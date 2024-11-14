@@ -10,12 +10,11 @@ var GET_SUMMARY = gql`query ($date: Date!) {
   unreleasedSummary (date: $date) {
     bonusTitle
     earningsClass
-    realeased
+    released
     paidAmount
     paidCount
     customerPaidCount
     totalVolume
-    realeased
     period {
       id
       end
@@ -36,7 +35,7 @@ const PayableSummaryPanel = ({ date, setCurrentBatch, handleViewBonus }) => {
 
 
       const groupedData = data.unreleasedSummary.reduce((acc, current) => {
-        const bonusTitle = `${current.bonusTitle}_${current.earningsClass}`;
+        const bonusTitle = `${current.bonusTitle.toLowerCase()}_${current.earningsClass}`;
 
         if (!acc[bonusTitle]) {
           acc[bonusTitle] = {
@@ -75,8 +74,8 @@ const PayableSummaryPanel = ({ date, setCurrentBatch, handleViewBonus }) => {
       setCurrentBatch({
         cutoffDate: date,
         bonusGroups: payables.filter(x => x.selected).map(x => ({ bonusTitle: x.bonusTitle, earningsClass: x.earningsClass })),
-        total: payables.filter(x => x.selected && x.earningsClass == 'RELEASE').reduce((t, x) => t + (x.paidAmount - x.realeased), 0),
-        forfeitTotal: payables.filter(x => x.selected && x.earningsClass == 'FORFEIT').reduce((t, x) => t + (x.paidAmount - x.realeased), 0),
+        total: payables.filter(x => x.selected && x.earningsClass == 'RELEASE').reduce((t, x) => t + (x.paidAmount - x.released), 0),
+        forfeitTotal: payables.filter(x => x.selected && x.earningsClass == 'FORFEIT').reduce((t, x) => t + (x.paidAmount - x.released), 0),
         totalCustomers: payables.filter(x => x.selected && x.earningsClass !== 'HOLD').reduce((t, x) => t + x.customerPaidCount, 0),
       });
     }
@@ -112,8 +111,8 @@ const PayableSummaryPanel = ({ date, setCurrentBatch, handleViewBonus }) => {
                 {eClass && <tr className="table-light">
                   <th className="subheader" colSpan={2}>Bonuses to {eClass}</th>
                   <th className="subheader d-none d-sm-table-cell text-start w-4">Customers</th>
-                  <th className="subheader d-none d-sm-table-cell text-end w-4">Total Amount</th>
-                  <th className="subheader d-none d-sm-table-cell text-end w-4">Released</th>
+                  {/* <th className="subheader d-none d-sm-table-cell text-end w-4">Total Amount</th>
+                  <th className="subheader d-none d-sm-table-cell text-end w-4">Released</th> */}
                   <th className="subheader border-start text-center w-3">Amount Due</th>
                 </tr>}
                 <tr>
@@ -130,14 +129,14 @@ const PayableSummaryPanel = ({ date, setCurrentBatch, handleViewBonus }) => {
                       {payable.customerPaidCount}
                     </button>
                   </td>
-                  <td className="d-none d-sm-table-cell text-end">
+                  {/* <td className="d-none d-sm-table-cell text-end">
                     {payable.paidAmount.toLocaleString("en-US", { style: 'currency', currency: 'USD' })}
                   </td>
                   <td className="d-none d-sm-table-cell text-end">
-                    {payable.realeased.toLocaleString("en-US", { style: 'currency', currency: 'USD' })}
-                  </td>
+                    {payable.released.toLocaleString("en-US", { style: 'currency', currency: 'USD' })}
+                  </td> */}
                   <td className="border-start text-end strong">
-                    {(payable.paidAmount - payable.realeased).toLocaleString("en-US", { style: 'currency', currency: 'USD' })}
+                    {(payable.paidAmount - payable.released).toLocaleString("en-US", { style: 'currency', currency: 'USD' })}
                   </td>
                 </tr>
               </React.Fragment>
