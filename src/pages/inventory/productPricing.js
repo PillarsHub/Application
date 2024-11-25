@@ -20,6 +20,7 @@ var GET_DATA = gql`query ($productIds: [String]!) {
       end
       storeIds
       customerTypeIds
+      orderTypeIds
       regionIds
       volume {
         volumeId
@@ -36,6 +37,10 @@ var GET_DATA = gql`query ($productIds: [String]!) {
     name
   }
   stores {
+    id
+    name
+  }
+  orderTypes {
     id
     name
   }
@@ -88,7 +93,8 @@ const ProductPricing = () => {
       priceType: activeItem.priceType,
       storeIds: activeItem.storeIds,
       priceGroups: activeItem.customerTypeIds,
-      regionIds: activeItem.regionIds
+      regionIds: activeItem.regionIds,
+      orderTypeIds: activeItem.orderTypeIds
     };
 
     var url = `/api/v1/Products/${params.productId}/Prices`;
@@ -148,7 +154,11 @@ const ProductPricing = () => {
                             return <span className="badge badge-outline text-blue m-1" key={regionId} >{data.regions.find(i => i.id == regionId)?.name ?? regionId}</span>
                           })}
                         </td>
-                        <td>Standard</td>
+                        <td>
+                          {price.orderTypeIds && price.orderTypeIds.map((orderTypeId) => {
+                            return <span className="badge badge-outline text-blue m-1" key={orderTypeId} >{data.orderTypes.find(i => i.id == orderTypeId)?.name ?? orderTypeId}</span>
+                          })}
+                        </td>
                         <td>
                           {price.storeIds && price.storeIds.map((storeId) => {
                             return <span className="badge badge-outline text-blue m-1" key={storeId} >{data.stores.find(i => i.id == storeId)?.name ?? storeId}</span>
@@ -245,7 +255,9 @@ const ProductPricing = () => {
             <div className="mb-3">
               <label className="form-label">Order Types</label>
               <MultiSelect className="form-select" name="orderTypeIds" value={activeItem?.orderTypeIds || ""} onChange={handleChange}>
-                <option>Standard</option>
+                {data.orderTypes && data.orderTypes.map((orderType) => {
+                  return <option key={orderType.id} value={orderType.id}>{orderType.name}</option>
+                })}
               </MultiSelect>
               <span className="text-danger"></span>
             </div>

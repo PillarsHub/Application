@@ -439,6 +439,7 @@ function treeBorad(id, rootId, treeId, periodDate, dataUrl, selectNode, getTempl
   function addChild(ul, node) {
     var result = null;
     if (node.uplineLeg?.toLowerCase() == "holding tank") return;
+    if (!node || !node.customer) return;
     var template = renderToStaticMarkup(getTemplate(node));
     var li = document.createElement('li');
     var nodeDiv = document.createElement('div');

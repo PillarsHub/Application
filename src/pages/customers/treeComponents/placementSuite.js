@@ -71,7 +71,7 @@ const PlacementSuite = ({ nodeId, treeId, shows, onHide, handlePlaceNode }) => {
                 </a>
               </div>
               <div className="col text-truncate">
-                {node.customer.fullName}
+                {node.customer?.fullName}
                 <div className="d-block text-muted text-truncate mt-n1"></div>
               </div>
               <div className="col-auto">
