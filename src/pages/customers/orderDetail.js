@@ -17,6 +17,9 @@ var GET_DATA = gql`query ($orderids: [String]!, $nodeIds: [String]!) {
         invoiceDate
         orderType
         status
+        statusDetail {
+          name
+        }
         tracking
         subTotal
         shipping
@@ -131,12 +134,12 @@ const OrderDetail = () => {
                       {groupedVolumes && Object.entries(groupedVolumes).map(([volumeId, volumeSum]) => {
                         return <>
                           <dd className="col-6">{volumeId}</dd>
-                          <dd className="col-6 text-end">{volumeSum}</dd>
+                          <dd className="col-6 text-end">{Math.round(volumeSum * 1000) / 1000}</dd>
                         </>
                       })}
 
                       <dd className="col-6">Status</dd>
-                      <dd className="col-6 text-end">{order?.status}</dd>
+                      <dd className="col-6 text-end">{order?.statusDetail?.name ?? order?.status}</dd>
                       <dd className="col-6">Tracking</dd>
                       <dd className="col-6 text-end">{order?.tracking}</dd>
 

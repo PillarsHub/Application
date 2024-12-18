@@ -19,6 +19,11 @@ var GET_DATA = gql`query ($offset: Int!, $first: Int!, $nodeIds: [String]!) {
       invoiceDate
       orderType
       status
+      statusDetail {
+        id
+        name
+        visibility
+      }
       tracking
       subTotal
       total
@@ -76,7 +81,7 @@ const CustomerOrders = () => {
         }
       }
     }
-    return total;
+    return Math.round(total * 1000) / 1000;
   };
 
 
@@ -130,7 +135,10 @@ const CustomerOrders = () => {
                   </thead>
                   <tbody>
                     {orders && orders.map((order) => {
-                      return <tr key={order.id}>
+                      var show = order.statusDetail?.visibility === 1 ? false : true;
+                      if (!show && GetScope() != undefined) return <></>;
+
+                      return <tr key={order.id} className={show ? '' : 'text-muted'}>
                         <td>
                           <span className="text-muted">
                             <a className="text-reset" href={`/customers/${params.customerId}/Orders/${order.id}`}>{order.id}</a>
@@ -156,7 +164,7 @@ const CustomerOrders = () => {
                           return <td key={index}>{volume !== null ? volume : 'N/A'}</td>
                         })}
                         <td>{order.total.toLocaleString("en-US", { style: 'currency', currency: order?.priceCurrency ?? 'USD' })}</td>
-                        <td>{order.status}</td>
+                        <td>{order.statusDetail?.name ?? order.status}</td>
                       </tr>
                     })}
                   </tbody>

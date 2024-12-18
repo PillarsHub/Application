@@ -15,6 +15,7 @@ const CustomerSummary = lazy(() => import("./pages/customers/summary"));
 const Users = lazy(() => import("./pages/settings/users"));
 const CustomerTree = lazy(() => import("./pages/customers/customerTree"));
 const Statuses = lazy(() => import("./pages/settings/statuses"));
+const OrderStatuses = lazy(() => import("./pages/settings/orderStatuses"));
 const NoPage = lazy(() => import("./pages/nopage"));
 const Company = lazy(() => import("./pages/settings/company"));
 const SalesTax = lazy(() => import("./pages/settings/salesTax"));
@@ -172,6 +173,7 @@ function App() {
               <Route path="settings/statuses" element={<Statuses />} />
               <Route path="settings/company" element={<Company />} />
               <Route path="settings/trees" element={<PlacementRules />} />
+              <Route path="settings/orderstatuses" element={<OrderStatuses />} />
               <Route path="*" element={<NoPage />} />
             </Route>
           </Routes>
