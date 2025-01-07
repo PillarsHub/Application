@@ -53,6 +53,7 @@ const WidgetTypes = {
   SocialLinks: "social",
   Recruiter: "recruiter",
   Earnings: "earnings",
+  Orders: "orders",
   Html: "html"
   //Report: "report"
 }

@@ -20,6 +20,7 @@ import LocalDate from "../../../util/LocalDate";
 import EarningsTable from "../../../components/earningsTable";
 import PeriodPicker from "../../../components/periodPicker";
 import RecruiterWidget from "./recruiterWidget";
+import OrdersWidget from "./ordersWidget";
 
 var GET_CUSTOMER = gql`query ($nodeIds: [String]!, $periodDate: Date!) {
   customers(idList: $nodeIds) {
@@ -147,7 +148,7 @@ const Widget = ({ widget, customer, compensationPlans, trees, isPreview = false,
     __html: modifiedCss,
   };
 
-  return <div style={{ display: "contents" }} className={widgetId}><div className={`card h-100 ${isPreview ? '' : 'mb-3'}`} style={inlineStyle}>
+  return <div style={{ display: "contents" }} className={widgetId}><div className={`card h-100 ${isPreview ? '' : ''}`} style={inlineStyle}>
     {widget.title && <div className="card-header" style={{ backgroundColor: (widget?.headerColor ?? '#ffffff') }}>
       <h3 className={`card-title ${msStyle} ${meStyle}`}>{widget.title}</h3>
       {widget.showDatePicker && widget.type != WidgetTypes.Earnings && <>
@@ -495,6 +496,13 @@ function Content(widget, customer, compensationPlans, trees, isPreview, widgetVa
 
     return <>
       <EarningsTable customerId={customer.id} periodId={widgetValues?.periodId ?? 0} overrides={overrides} />
+    </>
+  }
+
+  if (widget.type == WidgetTypes.Orders) {
+    //var overrides = widget.panes?.map((p) => ({ title: p.title, display: p.text, show: p.imageUrl.toLowerCase() == 'true' }));
+    return <>
+      <OrdersWidget customer={customer} widget={widget} />
     </>
   }
 

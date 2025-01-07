@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { useQuery, gql } from "@apollo/client";
 import LocalDate from '../util/LocalDate';
 import DataError from './dataError';
+import DataLoading from './dataLoading';
 import EmptyContent from './emptyContent';
 
 
@@ -43,7 +44,7 @@ const EarningsTable = ({ customerId, periodId, overrides }) => {
     variables: { nodeIds: [customerId], period: parseInt(periodId) },
   });
 
-  if (loading) return <></>;
+  if (loading) return <DataLoading />;
   if (error) return <DataError error={error} />
 
   var plan = data?.compensationPlans.find(item =>
@@ -91,7 +92,9 @@ const EarningsTable = ({ customerId, periodId, overrides }) => {
               <td>{bonus.amount.toLocaleString("en-US", { style: 'currency', currency: bonus?.currency ?? 'USD' })}</td>
               <td>{bonus.percent}</td>
               <td>
-                <a className="text-reset" href={`/customers/${customerId}/commissions/${bonus.bonusId}?periodId=${periodId}`}>{bonus.volume}</a>
+                <a className="text-reset" href={`/customers/${customerId}/commissions/${bonus.bonusId}?periodId=${periodId}`}>
+                  {Math.round(bonus.volume * 1000) / 1000}
+                </a>
               </td>
               <td>{bonus.released.toLocaleString("en-US", { style: 'currency', currency: bonus?.currency ?? 'USD' })}</td>
               <td>{ranks.find(r => r.id == bonus.rank)?.name}</td>
@@ -120,7 +123,7 @@ const EarningsTable = ({ customerId, periodId, overrides }) => {
                 <td></td>
                 <td className="strong">{totalAmount.toLocaleString("en-US", { style: 'currency', currency: bonuses[0]?.currency ?? 'USD' })}</td>
                 <td></td>
-                <td className="strong">{totalVolume}</td>
+                <td className="strong">{Math.round(totalVolume * 1000) / 1000}</td>
                 <td className="strong">{totalReleased.toLocaleString("en-US", { style: 'currency', currency: bonuses[0]?.currency ?? 'USD' })}</td>
                 <td></td>
               </tr>
