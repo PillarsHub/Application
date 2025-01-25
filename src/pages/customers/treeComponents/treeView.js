@@ -270,13 +270,14 @@ function treeBorad(id, rootId, treeId, periodDate, dataUrl, selectNode, getTempl
       parent.removeChild(loading);
       var baseNode = nodeData.data.trees[0];
       var hasLegs = false
+      var legNames = nodeData.data.trees[0].legNames;
 
-      if (nodeData.data.trees[0].legNames != undefined) {
+      if (legNames != undefined) {
         hasLegs = true;
       }
 
       for (const node of baseNode.nodes) {
-        var expander = addChild(parent, { customer: node.customer, nodeId: node.nodeId, card: node.customer?.cards[0], childArr: (node.totalChildNodes > 0 || hasLegs) ? [] : null });
+        var expander = addChild(parent, { customer: node.customer, nodeId: node.nodeId, legs: legNames, card: node.customer?.cards[0], childArr: (node.totalChildNodes > 0 || hasLegs) ? [] : null });
         if (expander) {
           handleExpand(expander);
         }
@@ -385,15 +386,15 @@ function treeBorad(id, rootId, treeId, periodDate, dataUrl, selectNode, getTempl
         for (const leg of legs) {
           if (fruits.has(leg)) {
             let node = fruits.get(leg);
-            addChild(parent, { customer: node.customer, uplineId: nodeId, uplineLeg: node.uplineLeg, nodeId: node.nodeId, card: node.customer?.cards[0], childArr: [] });
+            addChild(parent, { customer: node.customer, uplineId: nodeId, uplineLeg: node.uplineLeg, nodeId: node.nodeId, legs: legs, card: node.customer?.cards[0], childArr: [] });
           } else {
-            addChild(parent, { customer: undefined, uplineId: nodeId, uplineLeg: leg, nodeId: undefined, card: undefined, childArr: null });
+            addChild(parent, { customer: undefined, uplineId: nodeId, uplineLeg: leg, nodeId: undefined, legs: legs, card: undefined, childArr: null });
           }
         }
 
         fruits.forEach(function (node, key) {
           if (!legs.includes(key.toLowerCase())) {
-            addChild(parent, { customer: node.customer, uplineId: nodeId, uplineLeg: node.uplineLeg, nodeId: node.nodeId, card: node.customer?.cards[0], childArr: [] });
+            addChild(parent, { customer: node.customer, uplineId: nodeId, uplineLeg: node.uplineLeg, nodeId: node.nodeId, legs: legs, card: node.customer?.cards[0], childArr: [] });
           }
         })
       } else {
@@ -439,7 +440,7 @@ function treeBorad(id, rootId, treeId, periodDate, dataUrl, selectNode, getTempl
   function addChild(ul, node) {
     var result = null;
     if (node.uplineLeg?.toLowerCase() == "holding tank") return;
-    if (!node || !node.customer) return;
+    if (!node || (!node.customer && !node.legs)) return;
     var template = renderToStaticMarkup(getTemplate(node));
     var li = document.createElement('li');
     var nodeDiv = document.createElement('div');

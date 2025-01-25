@@ -9,7 +9,7 @@ const RankAdvance = ({ currentRank, ranks, valueMap, showRankId = false, showIte
 
 
   if (!rank) return <><EmptyContent title="No ranks found" text="Ranks are not available at the moment." /></>;
-  var percent = getPercentTotal(rank);
+  var percent = Math.trunc(getPercentTotal(rank));
 
   var handleNextRank = () => {
     var nextRankId = Math.min(...ranks.filter((r) => r.rankId > rank.rankId).map((r) => r.rankId));
@@ -233,14 +233,14 @@ function calculateAverage(array) {
     count++;
   });
 
-  return Math.round(total / count);
+  return Math.trunc((total / count) * 10) / 10;
 }
 
 function getPercent(x, y) {
   let percent = x / y * 100;
   if (percent > 100) percent = 100;
 
-  return Math.round(percent, 0);
+  return Math.trunc(percent * 10, 0) / 10;
 }
 
 function getRankRequirements(condition) {

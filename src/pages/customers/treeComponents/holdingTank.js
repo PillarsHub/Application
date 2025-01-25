@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import OffCanvas from '../../../components/offCanvas';
 import { useQuery, gql } from "@apollo/client";
 import Avatar from '../../../components/avatar';
+import EmptyContent from '../../../components/emptyContent';
 
 let GET_HoldingTank = gql`query ($nodeIds: [String]!, $treeId: ID!) {
   tree(id: $treeId)
@@ -13,11 +14,10 @@ let GET_HoldingTank = gql`query ($nodeIds: [String]!, $treeId: ID!) {
       nodeId
       uplineId
       uplineLeg
-      nodes
+      nodes (levels: 1)
       {
         nodeId
         uplineLeg
-        totalChildNodes
         customer{
           fullName
           enrollDate
@@ -48,6 +48,8 @@ const HoldingTank = ({ nodeId, treeId, uplineId, uplineLeg, showModal }) => {
     }
   }, [uplineId, uplineLeg]);
 
+  const items = data?.tree?.nodes?.[0].nodes.filter(node => node.uplineLeg.toLowerCase() == 'holding tank') ?? [];
+
   return <OffCanvas id="HoldingTank" showModal={show} >
     <div className="card-header">
       <h2 className="card-title">
@@ -60,30 +62,30 @@ const HoldingTank = ({ nodeId, treeId, uplineId, uplineLeg, showModal }) => {
     <div className="overflow-y-scroll">
       <p>{error && `Error loading Holding Tank Data. ${error}`}</p>
 
-      {/* <p>{uplineId}</p>
-      <p>{uplineLeg}</p>
-      <p>{JSON.stringify(placeData)}</p> */}
       <div className="list-group list-group-flush">
-        {data?.tree?.nodes && data.tree.nodes[0].nodes && data.tree.nodes[0].nodes.filter(node => node.uplineLeg.toLowerCase() == 'holding tank').map((node) => {
+        {!items || items.length == 0 && <>
+          <EmptyContent title="Holding Tank is Empty" text="There are no customers in this holding tank" />
+        </>}
+        {items && items.length > 0 && items.map((node) => {
           return <div key={node.nodeId} href="#" className="list-group-item list-group-item-action" aria-current="true">
-              <div className="row align-items-center">
-                <div className="col-auto">
-                  <a href="#">
-                    <Avatar name={node.customer?.fullName} url={node.customer?.profileImage} size="" />
-                  </a>
-                </div>
-                <div className="col text-truncate">
-                  {node.customer.fullName}
-                  <div className="d-block text-muted text-truncate mt-n1"></div>
-                </div>
-                <div className="col-auto">
-                  <div className="btn-list flex-nowrap">
-                    <button className="btn" onClick={() => handleShowPlacemntModel(`${node.nodeId}`)}>
-                      Place
-                    </button>
-                  </div>
+            <div className="row align-items-center">
+              <div className="col-auto">
+                <a href="#">
+                  <Avatar name={node.customer?.fullName} url={node.customer?.profileImage} size="" />
+                </a>
+              </div>
+              <div className="col text-truncate">
+                {node.customer.fullName}
+                <div className="d-block text-muted text-truncate mt-n1"></div>
+              </div>
+              <div className="col-auto">
+                <div className="btn-list flex-nowrap">
+                  <button className="btn" onClick={() => handleShowPlacemntModel(`${node.nodeId}`)}>
+                    Place
+                  </button>
                 </div>
               </div>
+            </div>
           </div>
         })}
       </div>

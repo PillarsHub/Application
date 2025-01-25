@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams } from "react-router-dom"
 import { useQuery, gql } from "@apollo/client";
 import { useFetch } from "../../hooks/useFetch";
@@ -148,6 +148,16 @@ const CustomerSummary = () => {
   const { loading, error, data, refetch } = useQuery(GET_CUSTOMER, {
     variables: { nodeIds: [params.customerId], periodDate: periodDate },
   });
+
+  useEffect(() => {
+    if (params.customerId) {
+      SendRequest("POST", `/api/v1/Recent`, { customerId: params.customerId }, () => {
+        //DoNothing
+      }, (error) => {
+        alert(error)
+      })
+    }
+  }, [params])
 
   const handlePeriodChange = (name, value) => {
     setPeriodDate(value);

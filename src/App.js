@@ -2,7 +2,6 @@ import React, { Suspense, lazy } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import useToken from './features/authentication/hooks/useToken';
 import { TokenProvider } from './features/authentication/hooks/useToken';
-import PlacementSuite from "./pages/customers/placementSuite";
 
 const Layout = lazy(() => import("./pages/layout"));
 const Login = lazy(() => import('./pages/account/login'));
@@ -35,6 +34,7 @@ const ProductVariants = lazy(() => import("./pages/inventory/productVariants"));
 const ProductBom = lazy(() => import("./pages/inventory/productBom"));
 const Periods = lazy(() => import("./pages/commissions/periods"));
 const PeriodDetail = lazy(() => import("./pages/commissions/periodDetail"));
+const TeamList = lazy(() => import("./pages/customers/teamList"));
 const NewCustomer = lazy(() => import("./pages/customers/newCustomer"));
 const EditCustomer = lazy(() => import("./pages/customers/editCustomer"));
 const CustomerOrders = lazy(() => import("./pages/customers/customerOrders"));
@@ -79,6 +79,8 @@ const BonusDetail = lazy(() => import("./pages/commissions/bonusDetail"));
 const RankDetail = lazy(() => import("./pages/commissions/rankDetail"));
 const Pages = lazy(() => import("./pages/settings/pages"));
 const ReportQuery = lazy(() => import("./pages/reports/reportQuery"));
+const PlacementSuite = lazy(() => import("./pages/customers/placementSuite"));
+const QueryBuilder = lazy(() => import("./pages/tools/queryBuilder"));
 
 function App() {
   const { token, setToken, clearToken } = useToken();
@@ -105,6 +107,7 @@ function App() {
               <Route path="profile" element={<Profile />} />
               <Route path="customers" element={<Customers />} />
               <Route path="customers/new" element={<NewCustomer />} />
+              <Route path="customers/:customerId/team" element={<TeamList />} />
               <Route path="customers/:customerId/edit" element={<EditCustomer />} />
               <Route path="customers/:customerId/summary" element={<CustomerSummary />} />
               <Route path="customers/:customerId/details" element={<CustomerDetail />} />
@@ -151,6 +154,7 @@ function App() {
               <Route path="reports/graphQL" element={<ReportQuery />} />
               <Route path="reports/:reportId" element={<Report />} />
               <Route path="reports/:reportId/edit" element={<EditReport />} />
+              <Route path="query" element={<QueryBuilder />} />
               <Route path="tools/adjustments" element={<Adjustments />} />
               <Route path="settings/users" element={<Users />} />
               <Route path="settings/theme" element={<Theme />} />

@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useQuery, gql } from "@apollo/client";
 import { GetScope } from '../../features/authentication/hooks/useToken';
-import Pagination from '../../components/pagination';
+import { SendRequest } from '../../hooks/usePost';
 import PageHeader, { CardHeader } from "../../components/pageHeader";
 import DataLoading from "../../components/dataLoading";
 import StatusPill from "./statusPill";
@@ -9,8 +9,35 @@ import Avatar from "../../components/avatar";
 import LocalDate from "../../util/LocalDate";
 import DataError from '../../components/dataError';
 
-var GET_CUSTOMERS = gql`query($offset: Int!, $first: Int!, $search: String!){
-  customers(offset: $offset, first: $first, search: $search) {
+var GET_CUSTOMERS = gql`query($offset: Int!, $first: Int!) {
+  recentCustomers(offset: $offset, first: $first) {
+    customerId
+    pinned
+    date
+    customer{
+      id
+      companyName
+      fullName
+      enrollDate
+      profileImage
+      webAlias
+      scopeLevel
+      status{
+        id
+        name
+        statusClass
+      }
+      customerType {
+        id
+        name
+      }
+      emailAddress
+      phoneNumbers {
+        number
+      }
+    }
+  }  
+  customers(offset: 0, first: 10) {
     id
     companyName
     fullName
@@ -36,12 +63,35 @@ var GET_CUSTOMERS = gql`query($offset: Int!, $first: Int!, $search: String!){
 }`;
 
 const Customers = () => {
-  const { loading, error, data, variables, refetch } = useQuery(GET_CUSTOMERS, {
+  const [recentList, setRecentList] = useState();
+  const { loading, error, data } = useQuery(GET_CUSTOMERS, {
     variables: { offset: 0, first: 10, search: '' },
   });
 
+  useEffect(() => {
+    if (data) {
+      setRecentList(data.recentCustomers.length > 0 ?
+        data.recentCustomers :
+        data.customers.map(c => ({ pinned: false, customer: c })))
+    }
+  }, [data])
+
   if (loading) return <DataLoading />;
   if (error) return <DataError error={error} />
+
+  const handleSetPinned = (customerId, pinned) => {
+    setRecentList(prevList =>
+      prevList.map(item =>
+        item.customerId === customerId ? { ...item, pinned } : item
+      )
+    );
+
+    SendRequest("POST", `/api/v1/Recent`, { pinned: pinned, customerId: customerId }, () => {
+      //Do Nothing
+    }, (error) => {
+      alert(error)
+    })
+  }
 
   return (
     <PageHeader title="Customers" >
@@ -56,55 +106,60 @@ const Customers = () => {
         }
       </CardHeader>
       <div className="container-xl">
-        <div className="row row-cards">
-          <div className="col-12">
-            <div className="card">
-              <div className="table-responsive">
-                <table className="table card-table table-vcenter text-nowrap datatable">
-                  <thead>
-                    <tr>
-                      <th className="text-center w-1"></th>
-                      <th>Customer</th>
-                      <th>Handle</th>
-                      <th>Customer Type</th>
-                      <th>Status</th>
-                      <th>Phone Number</th>
-                      <th>Email Address</th>
-                      <th>Enroll Date</th>
-                      <th className="text-center"><i className="icon-settings"></i></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.customers && data.customers.filter((item) => item.scopeLevel != 'UPLINE').map((item) => {
-                      return <tr key={item.id}>
-                        <td className="text-center">
-                          <Avatar name={item.fullName} url={item.profileImage} />
-                        </td>
-                        <td>
-                          <a className="text-reset" href={`/customers/${item.id}/summary`}>{item.fullName}</a>
-                          {GetScope() == undefined && <div className="small text-muted">
-                            {item.id}
-                          </div>}
-                        </td>
-                        <td>{item.webAlias}</td>
-                        <td>{item.customerType?.name}</td>
-                        <td><StatusPill status={item.status} small={true} /></td>
-                        <td>
-                          {item.phoneNumbers && item.phoneNumbers.length > 0 && item.phoneNumbers[0].number}
-                        </td>
-                        <td>{item.emailAddress}</td>
-                        <td><LocalDate dateString={item.enrollDate} hideTime={true} /></td>
-                        <td className="text-center"></td>
-                        </tr>
-                    })}
-                  </tbody>
-                </table>
-              </div>
-              <div className="card-footer d-flex align-items-center">
-                <Pagination variables={variables} refetch={refetch} total={data.totalCustomers} />
-              </div>
-            </div>
+        <div className="card">
+          <div className="table-responsive">
+            <table className="table card-table table-vcenter text-nowrap datatable">
+              <thead>
+                <tr>
+                  <th className="text-center w-1"></th>
+                  <th>Customer</th>
+                  <th>Handle</th>
+                  <th>Customer Type</th>
+                  <th>Status</th>
+                  <th>Phone Number</th>
+                  <th>Email Address</th>
+                  <th>Enroll Date</th>
+                  <th className="text-center"><i className="icon-settings"></i></th>
+                </tr>
+              </thead>
+              <tbody>
+                {recentList && recentList.filter((item) => item.customer.scopeLevel != 'UPLINE').map((item) => {
+                  return <tr key={item.customer.id}>
+                    <td className="text-center">
+                      <Avatar name={item.customer.fullName} url={item.customer.profileImage} />
+                    </td>
+                    <td>
+                      <a className="text-reset" href={`/customers/${item.customer.id}/summary`}>{item.customer.fullName}</a>
+                      {GetScope() == undefined && <div className="small text-muted">
+                        {item.customer.id}
+                      </div>}
+                    </td>
+                    <td>{item.customer.webAlias}</td>
+                    <td>{item.customer.customerType?.name}</td>
+                    <td><StatusPill status={item.customer.status} small={true} /></td>
+                    <td>
+                      {item.customer.phoneNumbers && item.customer.phoneNumbers.length > 0 && item.customer.phoneNumbers[0].number}
+                    </td>
+                    <td>{item.customer.emailAddress}</td>
+                    <td><LocalDate dateString={item.customer.enrollDate} hideTime={true} /></td>
+                    <td className="text-center">
+                      {!item.pinned && <>
+                        <button className="btn btn-ghost-secondary btn-icon" onClick={() => handleSetPinned(item.customer.id, true)}>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon icon-tabler icons-tabler-outline icon-tabler-pin"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M15 4.5l-4 4l-4 1.5l-1.5 1.5l7 7l1.5 -1.5l1.5 -4l4 -4" /><path d="M9 15l-4.5 4.5" /><path d="M14.5 4l5.5 5.5" /></svg>
+                        </button>
+                      </>}
+                      {item.pinned && <>
+                        <button className="btn btn-ghost-secondary btn-icon" onClick={() => handleSetPinned(item.customer.id, false)}>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon icon-tabler icons-tabler-outline icon-tabler-pinned"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M9 4v6l-2 4v2h10v-2l-2 -4v-6" /><path d="M12 16l0 5" /><path d="M8 4l8 0" /></svg>
+                        </button>
+                      </>}
+                    </td>
+                  </tr>
+                })}
+              </tbody>
+            </table>
           </div>
+
         </div>
       </div>
     </PageHeader>

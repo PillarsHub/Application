@@ -164,9 +164,8 @@ const Navigation = () => {
 
   const items = menuItems ? menuItems[activeIndex].items : [];
 
-
   const internalPages = [
-    { url: '/customers', title: 'Customer List' },
+    { url: '/customers/{customerId}/team', title: 'Customer List' },
     { url: '/reports', title: 'Reports' },
     { url: '/commissions/periods', title: 'Commission Periods' },
     { url: '/commissions/payables', title: 'Commission Payables' },

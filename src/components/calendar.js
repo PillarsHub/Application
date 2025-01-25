@@ -31,7 +31,7 @@ const Calendar = ({ name }) => {
   }
 
   const handleSelectDay = (day) => {
-    var thisDayEvents = events?.filter((e) => e.date.getDate() == day).sort((a, b) => (a.date > b.date) ? 1 : -1);
+    var thisDayEvents = findEvents(day, selectedDate, events);
     if (thisDayEvents.length > 0) {
       setSelectedEvents(thisDayEvents);
       setShow(true);
@@ -63,6 +63,11 @@ const Calendar = ({ name }) => {
   let optionsL2 = {
     hour: 'numeric',
     minute: '2-digit'
+  };
+  let optionsL3 = {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
   };
 
   return <>
@@ -103,7 +108,8 @@ const Calendar = ({ name }) => {
             {weekData && weekData.map((week) => {
               return <div key={week.week} className={week.week}>
                 {week.days.map((day) => {
-                  return <span key={`${day.id}_${day.last}_${day.next}_${day.event}`} className={`${day.last ? 'last-month' : ''} ${day.next ? 'last-month' : ''} ${day.event ? 'event' : ''} ${(day.id == currentDay && !day.next && !day.last) ? 'active' : ''}`} onClick={() => handleSelectDay(day.id)}>
+                  var hasEvents = day.events.length > 0;
+                  return <span key={`${day.id}_${day.last}_${day.next}_${day.event}`} className={`${day.last ? 'last-month' : ''} ${day.next ? 'last-month' : ''} ${hasEvents ? 'event' : ''} ${(day.id == currentDay && !day.next && !day.last) ? 'active' : ''}`} onClick={() => handleSelectDay(day.id)}>
                     {day.id} {day.event}
                   </span>
                 })}
@@ -115,9 +121,14 @@ const Calendar = ({ name }) => {
 
     </div>
 
-    <Modal showModal={show} size="sm" centered="true" onHide={handleCloseModal}>
+    <Modal showModal={show} size="md" centered="true" onHide={handleCloseModal}>
       <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       {selectedEvents && selectedEvents.map((e) => {
+
+        const eventStart = new Date(e.date);
+        const eventEnd = new Date(e.end);
+        var sameDay = datesAreOnSameDay(eventStart, eventEnd);
+
         return <div key={e.id} className="modal-body py-4">
           <dl className="row">
             <dt className="col-1"></dt>
@@ -128,12 +139,23 @@ const Calendar = ({ name }) => {
               <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-calendar-event" width="24" height="24" viewBox="0 0 24 24" strokeWidth="1" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z"></path><path d="M16 3l0 4"></path><path d="M8 3l0 4"></path><path d="M4 11l16 0"></path><path d="M8 15h2v2h-2z"></path></svg>
             </dt>
             <dd className="col-11 mb-3">
-              <div>{e.date.toLocaleDateString(undefined, optionsL1)}</div>
               <div>
-                {!e.end && 'All Day'}
-                {e.end && e.date.toLocaleTimeString(undefined, optionsL2)}
-                {e.end && ' - '}
-                {e.end && e.end.toLocaleTimeString(undefined, optionsL2)}
+                {sameDay && <>
+                  {e.date.toLocaleDateString(undefined, optionsL1)}
+                </>}
+                {!sameDay && <>
+                  {e.date.toLocaleDateString(undefined, optionsL3)} @ {e.end && e.date.toLocaleTimeString(undefined, optionsL2)} 
+                  {e.end && ' - '}
+                  {e.end.toLocaleDateString(undefined, optionsL3)} @ {e.end && e.end.toLocaleTimeString(undefined, optionsL2)}
+                </>}
+              </div>
+              <div>
+                {sameDay && <>
+                  {!e.end && 'All Day'}
+                  {e.end && e.date.toLocaleTimeString(undefined, optionsL2)}
+                  {e.end && ' - '}
+                  {e.end && e.end.toLocaleTimeString(undefined, optionsL2)}
+                </>}
               </div>
               <div>
                 {e.date.toLocaleDateString(undefined, { day: '2-digit', timeZoneName: 'long' }).slice(4)}
@@ -165,6 +187,33 @@ const Calendar = ({ name }) => {
   </>
 }
 
+function datesAreOnSameDay(first, second) {
+  return first.getFullYear() === second.getFullYear() &&
+    first.getMonth() === second.getMonth() &&
+    first.getDate() === second.getDate();
+}
+
+function findEvents(day, date, events) {
+  // Create a new Date object with the same year, month, and updated day, and reset time to midnight
+  const targetDate = new Date(date);
+  targetDate.setDate(day);
+  targetDate.setHours(0, 0, 0, 0); // Reset time to midnight
+
+  return events?.filter((e) => {
+    const eventStart = new Date(e.date);
+    const eventEnd = new Date(e.end);
+
+    // Normalize times to compare only the date part
+    eventStart.setHours(0, 0, 0, 0);
+    eventEnd.setHours(23, 59, 59, 999); // Ensure full-day inclusivity
+
+    return eventStart <= targetDate && eventEnd >= targetDate;
+  }).sort((a, b) => (a.date > b.date ? 1 : -1)) ?? [];
+}
+
+
+
+
 function fillWeekArrays(date, events) {
   var weeks = [];
 
@@ -177,36 +226,36 @@ function fillWeekArrays(date, events) {
   var firstWeek = [];
   for (let i = 0; i < firstDayOfWeek; i++) {
     let id = lastMonthLastDay - (firstDayOfWeek - (i + 1));
-    firstWeek.push({ last: true, event: false, id: id });
+    firstWeek.push({ last: true, events: [], id: id });
   }
   for (let i = firstDayOfWeek; i < 7; i++) {
     let id = i - firstDayOfWeek + 1;
-    let hasEvent = (events.find((e) => e.date.getDate() == id) !== undefined);
-    firstWeek.push({ last: false, event: hasEvent, id: id });
+    let hasEvent = findEvents(id, date, events);
+    firstWeek.push({ last: false, events: hasEvent, id: id });
   }
   weeks.push({ week: "first", days: firstWeek });
 
   var secondWeek = [];
   for (let i = 0; i < 7; i++) {
     let id = i + (8 - firstDayOfWeek);
-    let hasEvent = (events.find((e) => e.date.getDate() == id) !== undefined);
-    secondWeek.push({ last: false, event: hasEvent, id: id });
+    let hasEvent = findEvents(id, date, events);
+    secondWeek.push({ last: false, events: hasEvent, id: id });
   }
   weeks.push({ week: "second", days: secondWeek });
 
   var thirdWeek = [];
   for (let i = 0; i < 7; i++) {
     let id = i + (15 - firstDayOfWeek);
-    let hasEvent = (events.find((e) => e.date.getDate() == id) !== undefined);
-    thirdWeek.push({ last: false, event: hasEvent, id: id });
+    let hasEvent = findEvents(id, date, events);
+    thirdWeek.push({ last: false, events: hasEvent, id: id });
   }
   weeks.push({ week: "third", days: thirdWeek });
 
   var fourthWeek = [];
   for (let i = 0; i < 7; i++) {
     let id = i + (22 - firstDayOfWeek);
-    let hasEvent = (events.find((e) => e.date.getDate() == id) !== undefined);
-    fourthWeek.push({ last: false, event: hasEvent, id: id });
+    let hasEvent = findEvents(id, date, events);
+    fourthWeek.push({ last: false, events: hasEvent, id: id });
   }
   weeks.push({ week: "fourth", days: fourthWeek });
 
@@ -218,8 +267,8 @@ function fillWeekArrays(date, events) {
       day = i - lastDayOfWeek;
       next = true;
     }
-    let hasEvent = !next && (events.find((e) => e.date.getDate() == day) !== undefined);
-    fifthWeek.push({ last: false, next: next, event: hasEvent, id: day });
+    let hasEvent = !next && findEvents(day, date, events);
+    fifthWeek.push({ last: false, next: next, events: hasEvent, id: day });
   }
   weeks.push({ week: "fifth", days: fifthWeek });
 
@@ -235,8 +284,8 @@ function fillWeekArrays(date, events) {
       }
       next = true;
     }
-    let hasEvent = !next && (events.find((e) => e.date.getDate() == day) !== undefined);
-    sixthWeek.push({ last: false, next: next, event: hasEvent, id: day });
+    let hasEvent = !next && findEvents(day, date, events);
+    sixthWeek.push({ last: false, next: next, events: hasEvent, id: day });
   }
   weeks.push({ week: "sixth", days: sixthWeek });
 
