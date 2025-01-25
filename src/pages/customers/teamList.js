@@ -3,15 +3,19 @@ import { useParams } from "react-router-dom"
 import { useQuery, gql } from "@apollo/client";
 import { GetScope } from '../../features/authentication/hooks/useToken';
 import Pagination from '../../components/pagination';
-import PageHeader, { CardHeader } from "../../components/pageHeader";
+import PageHeader from "../../components/pageHeader";
 import DataLoading from "../../components/dataLoading";
 import StatusPill from "./statusPill";
 import Avatar from "../../components/avatar";
 import LocalDate from "../../util/LocalDate";
 import DataError from '../../components/dataError';
 
-var GET_CUSTOMERS = gql`query($offset: Int!, $first: Int!, $search: String!){
-  customers(offset: $offset, first: $first, search: $search) {
+var GET_CUSTOMERS = gql`query($nodeIds: [String]!, $offset: Int!, $first: Int!){
+  customer: customers(idList: $nodeIds) {
+    id,
+    fullName
+  }
+  customers(offset: $offset, first: $first) {
     id
     companyName
     fullName
@@ -39,26 +43,16 @@ var GET_CUSTOMERS = gql`query($offset: Int!, $first: Int!, $search: String!){
 const TeamList = () => {
   let params = useParams()
   const { loading, error, data, variables, refetch } = useQuery(GET_CUSTOMERS, {
-    variables: { offset: 0, first: 10, search: '' },
+    variables: { nodeIds: [params.customerId], offset: 0, first: 10 },
   });
 
   if (loading) return <DataLoading />;
   if (error) return <DataError error={error} />
 
-  let customer = data.customers[0] ?? { id: params.customerId, cards: [] };
+  let customer = data.customer[0] ?? { id: params.customerId, cards: [] };
 
   return (
-    <PageHeader title={customer.fullName} preTitle="My Team" pageId='team' customerId={customer.id}>
-      <CardHeader>
-        {GetScope() == undefined &&
-          <div className="dropdown">
-            <a href="/Customers/New" className="btn btn-primary">
-              <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-user-plus" width="40" height="40" viewBox="0 0 24 24" strokeWidth="1" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"></path><path d="M16 19h6"></path><path d="M19 16v6"></path><path d="M6 21v-2a4 4 0 0 1 4 -4h4"></path></svg>
-              Add Customer
-            </a>
-          </div>
-        }
-      </CardHeader>
+    <PageHeader title={customer.fullName} preTitle="My Team" pageId='team' customerId={params.customerId}>
       <div className="container-xl">
         <div className="row row-cards">
           <div className="col-12">
