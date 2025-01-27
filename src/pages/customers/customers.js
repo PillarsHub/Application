@@ -123,38 +123,40 @@ const Customers = () => {
                 </tr>
               </thead>
               <tbody>
-                {recentList && recentList.filter((item) => item.customer.scopeLevel != 'UPLINE').map((item) => {
-                  return <tr key={item.customer.id}>
-                    <td className="text-center">
-                      <Avatar name={item.customer.fullName} url={item.customer.profileImage} />
-                    </td>
-                    <td>
-                      <a className="text-reset" href={`/customers/${item.customer.id}/summary`}>{item.customer.fullName}</a>
-                      {GetScope() == undefined && <div className="small text-muted">
-                        {item.customer.id}
-                      </div>}
-                    </td>
-                    <td>{item.customer.webAlias}</td>
-                    <td>{item.customer.customerType?.name}</td>
-                    <td><StatusPill status={item.customer.status} small={true} /></td>
-                    <td>
-                      {item.customer.phoneNumbers && item.customer.phoneNumbers.length > 0 && item.customer.phoneNumbers[0].number}
-                    </td>
-                    <td>{item.customer.emailAddress}</td>
-                    <td><LocalDate dateString={item.customer.enrollDate} hideTime={true} /></td>
-                    <td className="text-center">
-                      {!item.pinned && <>
-                        <button className="btn btn-ghost-secondary btn-icon" onClick={() => handleSetPinned(item.customer.id, true)}>
-                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon icon-tabler icons-tabler-outline icon-tabler-pin"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M15 4.5l-4 4l-4 1.5l-1.5 1.5l7 7l1.5 -1.5l1.5 -4l4 -4" /><path d="M9 15l-4.5 4.5" /><path d="M14.5 4l5.5 5.5" /></svg>
-                        </button>
-                      </>}
-                      {item.pinned && <>
-                        <button className="btn btn-ghost-secondary btn-icon" onClick={() => handleSetPinned(item.customer.id, false)}>
-                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon icon-tabler icons-tabler-outline icon-tabler-pinned"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M9 4v6l-2 4v2h10v-2l-2 -4v-6" /><path d="M12 16l0 5" /><path d="M8 4l8 0" /></svg>
-                        </button>
-                      </>}
-                    </td>
-                  </tr>
+                {recentList && recentList.filter((item) => item.customer?.scopeLevel != 'UPLINE').map((item) => {
+                  if (item.customer?.id) {
+                    return <tr key={item.customer.id}>
+                      <td className="text-center">
+                        <Avatar name={item.customer.fullName} url={item.customer.profileImage} />
+                      </td>
+                      <td>
+                        <a className="text-reset" href={`/customers/${item.customer.id}/summary`}>{item.customer.fullName}</a>
+                        {GetScope() == undefined && <div className="small text-muted">
+                          {item.customer.id}
+                        </div>}
+                      </td>
+                      <td>{item.customer.webAlias}</td>
+                      <td>{item.customer.customerType?.name}</td>
+                      <td><StatusPill status={item.customer.status} small={true} /></td>
+                      <td>
+                        {item.customer.phoneNumbers && item.customer.phoneNumbers.length > 0 && item.customer.phoneNumbers[0].number}
+                      </td>
+                      <td>{item.customer.emailAddress}</td>
+                      <td><LocalDate dateString={item.customer.enrollDate} hideTime={true} /></td>
+                      <td className="text-center">
+                        {!item.pinned && <>
+                          <button className="btn btn-ghost-secondary btn-icon" onClick={() => handleSetPinned(item.customer.id, true)}>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon icon-tabler icons-tabler-outline icon-tabler-pin"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M15 4.5l-4 4l-4 1.5l-1.5 1.5l7 7l1.5 -1.5l1.5 -4l4 -4" /><path d="M9 15l-4.5 4.5" /><path d="M14.5 4l5.5 5.5" /></svg>
+                          </button>
+                        </>}
+                        {item.pinned && <>
+                          <button className="btn btn-ghost-secondary btn-icon" onClick={() => handleSetPinned(item.customer.id, false)}>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon icon-tabler icons-tabler-outline icon-tabler-pinned"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M9 4v6l-2 4v2h10v-2l-2 -4v-6" /><path d="M12 16l0 5" /><path d="M8 4l8 0" /></svg>
+                          </button>
+                        </>}
+                      </td>
+                    </tr>
+                  }
                 })}
               </tbody>
             </table>

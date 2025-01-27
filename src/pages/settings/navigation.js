@@ -165,7 +165,7 @@ const Navigation = () => {
   const items = menuItems ? menuItems[activeIndex].items : [];
 
   const internalPages = [
-    { url: '/customers/{customerId}/team', title: 'Customer List' },
+    { url: '/customers', title: 'Recent Customers' },
     { url: '/reports', title: 'Reports' },
     { url: '/commissions/periods', title: 'Commission Periods' },
     { url: '/commissions/payables', title: 'Commission Payables' },
@@ -178,6 +178,7 @@ const Navigation = () => {
     { url: '/media', title: 'Media Library' },
     { url: '/training', title: 'Training Course Admin' },
     { url: '/customers/{customerId}/summary', title: 'Customer Details' },
+    { url: '/customers/{customerId}/team', title: 'Customer Team' },
     { url: '/customers/{customerId}/dashboard', title: 'Dashboard' },
     { url: '/customers/{customerId}/orders', title: 'Customer Orders' },
     { url: '/customers/{customerId}/autoships', title: 'Customer Autoships' },
