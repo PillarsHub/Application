@@ -73,8 +73,8 @@ const EditCustomer = () => {
 
   useEffect(() => {
     if (data && activeItem.id != data.customer.id) {
-      var billAddress = data.customer.addresses?.find(i => i.type == "Billing");
-      var shipAddress = data.customer.addresses?.find(i => i.type == "Shipping");
+      var billAddress = data.customer.addresses?.find(i => i.type.toLowerCase() == "billing");
+      var shipAddress = data.customer.addresses?.find(i => i.type.toLowerCase() == "shipping");
 
       setActiveItem({
         id: data.customer.id,
@@ -128,7 +128,7 @@ const EditCustomer = () => {
           type: "Billing",
           line1: activeItem.billing_line1,
           city: activeItem.billing_city,
-          stateCode: activeItem.billing_stage,
+          stateCode: activeItem.billing_state,
           zip: activeItem.billing_zip,
           countryCode: activeItem.billing_country ?? 'us'
         },
@@ -136,7 +136,7 @@ const EditCustomer = () => {
           type: "Shipping",
           line1: activeItem.shipping_line1,
           city: activeItem.shipping_city,
-          stateCode: activeItem.shipping_stage,
+          stateCode: activeItem.shipping_state,
           zip: activeItem.shipping_zip,
           countryCode: activeItem.shipping_country ?? 'us'
         }

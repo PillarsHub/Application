@@ -10,34 +10,34 @@ import Avatar from "../../components/avatar";
 import LocalDate from "../../util/LocalDate";
 import DataError from '../../components/dataError';
 
-var GET_CUSTOMERS = gql`query($nodeIds: [String]!, $offset: Int!, $first: Int!){
+var GET_CUSTOMERS = gql`query ($nodeIds: [String]!, $offset: Int!, $first: Int!) {
   customer: customers(idList: $nodeIds) {
-    id,
-    fullName
-  }
-  customers(offset: $offset, first: $first) {
     id
-    companyName
     fullName
-    enrollDate
-    profileImage
-    webAlias
-    scopeLevel
-    status{
+    customers(offset: $offset, first: $first) {
       id
-      name
-      statusClass
+      companyName
+      fullName
+      enrollDate
+      profileImage
+      webAlias
+      scopeLevel
+      status {
+        id
+        name
+        statusClass
+      }
+      customerType {
+        id
+        name
+      }
+      emailAddress
+      phoneNumbers {
+        number
+      }
     }
-    customerType {
-      id
-      name
-    }
-    emailAddress
-    phoneNumbers {
-      number
-    }
+    totalCustomers
   }
-  totalCustomers
 }`;
 
 const TeamList = () => {
@@ -73,7 +73,7 @@ const TeamList = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {data.customers && data.customers.filter((item) => item.scopeLevel != 'UPLINE').map((item) => {
+                    {customer.customers && customer.customers.filter((item) => item.scopeLevel != 'UPLINE').map((item) => {
                       return <tr key={item.id}>
                         <td className="text-center">
                           <Avatar name={item.fullName} url={item.profileImage} />
@@ -99,7 +99,7 @@ const TeamList = () => {
                 </table>
               </div>
               <div className="card-footer d-flex align-items-center">
-                <Pagination variables={variables} refetch={refetch} total={data.totalCustomers} />
+                <Pagination variables={variables} refetch={refetch} total={customer.totalCustomers} />
               </div>
             </div>
           </div>
