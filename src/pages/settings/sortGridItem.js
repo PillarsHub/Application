@@ -5,7 +5,7 @@ import PropTypes from 'prop-types';
 import Widget from '../../features/widgets/components/widget';
 import EmptyContent from '../../components/emptyContent';
 
-const SortGridItem = ({ id, col, item, widgets, trees, pageId, onAdd, onResize, onDelete }) => {
+const SortGridItem = ({ id, col, item, widgets, trees, pageId, onAdd, onResize, onDelete, onPublish }) => {
   const { attributes, listeners, setNodeRef, isDragging, transform, transition, isOver } = useSortable({ id });
 
   const doTransofrm = false;
@@ -24,31 +24,16 @@ const SortGridItem = ({ id, col, item, widgets, trees, pageId, onAdd, onResize, 
   return <>
     <div className={`col-md-${col}`} ref={setNodeRef} style={style}>
       <div className="card">
-        {item?.widgetId && <Widget widget={widget} isPreview={true} trees={trees} />}
-        {!item?.widgetId && item?.children.length == 0 && <>
-          <div className="card m-0 mt-4 p-1 card-borderless card-transparent">
-            <div className="row row-cards row-deck">
-              <EmptyContent title="Empty Container" text="Use the drop down menu to add widgets to this container" />
-            </div>
-          </div>
-        </>}
-        {!item?.widgetId && item?.children.length > 0 &&
-          <div className="card m-0 mt-4 p-1 card-borderless card-transparent">
-            <div className="row row-cards row-deck">
-              {item.children.map((child) => {
-                return <SortGridItem key={child.id} id={child.id} col={child.columns} item={child} widgets={widgets} trees={trees} onAdd={onAdd} onResize={onResize} onDelete={onDelete} />
-              })}
-            </div>
-          </div>
-        }
-
-        <div className="drag-handle p-1">
-          <div className="col drag-handle-dots">
-            <span className="pt-0 ms-1" {...listeners} {...attributes}>
+        <div className="drag-handle bg-light">
+          <div className="col m-1 drag-handle-dots" {...listeners} {...attributes}>
+            <span className="pt-0 ms-1">
               <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-grip-horizontal" width="40" height="40" viewBox="0 0 24 24" strokeWidth="1" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M5 9m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"></path><path d="M5 15m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"></path><path d="M12 9m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"></path><path d="M12 15m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"></path><path d="M19 9m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"></path><path d="M19 15m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"></path></svg>
             </span>
           </div>
-          <div className="col-auto p-0">
+          {widget?.state == 1 && <div className="col-auto p-0 bg-light me-0">
+            <span className="badge badge-outline text-warning" >Not Published</span>
+          </div>}
+          <div className="col-auto p-0 bg-light">
             <div className="nav-item dropdown">
               <a className="btn-action nav-link dropdown-toggle" href="#navbar-base" data-bs-toggle="dropdown" data-bs-auto-close="true" role="button" aria-expanded="false" >
                 <span className="nav-link-title">
@@ -65,7 +50,13 @@ const SortGridItem = ({ id, col, item, widgets, trees, pageId, onAdd, onResize, 
                   <svg xmlns="http://www.w3.org/2000/svg" className="icon dropdown-item-icon icon-tabler icon-tabler-edit" width="40" height="40" viewBox="0 0 24 24" strokeWidth="1" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1"></path><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z"></path><path d="M16 5l3 3"></path></svg>
                   Edit widget
                 </a>}
-
+                {(item?.children?.length ?? 0) == 0 && <>
+                  <a className="dropdown-item" href="#" onClick={(e) => { onPublish(item.id, widget?.state == 1); e.preventDefault(); }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon dropdown-item-icon icon-tabler icons-tabler-outline icon-tabler-scan-eye"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M4 8v-2a2 2 0 0 1 2 -2h2" /><path d="M4 16v2a2 2 0 0 0 2 2h2" /><path d="M16 4h2a2 2 0 0 1 2 2v2" /><path d="M16 20h2a2 2 0 0 0 2 -2v-2" /><path d="M7 12c3.333 -4.667 6.667 -4.667 10 0" /><path d="M7 12c3.333 4.667 6.667 4.667 10 0" /><path d="M12 12h-.01" /></svg>
+                    {widget?.state == 1 && <span>Publish Widget</span>}
+                    {widget?.state != 1 && <span>Unpublish Widget</span>}
+                  </a>
+                </>}
                 {(item?.children?.length ?? 0) == 0 && <>
                   <a className="dropdown-item" href="#" onClick={(e) => { onDelete(item.id); e.preventDefault(); }}>
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon dropdown-item-icon icon-tabler icons-tabler-outline icon-tabler-square-x"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M3 5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14z" /><path d="M9 9l6 6m0 -6l-6 6" /></svg>
@@ -100,7 +91,23 @@ const SortGridItem = ({ id, col, item, widgets, trees, pageId, onAdd, onResize, 
             </div>
           </div>
         </div>
-
+        {item?.widgetId && <Widget widget={widget} isPreview={true} trees={trees} />}
+        {!item?.widgetId && item?.children.length == 0 && <>
+          <div className="card m-0 mt-4 p-1 card-borderless card-transparent">
+            <div className="row row-cards row-deck">
+              <EmptyContent title="Empty Container" text="Use the drop down menu to add widgets to this container" />
+            </div>
+          </div>
+        </>}
+        {!item?.widgetId && item?.children.length > 0 &&
+          <div className="card m-0 mt-4 p-1 card-borderless card-transparent">
+            <div className="row row-cards row-deck">
+              {item.children.map((child) => {
+                return <SortGridItem key={child.id} id={child.id} col={child.columns} item={child} widgets={widgets} trees={trees} onAdd={onAdd} onResize={onResize} onDelete={onDelete} onPublish={onPublish} />
+              })}
+            </div>
+          </div>
+        }
       </div>
     </div >
   </>
@@ -115,7 +122,8 @@ SortGridItem.propTypes = {
   pageId: PropTypes.string,
   onAdd: PropTypes.func.isRequired,
   onResize: PropTypes.func.isRequired,
-  onDelete: PropTypes.func.isRequired
+  onDelete: PropTypes.func.isRequired,
+  onPublish: PropTypes.func.isRequired
 };
 
 export default SortGridItem;

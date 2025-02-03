@@ -33,7 +33,7 @@ const CustomerDetailSettings = () => {
   const [activeIndex, setActiveIndex] = useState(null);
 
   const { data, loading, error } = useFetch(`/api/v1/dashboards/${initId}`, {}, { id: initId, children: [] });
-  const { widgets, loading: wLoading, error: wError, CreateWidget, DeleteWidget } = useWidgets();
+  const { widgets, loading: wLoading, error: wError, refetch, CreateWidget, DeleteWidget, PublishWidget } = useWidgets();
   const [dashboardId, setDashboardId] = useState();
   const [showDel, setShowDel] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
@@ -73,6 +73,13 @@ const CustomerDetailSettings = () => {
     }, (error, code) => {
       alert(code + ": " + error);
     });
+  }
+
+  const handlePublish = (id, publish) => {
+    var item = findId(items, id).item;
+    PublishWidget(item.widgetId, publish, () => {
+      refetch();
+    })
   }
 
   const handleDelhide = () => setShowDel(false);
@@ -138,7 +145,7 @@ const CustomerDetailSettings = () => {
       CreateWidget(current.widgetType, (w) => {
         setItems((items) => {
           const newItems = [...items];
-          const newItem = { id: crypto.randomUUID(), widgetId: w?.id, columns: (current?.id ? 12 : 6), children: [] }
+          const newItem = { id: crypto.randomUUID(), widgetId: w?.id, state: 1, columns: (current?.id ? 12 : 6), children: [] }
 
           if (current?.id) {
             const activeItem = findItemAndParent(newItems, current.id);
@@ -236,7 +243,7 @@ const CustomerDetailSettings = () => {
               <SortableContext items={items.map((item) => item.title)} strategy={rectSwappingStrategy}>
                 <div className="row row-cards row-deck mb-3">
                   {items && items.map((item, itemIndex) => {
-                    return <SortGridItem key={item.id} id={item.id} col={item.columns} item={item} pageId={dashboardId} widgets={widgets} trees={treeData?.trees} onAdd={handleAddShow} onResize={handleResize} onDelete={handleDelShow} styles={activeIndex === itemIndex ? { opacity: 0 } : {}} />
+                    return <SortGridItem key={item.id} id={item.id} col={item.columns} item={item} pageId={dashboardId} widgets={widgets} trees={treeData?.trees} onAdd={handleAddShow} onResize={handleResize} onDelete={handleDelShow} onPublish={handlePublish} styles={activeIndex === itemIndex ? { opacity: 0 } : {}} />
                   })}
                 </div>
               </SortableContext>

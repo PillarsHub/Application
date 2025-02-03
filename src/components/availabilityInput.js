@@ -1,19 +1,46 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { useFetch } from "../hooks/useFetch";
+import { useQuery, gql } from "@apollo/client";
 import DataLoading from "../components/dataLoading";
 import SelectInput from './selectInput';
 import NumericInput from './numericInput';
 import EmptyContent from './emptyContent';
 
+var GET_DATA = gql`query {
+  compensationPlans {
+    id
+    definitions {
+      name
+      valueId
+      comment
+    }
+    ranks {
+      id
+      name
+    }
+  }  
+  trees
+  {
+    name
+    id
+  }
+  customerTypes {
+    id
+    name
+  }
+}`;
+
 const AvailabilityInput = ({ name, value, resourceName, onChange }) => {
-  const { data, loading, error } = useFetch('/api/v1/CompensationPlans');
+  const { data, loading, error } = useQuery(GET_DATA, {
+    variables: {},
+  });
 
   if (loading) return <DataLoading />;
   if (error) return `Error loading Documents ${error}`;
 
-  const allValues = [].concat(...data.map(obj => obj.definitions));
-  const allRanks = [].concat(...data.map(obj => obj.ranks));
+  const allValues = [].concat(...data.compensationPlans.map(obj => obj.definitions));
+  const allRanks = [].concat(...data.compensationPlans.map(obj => obj.ranks));
+  const allCustTypes = [].concat(...data.customerTypes);
   const hasRank = allRanks.length > 0;
 
   const handleChange = (row, nme, val) => {
@@ -23,7 +50,7 @@ const AvailabilityInput = ({ name, value, resourceName, onChange }) => {
 
   const handleAdd = () => {
     if (!value) value = [];
-    value.push({ key: 'Rank', volume: allRanks[0]?.rankId });
+    value.push({ key: 'Rank', volume: allRanks[0]?.id });
     onChange(name, value);
   }
 
@@ -66,12 +93,32 @@ const AvailabilityInput = ({ name, value, resourceName, onChange }) => {
                 <td>
                   {requirement.key == "Rank" && <SelectInput name="volume" value={requirement.volume} onChange={(n, v) => handleChange(index, n, v)}>
                     {allRanks && allRanks.map((value) => {
-                      return <option key={value.rankId} value={value.rankId}>
-                        {value.rankName}
+                      return <option key={value.id} value={value.id}>
+                        {value.name}
                       </option>
                     })}
                   </SelectInput>}
-                  {requirement.key != "Rank" && <div className="input-group">
+                  {requirement.key == "CustType" && <div className="input-group">
+                    <button type="button" className="btn dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                      {requirement.exact ? 'Exactly' : 'At Least'}
+                    </button>
+                    <div className="dropdown-menu">
+                      <a className="dropdown-item" href="#" onClick={(e) => { handleChange(index, "exact", true); e.preventDefault(); }}>
+                        Exactly
+                      </a>
+                      <a className="dropdown-item" href="#" onClick={(e) => { handleChange(index, "exact", false); e.preventDefault(); }}>
+                        At Least
+                      </a>
+                    </div>
+                    <SelectInput name="volume" value={requirement.volume} onChange={(n, v) => handleChange(index, n, v)}>
+                      {allCustTypes && allCustTypes.map((value) => {
+                        return <option key={value.id} value={value.id}>
+                          {value.name}
+                        </option>
+                      })}
+                    </SelectInput>
+                  </div>}
+                  {requirement.key != "Rank" && requirement.key != "CustType" && <div className="input-group">
                     <button type="button" className="btn dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                       {requirement.exact ? 'Exactly' : 'At Least'}
                     </button>

@@ -57,6 +57,7 @@ var GET_CUSTOMER = gql`query ($nodeIds: [String]!, $periodDate: Date!) {
       title
       description
       type
+      state
       showDatePicker
       headerColor
       headerTextColor
@@ -173,6 +174,7 @@ const WidgetContainer = ({ customerId, dashboardId, periodId, onLoad, onEmpty })
 function buildCard(card, widgets, customer, compensationPlans, trees, date, periodId) {
   if ((card?.widgetId || card?.children) && widgets !== undefined) {
     let widget = widgets.find((w) => w.id === card?.widgetId ?? '');
+    if (widget?.state == 1) return <></>
     if (!widget && (!card.children || card.children.length == 0)) return <></>
 
     return <div key={card?.id} className={`col-sm-12 col-lg-${card?.columns > 6 ? '12' : '6'} col-xl-${card?.columns}`}>

@@ -69,6 +69,7 @@ var GET_CUSTOMER = gql`query ($nodeIds: [String]!, $periodDate: Date!) {
       title
       description
       type
+      state
       showDatePicker
       headerColor
       headerTextColor

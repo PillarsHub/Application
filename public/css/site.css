@@ -220,11 +220,6 @@ input[type=number] {
 .drag-handle {
   display: flex;
   align-items: center;
-  position: absolute;
-  right: 0;
-  left: 0;
-  top: -4px;
-  z-index: 10;
 }
 
 .drag-handle-dots {
