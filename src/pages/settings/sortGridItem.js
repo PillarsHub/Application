@@ -93,14 +93,14 @@ const SortGridItem = ({ id, col, item, widgets, trees, pageId, onAdd, onResize, 
         </div>
         {item?.widgetId && <Widget widget={widget} isPreview={true} trees={trees} />}
         {!item?.widgetId && item?.children.length == 0 && <>
-          <div className="card m-0 mt-4 p-1 card-borderless card-transparent">
+          <div className="card m-0 p-1 card-borderless card-transparent">
             <div className="row row-cards row-deck">
               <EmptyContent title="Empty Container" text="Use the drop down menu to add widgets to this container" />
             </div>
           </div>
         </>}
         {!item?.widgetId && item?.children.length > 0 &&
-          <div className="card m-0 mt-4 p-1 card-borderless card-transparent">
+          <div className="card m-0 p-1 card-borderless card-transparent">
             <div className="row row-cards row-deck">
               {item.children.map((child) => {
                 return <SortGridItem key={child.id} id={child.id} col={child.columns} item={child} widgets={widgets} trees={trees} onAdd={onAdd} onResize={onResize} onDelete={onDelete} onPublish={onPublish} />

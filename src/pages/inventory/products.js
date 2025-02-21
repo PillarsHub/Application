@@ -8,6 +8,7 @@ var GET_DATA = gql`query($offset: Int!, $first: Int!, $search: String!) {
   products(offset: $offset, first: $first, search: $search) {
     id
     name
+    imageUrl
     categories{
       name
     }
@@ -82,8 +83,9 @@ const Products = () => {
                   {data.products && data.products.map((item) => {
                     return <tr key={item.id}>
                       <td className="text-center">
-                        <div className="avatar d-block" style={{ backgroundImage: `url(${item.ImageUrl})` }} data-toggle="tooltip" title="" data-original-title="@product.Status">
-                          <span className="avatar-status bg-@product.StatusColor"></span>
+                      
+                        <div className="avatar d-block">
+                          <img src={item.imageUrl} className="" />
                         </div>
                       </td>
                       <td>
