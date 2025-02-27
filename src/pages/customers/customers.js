@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useQuery, gql } from "@apollo/client";
-import { GetScope } from '../../features/authentication/hooks/useToken';
+import { GetScope, GetToken } from '../../features/authentication/hooks/useToken';
 import { SendRequest } from '../../hooks/usePost';
 import PageHeader, { CardHeader } from "../../components/pageHeader";
 import DataLoading from "../../components/dataLoading";
@@ -93,10 +93,12 @@ const Customers = () => {
     })
   }
 
+  var token = GetToken();
+
   return (
     <PageHeader title="Customers" >
       <CardHeader>
-        {GetScope() == undefined &&
+        {GetScope() == undefined && token?.environmentId == '00' &&
           <div className="dropdown">
             <a href="/Customers/New" className="btn btn-primary">
               <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-user-plus" width="40" height="40" viewBox="0 0 24 24" strokeWidth="1" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"></path><path d="M16 19h6"></path><path d="M19 16v6"></path><path d="M6 21v-2a4 4 0 0 1 4 -4h4"></path></svg>

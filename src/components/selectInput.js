@@ -9,12 +9,19 @@ const SelectInput = ({ className, name, value, onChange, disabled, emptyOption, 
     onChange(name, value);
   };
 
-  return <select className={className ?? 'form-select'} name={name} value={value ?? ""} disabled={disabled} onChange={handleChange}>
-    {emptyOption && !value && <option value="" disabled={true}>{emptyOption}</option>}
+  const childValues = Children.toArray(children)
+    .filter(child => child?.props?.value !== undefined)
+    .map(child => child.props.value);
+
+  const isValidValue = childValues.includes(value)
+
+  return <> <select className={className ?? 'form-select'} name={name} value={isValidValue ? value : ""} disabled={disabled} onChange={handleChange}>
+    {emptyOption && !isValidValue && <option value="" disabled={true}>{emptyOption}</option>}
     {Children.map(children, child =>
       <>{child} - {value}</>
     )}
-  </select>;
+  </select>
+  </>
 }
 
 export default SelectInput;

@@ -192,6 +192,8 @@ const RankAdvance = ({ currentRank, ranks, valueMap, showRankId = false, showIte
             {rank.requirements && rank.requirements.map((requirement) => {
               return requirement?.conditions && requirement.conditions.map((condition) => {
                 let value = valueMap?.find(m => m.valueId == condition.valueId);
+                var percent = getPercent(condition.value, condition.required);
+
                 return <tr key={condition.valueId}>
                   <td>
                     {value?.text ?? condition.valueId}
@@ -200,7 +202,7 @@ const RankAdvance = ({ currentRank, ranks, valueMap, showRankId = false, showIte
                   <td>{getRankRequirements(condition)}</td>
                   {showItemPercent && <td className="w-25">
                     <div className="progress progress-xs">
-                      <div className="progress-bar bg-primary" style={{ width: getPercent(condition.value, condition.required) + '.0%' }} ></div>
+                      <div className="progress-bar bg-primary" style={{ width: percent  + '%' }} ></div>
                     </div>
                   </td>}
                 </tr>

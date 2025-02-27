@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from "react-router-dom"
 import { useQuery, gql } from "@apollo/client";
 import { useFetch } from "../../hooks/useFetch";
-import { GetScope } from "../../features/authentication/hooks/useToken"
+import { GetScope, GetToken } from "../../features/authentication/hooks/useToken"
 import PageHeader, { CardHeader } from '../../components/pageHeader';
 import ChangeStatusModal from './changeStatusModal';
 import DataLoading from '../../components/dataLoading';
@@ -181,6 +181,7 @@ const CustomerSummary = () => {
   }
 
   const hasScope = GetScope() != undefined;
+  const token = GetToken();
 
   let customer = data.customers[0] ?? { id: params.customerId, cards: [] };
   let currentRank = customer.cards?.[0]?.values.find(v => v.valueId.toLowerCase() == 'rank')?.value ?? 0;
@@ -205,21 +206,31 @@ const CustomerSummary = () => {
               Create Order
             </a> */}
 
-            <a href={`/Customers/${customer.id}/Edit`} className="btn btn-default">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon icon-tabler icons-tabler-outline icon-tabler-user-edit"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" /><path d="M6 21v-2a4 4 0 0 1 4 -4h3.5" /><path d="M18.42 15.61a2.1 2.1 0 0 1 2.97 2.97l-3.39 3.42h-3v-3l3.42 -3.39z" /></svg>
-              Edit Customer
-            </a>
-
-            <div className="dropdown">
-              <a href="#" className="btn btn-default btn-icon" data-bs-toggle="dropdown" aria-expanded="false">
-                <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="19" r="1"></circle><circle cx="12" cy="5" r="1"></circle></svg>
+            {token?.environmentId == '00' && <>
+              <a href={`/Customers/${customer.id}/Edit`} className="btn btn-default">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon icon-tabler icons-tabler-outline icon-tabler-user-edit"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" /><path d="M6 21v-2a4 4 0 0 1 4 -4h3.5" /><path d="M18.42 15.61a2.1 2.1 0 0 1 2.97 2.97l-3.39 3.42h-3v-3l3.42 -3.39z" /></svg>
+                Edit Customer
               </a>
-              <div className="dropdown-menu dropdown-menu-end">
-                <a href={`/Customers/${customer.id}/Edit`} className="dropdown-item">Edit Customer</a>
-                <a href="#" className="dropdown-item" data-bs-toggle="modal" data-bs-target="#modal-status">Update Status</a>
-                <button className="dropdown-item text-danger" onClick={handleShow}>Delete</button>
+
+              <div className="dropdown">
+                <a href="#" className="btn btn-default btn-icon" data-bs-toggle="dropdown" aria-expanded="false">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="19" r="1"></circle><circle cx="12" cy="5" r="1"></circle></svg>
+                </a>
+                <div className="dropdown-menu dropdown-menu-end">
+                  <a href={`/Customers/${customer.id}/Edit`} className="dropdown-item">Edit Customer</a>
+                  <a href="#" className="dropdown-item" data-bs-toggle="modal" data-bs-target="#modal-status">Update Status</a>
+                  <button className="dropdown-item text-danger" onClick={handleShow}>Delete</button>
+                </div>
               </div>
-            </div>
+            </>}
+
+            {token?.environmentId != '00' && <>
+              <a href="#" className="btn btn-default" data-bs-toggle="modal" data-bs-target="#modal-status">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon icon-tabler icons-tabler-outline icon-tabler-user-edit"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" /><path d="M6 21v-2a4 4 0 0 1 4 -4h3.5" /><path d="M18.42 15.61a2.1 2.1 0 0 1 2.97 2.97l-3.39 3.42h-3v-3l3.42 -3.39z" /></svg>
+                Update Status
+              </a>
+            </>}
+
           </div>
         </>}
       </CardHeader>

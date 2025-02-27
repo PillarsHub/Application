@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { SendRequest } from "../../hooks/usePost";
+import SelectInput from "../../components/selectInput";
 
-const ChangeStatusModal = ({customerId, id, statusId, setStatus, statuses}) => {
+const ChangeStatusModal = ({ customerId, id, statusId, setStatus, statuses }) => {
   const [statusUpdatedId, setStatusUpdatedId] = useState(statusId);
 
   const handleSubmit = async e => {
@@ -16,8 +17,8 @@ const ChangeStatusModal = ({customerId, id, statusId, setStatus, statuses}) => {
       value: statusUpdatedId,
       externalId: now.toISOString()
     };
-    
-    SendRequest("POST", "/api/v1/Sources", source, ()=>{
+
+    SendRequest("POST", "/api/v1/Sources", source, () => {
       var item = statuses.find(element => element.id == statusUpdatedId);
       setStatus(item);
     }, (error) => {
@@ -39,12 +40,11 @@ const ChangeStatusModal = ({customerId, id, statusId, setStatus, statuses}) => {
               <div className="col-md-12">
                 <div className="mb-3">
                   <label className="form-label">Customer Status</label>
-                  <select className="form-select" value={statusUpdatedId} onChange={e => setStatusUpdatedId(e.target.value)}>
-                    {statuses && statuses.map((status) =>
-                    {
+                  <SelectInput value={statusUpdatedId} emptyOption="Select Status" onChange={(name, value) => setStatusUpdatedId(value)}>
+                    {statuses && statuses.map((status) => {
                       return <option key={status.id} value={status.id}>{status.name}</option>
                     })}
-                  </select>
+                  </SelectInput>
                   <span className="text-danger"></span>
                 </div>
               </div>
