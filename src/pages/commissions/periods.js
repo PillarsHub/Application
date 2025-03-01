@@ -25,6 +25,7 @@ const Periods = () => {
   const planQuery = queryParams.get("p");
   const [tab, setTab] = useState(planQuery);
   const currentDate = new Date(Date.now());
+  currentDate.setDate(currentDate.getDate() + 1);
   const isoDate = currentDate.toISOString();
   const dateOnly = isoDate.split('T')[0];
   const { loading, error, data, } = useQuery(GET_PERIODS, {
