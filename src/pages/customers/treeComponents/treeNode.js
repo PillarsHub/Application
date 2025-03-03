@@ -25,10 +25,17 @@ const TreeNode = ({ node, dashboard, trees, date }) => {
     </div>
   }
 
+  var hasBack = (dashboard?.children?.length > 1 ?? false) && (dashboard?.children?.[1]?.widgetId ?? false);
+  var flipCard = "flip-card";
+
+  if (!hasBack) {
+    flipCard = '';
+  }
+
 
   return <div className="flip-card">
-    <div className="flip-card-inner">
-      <div className="flip-card-front">
+    <div className={`${flipCard}-inner`}>
+      <div className={`${flipCard}-front mb-2`}>
         {dashboard && dashboard.children.length > 2 && (
           buildCard(dashboard.children[0], node.customer.widgets, node.customer, node.compensationPlans, trees, date)
         )}
@@ -53,39 +60,40 @@ const TreeNode = ({ node, dashboard, trees, date }) => {
           </div>
         </>}
       </div>
-      <div className="flip-card-back">
+      {hasBack && <>
+        <div className="flip-card-back mb-2">
+          {dashboard && dashboard.children.length > 2 && (
+            buildCard(dashboard.children[1], node.customer.widgets, node.customer, node.compensationPlans, trees, date)
+          )}
+          {(dashboard?.children?.length <= 2 ?? true) && <>
+            <div className="card d-flex flex-column box-shadow">
+              <div className="card-body d-flex flex-column">
+                <h3 className="d-flex align-items-center">
+                  <span className='cardTitle'>{node.customer?.fullName} ({node.nodeId})</span>
+                </h3>
+                <dl className="row">
+                  <dd className="col-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="icon me-2 text-muted" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M3 5m0 2a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2z"></path><path d="M3 7l9 6l9 -6"></path></svg>
+                    Email</dd>
+                  <dd className="col-8 text-end">{node.customer?.emailAddress}</dd>
 
-        {dashboard && dashboard.children.length > 2 && (
-          buildCard(dashboard.children[1], node.customer.widgets, node.customer, node.compensationPlans, trees, date)
-        )}
-        {(dashboard?.children?.length <= 2 ?? true) && <>
-          <div className="card d-flex flex-column box-shadow">
-            <div className="card-body d-flex flex-column">
-              <h3 className="d-flex align-items-center">
-                <span className='cardTitle'>{node.customer?.fullName} ({node.nodeId})</span>
-              </h3>
-              <dl className="row">
-                <dd className="col-4">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="icon me-2 text-muted" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M3 5m0 2a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2z"></path><path d="M3 7l9 6l9 -6"></path></svg>
-                  Email</dd>
-                <dd className="col-8 text-end">{node.customer?.emailAddress}</dd>
+                  <dd className="col-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="icon me-2 text-muted" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M5 4h4l2 5l-2.5 1.5a11 11 0 0 0 5 5l1.5 -2.5l5 2v4a2 2 0 0 1 -2 2a16 16 0 0 1 -15 -15a2 2 0 0 1 2 -2"></path><path d="M15 7a2 2 0 0 1 2 2"></path><path d="M15 3a6 6 0 0 1 6 6"></path></svg>
+                    Phone</dd>
+                  <dd className="col-8 text-end">{node.customer?.phoneNumbers && node.customer?.phoneNumbers.length > 0 && node.customer.phoneNumbers[0].number}</dd>
 
-                <dd className="col-4">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="icon me-2 text-muted" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M5 4h4l2 5l-2.5 1.5a11 11 0 0 0 5 5l1.5 -2.5l5 2v4a2 2 0 0 1 -2 2a16 16 0 0 1 -15 -15a2 2 0 0 1 2 -2"></path><path d="M15 7a2 2 0 0 1 2 2"></path><path d="M15 3a6 6 0 0 1 6 6"></path></svg>
-                  Phone</dd>
-                <dd className="col-8 text-end">{node.customer?.phoneNumbers && node.customer?.phoneNumbers.length > 0 && node.customer.phoneNumbers[0].number}</dd>
+                  <dd className="col-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="icon me-2 text-muted" width="24" height="24" viewBox="0 0 24 24" strokeWidth="1" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M10 3h4v4h-4z"></path><path d="M3 17h4v4h-4z"></path><path d="M17 17h4v4h-4z"></path><path d="M7 17l5 -4l5 4"></path><path d="M12 7l0 6"></path></svg>
+                    Leg</dd>
+                  <dd className="col-8 text-end">{node.uplineLeg}</dd>
 
-                <dd className="col-4">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="icon me-2 text-muted" width="24" height="24" viewBox="0 0 24 24" strokeWidth="1" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M10 3h4v4h-4z"></path><path d="M3 17h4v4h-4z"></path><path d="M17 17h4v4h-4z"></path><path d="M7 17l5 -4l5 4"></path><path d="M12 7l0 6"></path></svg>
-                  Leg</dd>
-                <dd className="col-8 text-end">{node.uplineLeg}</dd>
+                </dl>
 
-              </dl>
-
+              </div>
             </div>
-          </div>
-        </>}
-      </div>
+          </>}
+        </div>
+      </>}
     </div>
   </div>
 }
