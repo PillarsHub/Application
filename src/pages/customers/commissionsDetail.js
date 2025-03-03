@@ -23,7 +23,7 @@ const CommissionsDetail = () => {
     setLoaded(true);
   }
 
-  return <PageHeader preTitle="Commissions Detail" title={data?.customers[0].fullName} pageId="commissions" customerId={params.customerId}>
+  return <PageHeader preTitle="Commissions Detail" title={data?.customers[0]?.fullName} pageId="commissions" customerId={params.customerId}>
     <div className="container-xl">
       <WidgetContainer customerId={params.customerId} dashboardId="earnings" periodId={Number(periodId)} onLoad={(d) => setData(d)} onEmpty={handleNoContent} />
 

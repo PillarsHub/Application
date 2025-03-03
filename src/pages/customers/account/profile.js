@@ -68,7 +68,7 @@ const CustomerProfile = () => {
   if (loading) return <DataLoading />
   if (error) return `Error! ${error}`;
 
-  let user = data?.customers[0].user;
+  let user = data?.customers[0]?.user ?? {};
 
   const handleHideModal = () => setShowCrop(false);
   const handleShowModal = () => setShowCrop(true);
@@ -144,7 +144,7 @@ const CustomerProfile = () => {
             </div>
             <div className="col d-flex flex-column flex-sm-row justify-content-between mb-3">
               <div className="text-sm-left mb-2 mb-sm-0">
-                <h2 className="pt-sm-2 pb-1 mb-0 text-nowrap">{data?.customers[0].firstName} {data?.customers[0].lastName}</h2>
+                <h2 className="pt-sm-2 pb-1 mb-0 text-nowrap">{data?.customers[0]?.firstName} {data?.customers[0]?.lastName}</h2>
                 <p className="mb-0">{user?.username ?? customer?.emailAddress}</p>
                 <div className="text-muted"><small>Joined <LocalDate dateString={customer?.enrollDate} hideTime={true} /></small></div>
                 <div className="mt-2">

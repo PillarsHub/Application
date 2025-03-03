@@ -13,6 +13,7 @@ import ChangePlacementModal from './treeComponents/changePlacementModal';
 import LoadingNode from './treeComponents/loadingNode.js';
 import DataError from '../../components/dataError.js';
 import PlacementSuite from './treeComponents/placementSuite.js';
+import EmptyContent from '../../components/emptyContent.js';
 
 var GET_DATA = gql`query ($nodeIds: [String]!, $treeIds: [String]!, $treeId: ID!, $periodDate: Date) {
   customers(idList: $nodeIds) {
@@ -64,7 +65,7 @@ const CustomerTree = () => {
   }
 
   useEffect(() => {
-    if (data) {
+    if (data && data?.customers?.[0]) {
       treeBorad('box', params.customerId, params.treeId, periodDate, '/graphql',
         function (node) {
           if (node && node.id != undefined) {
@@ -98,17 +99,21 @@ const CustomerTree = () => {
   var tree = data.trees.find(t => t.id == params.treeId);
 
   return <>
-    <PageHeader preTitle={`${data?.trees[0].name} Tree`} title={data?.customers[0].fullName} pageId="tree" customerId={params.customerId} subPage={params.treeId}>
+    <PageHeader preTitle={`${data?.trees[0].name} Tree`} title={data?.customers?.[0]?.fullName} pageId="tree" customerId={params.customerId} subPage={params.treeId}>
       <CardHeader>
         <div className="d-flex">
           <div className="me-3">
             <PeriodDatePicker value={periodDate} onChange={handlePeriodChange} />
           </div>
-          {data?.trees[0].enableCustomerMovements && data?.customers[0].nodes[0].totalChildNodes > 2 && <>
+          {data?.trees[0].enableCustomerMovements && data?.customers[0]?.nodes[0].totalChildNodes > 2 && <>
             <button className="btn btn-primary" onClick={() => setShowPlacementSuite(true)}>Placement Suite</button>
           </>}
         </div>
       </CardHeader>
+
+      {(!data?.customers?.[0]) && <>
+        <EmptyContent title="Customer Not Found" text="The customer requested cannot be found." ></EmptyContent>
+      </>}
 
       <div id="box" className="h-100" ></div>
 

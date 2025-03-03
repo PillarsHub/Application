@@ -15,7 +15,7 @@ const CustomerOrders = () => {
   }
 
   return <>
-    <PageHeader preTitle="Order History" title={data?.customers[0].fullName} pageId="orders" customerId={params.customerId}>
+    <PageHeader preTitle="Order History" title={data?.customers[0]?.fullName} pageId="orders" customerId={params.customerId}>
       <div className="container-xl">
         <WidgetContainer customerId={params.customerId} dashboardId="orders" onLoad={(d) => setData(d)} onEmpty={handleNoContent} />
         {loaded && <>

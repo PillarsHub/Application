@@ -6,6 +6,7 @@ import DataLoading from "../../../components/dataLoading";
 import DataError from "../../../components/dataError";
 import LocalDate from "../../../util/LocalDate";
 import Pagination from "../../../components/pagination";
+import EmptyContent from "../../../components/emptyContent";
 
 var GET_DATA = gql`query ($offset: Int!, $first: Int!, $nodeIds: [String]!) {
   customers(idList: $nodeIds) {
@@ -43,7 +44,7 @@ var GET_DATA = gql`query ($offset: Int!, $first: Int!, $nodeIds: [String]!) {
 
 const OrdersWidget = ({ customer }) => {
   const { loading, error, data, variables, refetch } = useQuery(GET_DATA, {
-    variables: { offset: 0, first: 10, nodeIds: [customer.id] },
+    variables: { offset: 0, first: 10, nodeIds: [customer?.id] },
   });
 
   if (loading) return <DataLoading />;
@@ -86,6 +87,10 @@ const OrdersWidget = ({ customer }) => {
 
 
   const uniqueVolumeIds = getUniqueVolumeIds(orders);
+
+  if (!data?.customers?.[0]) {
+    return <EmptyContent title="Customer Not Found" text="The customer requested cannot be found." ></EmptyContent>
+  }
 
   return <>
     <div className="table-responsive">
