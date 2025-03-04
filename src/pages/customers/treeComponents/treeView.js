@@ -212,6 +212,7 @@ function treeBorad(id, rootId, treeId, periodDate, dataUrl, selectNode, getTempl
               fullName
               enrollDate
               profileImage
+              webAlias
               status {
                 id,
                 name,
@@ -313,6 +314,7 @@ function treeBorad(id, rootId, treeId, periodDate, dataUrl, selectNode, getTempl
               totalChildNodes
               customer {
                 id
+                webAlias
                 fullName
                 enrollDate
                 profileImage

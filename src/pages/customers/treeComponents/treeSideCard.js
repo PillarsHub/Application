@@ -14,6 +14,7 @@ let GET_CUSTOMER = `query ($nodeIds: [String]!, $periodDate: Date!) {
     id
     fullName
     enrollDate
+    webAlias
     profileImage
     status {
       id
