@@ -8,6 +8,7 @@ import TreeSelect from "../../components/treeSelect";
 import CustomerTypeSelect from "../../components/customerTypeSelect";
 import NumericInput from "../../components/numericInput";
 import DateInput from "../../components/dateInput";
+import DateTimeInput from "../../components/dateTimeInput";
 
 const FilterInput = ({ filter, values, onChange, col = 'col' }) => {
   const { inputType } = filter;
@@ -27,7 +28,9 @@ const FilterInput = ({ filter, values, onChange, col = 'col' }) => {
     case "CustomerType":
       return <div className={col}><CustomerTypeSelect placeholder="Select Type" name={filter.id} value={values[filter.id] ?? ''} onChange={onChange} /></div>
     case "Date":
-        return <div className={col}><DateInput placeholder="Select Type" allowEmpty={false} name={filter.id} value={values[filter.id] ?? ''} onChange={onChange} /></div>
+      return <div className={col}><DateInput placeholder="Select Type" allowEmpty={false} name={filter.id} value={values[filter.id] ?? ''} onChange={onChange} /></div>
+    case "DateTime":
+      return <div className={col}><DateTimeInput placeholder="Select Type" allowEmpty={false} name={filter.id} value={values[filter.id] ?? ''} onChange={onChange} /></div>
     default:
       return <div className={col}><TextInput name={filter.id} placeholder={JSON.stringify(filter)} value={values[filter.id] ?? ''} onChange={onChange} /></div>
   }

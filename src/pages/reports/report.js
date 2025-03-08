@@ -9,6 +9,7 @@ import Pagination from "../../components/pagination";
 import DataError from "../../components/dataError";
 import LocalDate from "../../util/LocalDate";
 import FilterInput from "./filterInput";
+import Avatar from "../../components/avatar";
 
 const notLoading = 0;
 const loadingPage = 1;
@@ -135,6 +136,7 @@ const Report = () => {
                   <tr>
                     {data.dataColumns.map((column) => {
                       var textEnd = column.dataType == "Currency";
+                      if (column.dataType == "Hidden") return <></>;
                       return <th key={column.name} className={`w-${column.dataLength} ${textEnd ? 'text-end' : ''}`}>{column.title}</th>;
                     })}
                   </tr>
@@ -145,27 +147,19 @@ const Report = () => {
                       {data.dataColumns.map((column, index) => {
                         var colValue = row.values[column.name] ?? '';
                         var textEnd = column.dataType == "Currency";
+                        var name = row.values["fullName"] ?? row.values["firstName"] + " " + row.values["lastName"];
+                        var id = row.values["id"];
+
+                        if (column.dataType == "Hidden") return <></>;
                         return <td key={`${row.rowNumber}_${index}`} className={textEnd ? 'text-end' : ''} style={{ whiteSpace: 'nowrap' }}>
-                          {column.dataType == "String" && <span>{colValue}</span>}
-                          {column.dataType == "Number" && <span>{(colValue == '' ? 0 : Number(colValue)).toLocaleString("en-US")}</span>}
-                          {column.dataType == "DateTime" && <LocalDate dateString={colValue} hideTime={false} />}
-                          {column.dataType == "Date" && <LocalDate dateString={colValue} hideTime={true} />}
-                          {column.dataType == "Boolean" && <span>{colValue == "1" ? 'True' : 'False'}</span>}
-                          {column.dataType == "Currency" && <span>{(colValue == '' ? 0 : Number(colValue)).toLocaleString("en-US", { style: 'currency', currency: 'USD' })}</span>}
-                          {column.dataType == "Percent" && <div className="row align-items-center">
-                            <div className="col-12 col-lg-auto" style={{ width: "3rem" }}>{colValue}%</div>
-                            <div className="col">
-                              <div className="progress" style={{ width: "3rem" }}>
-                                <div className="progress-bar" style={{ width: `${colValue}%` }} role="progressbar" aria-valuenow={colValue} aria-valuemin="0" aria-valuemax="100" aria-label={`${colValue}% Complete`}>
-                                  <span className="visually-hidden">38% Complete</span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>}
-                          {column.dataType == "Level" &&
-                            <span style={{ marginLeft: `${(Math.min(colValue, 10) - 1) * 15}px` }}>
-                              {colValue}
-                            </span>}
+                          {column.drillDown && <>
+                            <a className="text-reset" href={`/customers/${id}/summary`}>
+                              {FormatColumn(column.dataType, colValue, name)}
+                            </a>
+                          </>}
+                          {!column.drillDown && <>
+                            {FormatColumn(column.dataType, colValue, name)}
+                          </>}
                         </td>
                       })}
                     </tr>
@@ -183,6 +177,34 @@ const Report = () => {
       </div>
     </div>
   </PageHeader >
+}
+
+function FormatColumn(dataType, value, name) {
+
+  if (dataType == "String") return <span>{value}</span>;
+  if (dataType == "Image") return <span><Avatar url={value} name={name} /></span>
+  if (dataType == "Number") return <span>{(value == '' ? 0 : Number(value)).toLocaleString("en-US")}</span>
+  if (dataType == "DateTime") return <LocalDate dateString={value} hideTime={false} />
+  if (dataType == "Date") return <LocalDate dateString={value} hideTime={true} />
+  if (dataType == "Boolean") return <span>{value == "1" ? 'True' : 'False'}</span>
+  if (dataType == "Currency") return <span>{(value == '' ? 0 : Number(value)).toLocaleString("en-US", { style: 'currency', currency: 'USD' })}</span>
+  if (dataType == "Percent") return <div className="row align-items-center">
+    <div className="col-12 col-lg-auto" style={{ width: "3rem" }}>{value}%</div>
+    <div className="col">
+      <div className="progress" style={{ width: "3rem" }}>
+        <div className="progress-bar" style={{ width: `${value}%` }} role="progressbar" aria-valuenow={value} aria-valuemin="0" aria-valuemax="100" aria-label={`${value}% Complete`}>
+          <span className="visually-hidden">38% Complete</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  if (dataType == "Level") return <span style={{ marginLeft: `${(Math.min(value, 10) - 1) * 15}px` }}>
+    {value}
+  </span>
+
+  return value;
+
 }
 
 export default Report;

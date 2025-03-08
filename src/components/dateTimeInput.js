@@ -1,7 +1,15 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import PropTypes from 'prop-types';
 
-const DateTimeInput = ({ className = 'form-control', name, value, onChange, disabled, placeholder, errorText }) => {
+const DateTimeInput = ({ className = 'form-control', name, value, onChange, disabled, placeholder, errorText, errored, allowEmpty = true }) => {
+
+  useEffect(() => {
+    if (!allowEmpty && !value) {
+      console.log(value);
+      const formattedDate = new Date().toISOString();
+      onChange(name, formattedDate);
+    }
+  }, [value])
 
   const handleChange = (event) => {
     if (event.target.value) {
@@ -19,11 +27,11 @@ const DateTimeInput = ({ className = 'form-control', name, value, onChange, disa
     displayDate = valueDate.toLocaleDateString('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit' }) + 'T' + valueDate.toLocaleTimeString('en-CA', { hour: '2-digit', minute: '2-digit', hour12: false });
   }
 
-  const inputClass = errorText ? `${className} is-invalid` : className;
+  const inputClass = (errorText || errored) ? `${className} is-invalid` : className;
 
   return <>
     <input type="datetime-local" className={inputClass} placeholder={placeholder ?? ''} name={name} value={displayDate} disabled={disabled} onChange={handleChange} autoComplete='off' />
-    <div className="invalid-feedback">{errorText}</div>
+    {errorText && <div className="invalid-feedback">{errorText}</div>}
   </>
 }
 
@@ -36,5 +44,7 @@ DateTimeInput.propTypes = {
   onChange: PropTypes.func.isRequired,
   disabled: PropTypes.bool,
   placeholder: PropTypes.string,
-  errorText: PropTypes.string
+  errorText: PropTypes.string,
+  errored: PropTypes.bool,
+  allowEmpty: PropTypes.bool
 }

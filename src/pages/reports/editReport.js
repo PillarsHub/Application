@@ -291,16 +291,18 @@ const EditReport = () => {
           <TextInput name="id" value={activeItem?.id} onChange={handleActiveChange} />
         </div>
         <div className="mb-3">
+          {JSON.stringify(activeItem)}
           <label className="form-label">Filter Type</label>
           <SelectInput name="inputType" value={activeItem?.inputType} onChange={handleActiveChange} >
-            <option>Text</option>
-            <option>Number</option>
-            <option>Period</option>
-            <option>Date</option>
-            <option>CustomerId</option>
-            <option>Rank</option>
-            <option>Tree</option>
-            <option>CustomerType</option>
+            <option value="Text">Text</option>
+            <option value="Number">Number</option>
+            <option value="Period">Period</option>
+            <option value="Date">Date</option>
+            <option value="DateTime">DateTime</option>
+            <option value="CustomerId">CustomerId</option>
+            <option value="Rank">Rank</option>
+            <option value="Tree">Tree</option>
+            <option value="CustomerType">CustomerType</option>
           </SelectInput>
         </div>
       </div>
@@ -333,16 +335,21 @@ const EditReport = () => {
             <div className="mb-3">
               <label className="form-label">Type</label>
               <SelectInput name="dataType" value={activeItem?.dataType} onChange={handleActiveChange} >
-                <option>String</option>
-                <option>Number</option>
-                <option>DateTime</option>
-                <option>Date</option>
-                <option>Boolean</option>
-                <option>Currency</option>
-                <option>Level</option>
-                <option>Percent</option>
+                <option value="Hidden">Hidden</option>
+                <option value="String">String</option>
+                <option value="Number">Number</option>
+                <option value="DateTime">DateTime</option>
+                <option value="Date">Date</option>
+                <option value="Boolean">Boolean</option>
+                <option value="Currency">Currency</option>
+                <option value="Level">Level</option>
+                <option value="Percent">Percent</option>
+                <option value="Image">Image</option>
               </SelectInput>
             </div>
+          </div>
+          <div className="mb-3">
+            <Switch title="Link to Resource" name="drillDown" value={activeItem?.drillDown} onChange={handleActiveChange} />
           </div>
           <div className="col-12">
             <Switch title="Skip row if empty" name="hideRowIfEmpty" value={activeItem?.hideRowIfEmpty} onChange={handleActiveChange} />
