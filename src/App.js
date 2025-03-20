@@ -152,6 +152,7 @@ function App() {
               <Route path="training/:courseId" element={<EditCourse />} />
               <Route path="reports" element={<Reports />} />
               <Route path="reports/graphQL" element={<ReportQuery />} />
+              <Route path="reports/new" element={<EditReport />} />
               <Route path="reports/:reportId" element={<Report />} />
               <Route path="reports/:reportId/edit" element={<EditReport />} />
               <Route path="query" element={<QueryBuilder />} />

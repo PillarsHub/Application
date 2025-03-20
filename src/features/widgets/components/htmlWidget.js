@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import PropTypes from 'prop-types';
-import parse from 'html-react-parser';
 import Mustache from 'mustache';
 import { SendRequest } from '../../../hooks/usePost';
+import HtmlFrame from "./htmlFrame";
 
 const HtmlWidget = ({ html, customer, widget }) => {
   var [data, setData] = useState({});
@@ -61,19 +61,7 @@ const HtmlWidget = ({ html, customer, widget }) => {
     }
   }, [html, data, customer])
 
-  let renderedOutput = null;
-
-  try {
-    // Attempt to parse and render output
-    renderedOutput = <>{parse(output ?? '')}</>;
-  } catch (error) {
-    // Handle parsing or rendering error
-    console.error('Error parsing or rendering output:', error);
-    // Provide a fallback or error message
-    renderedOutput = <p>Error parsing or rendering output</p>;
-  }
-
-  return renderedOutput;
+  return <HtmlFrame htmlContent={output} cssContent={widget.css} scriptCode={``} />
 }
 
 export default HtmlWidget;

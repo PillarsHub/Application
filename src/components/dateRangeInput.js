@@ -1,14 +1,29 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 
-const DateRangeInput = ({ className = 'form-control pe-4', name, startDate, endDate, onChange, disabled, placeholder, errorText, errored }) => {
+const DateRangeInput = ({ className = 'form-control pe-4', name, startDate, endDate, onChange, disabled, placeholder, errorText, errored, allowEmpty = true }) => {
+  const [begin, setBegin] = useState();
+  const [end, setEnd] = useState();
+
+  useEffect(() => {
+    if (!allowEmpty && !startDate) {
+      setBegin(new Date());
+      setEnd(new Date());
+      const formattedDate = new Date().toISOString();
+      onChange(name, formattedDate, formattedDate);
+    }
+  }, [startDate, endDate])
+
   const handleChange = (update) => {
     const [startDate, endDate] = update;
 
+    setBegin(startDate);
+    setEnd(endDate);
+
     const formattedSDate = startDate ? startDate.toISOString() : null;
-    const formattedEDate = endDate ? endDate.toISOString() : null;
+    const formattedEDate = endDate ? endDate.toISOString() : formattedSDate;
     onChange(name, formattedSDate, formattedEDate);
   };
 
@@ -25,8 +40,8 @@ const DateRangeInput = ({ className = 'form-control pe-4', name, startDate, endD
           disabled={disabled}
           swapRange={true}
           selectsRange={true}
-          startDate={startDate ? new Date(startDate) : null}
-          endDate={endDate ? new Date(endDate) : null}
+          startDate={begin}//startDate ? new Date(startDate) : null}
+          endDate={end}//endDate ? new Date(endDate) : null}
           onChange={handleChange}
         />
 
@@ -51,5 +66,6 @@ DateRangeInput.propTypes = {
   disabled: PropTypes.bool,
   placeholder: PropTypes.string,
   errorText: PropTypes.string,
-  errored: PropTypes.bool
+  errored: PropTypes.bool,
+  allowEmpty: PropTypes.bool
 }

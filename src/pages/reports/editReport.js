@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom"
+import { useParams, useNavigate  } from "react-router-dom"
 import { useFetch } from "../../hooks/useFetch";
 import { SendRequest } from "../../hooks/usePost";
 import PageHeader from "../../components/pageHeader";
@@ -18,13 +18,15 @@ const columnDelType = "del_column";
 
 const EditReport = () => {
   let params = useParams()
+  const navigate = useNavigate();
   const [showFilter, setShowFilter] = useState(false);
   const [showColumn, setShowColumn] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [activeItem, setActiveItem] = useState();
+  const [errorDisplay, setErrorDisplay] = useState();
   const [report, setReport] = useState();
   const [values, setValues] = useState({ offset: 0, count: 10 });
-  const { loading, error, data } = useFetch(`/api/v1/Reports/${params.reportId}`);
+  const { loading, error, data } = useFetch(`/api/v1/Reports/${params.reportId ?? '0'}`);
 
   useEffect(() => {
     if (data) {
@@ -32,12 +34,31 @@ const EditReport = () => {
     }
   }, [data])
 
+  useEffect(() => {
+    if (error) {
+      if (error.code == 404) {
+        setReport({categoryId: 1, Query: 'query {}'});
+      } else {
+        setErrorDisplay(error);
+      }
+    }
+  }, [error])
+
+  if (errorDisplay) return <DataError error={errorDisplay} />
   if (loading || !report) return <DataLoading />
-  if (error) return <DataError error={error} />
 
   const handleSave = () => {
-    SendRequest("PUT", `/api/v1/Reports/${params.reportId}`, report, () => {
+    var method = 'PUT';
+    var path = `/api/v1/Reports/${params.reportId}`
+
+    if (!params.reportId) {
+      method = 'POST';
+      path = `/api/v1/Reports`;
+    }
+
+    SendRequest(method, path, report, (r) => {
       alert('saved');
+      if (r.id != params.reportId) navigate(`/reports/${r.id}/edit`);
     }, (error) => {
       alert(error);
     });
@@ -134,7 +155,7 @@ const EditReport = () => {
     setValues(v => ({ ...v, [name]: value }));
   }
 
-  return <PageHeader title="Edit Report" breadcrumbs={[{ title: `Reports`, link: `/reports` }, { title: data.categoryName, link: `/reports#${data.categoryId}` }, { title: `${data.name}`, link: `/reports/${params.reportId}` }]}>
+  return <PageHeader title="Edit Report" breadcrumbs={[{ title: `Reports`, link: `/reports` }, { title: report.categoryName, link: `/reports#${report.categoryId}` }, { title: `${report.name}`, link: `/reports/${params.reportId}` }]}>
     <div className="container-xl">
       <div className="row row-cards row-deck mb-3">
         <div className="col-md-6">
@@ -291,14 +312,14 @@ const EditReport = () => {
           <TextInput name="id" value={activeItem?.id} onChange={handleActiveChange} />
         </div>
         <div className="mb-3">
-          {JSON.stringify(activeItem)}
           <label className="form-label">Filter Type</label>
           <SelectInput name="inputType" value={activeItem?.inputType} onChange={handleActiveChange} >
             <option value="Text">Text</option>
             <option value="Number">Number</option>
             <option value="Period">Period</option>
             <option value="Date">Date</option>
-            <option value="DateTime">DateTime</option>
+            <option value="DateTime">Date Time</option>
+            <option value="DateRange">Date Range</option>
             <option value="CustomerId">CustomerId</option>
             <option value="Rank">Rank</option>
             <option value="Tree">Tree</option>
