@@ -5,6 +5,7 @@ import SelectInput from "../../../components/selectInput";
 import TextInput from "../../../components/textInput";
 import Tabs, { Tab } from "../../../components/tabs";
 import GraphQLEditor from "../../../components/graphQLEdtor";
+import Switch from "../../../components/switch";
 
 const HtmlContent = ({ widget, updateWidget }) => {
 
@@ -26,7 +27,21 @@ const HtmlContent = ({ widget, updateWidget }) => {
     }
   }
 
+  const handleWidgetSettingsChange = (name, value) => {
+    updateWidget((v) => ({
+      ...v,
+      settings: {
+        ...v.settings,
+        [name]: value,
+      },
+    }));
+  };
+
   return <>
+    <div className="mb-3 border-bottom">
+      <Switch name="useIframe" value={widget?.settings?.['useIframe']} title="Use IFrame (allows Javascript)" onChange={handleWidgetSettingsChange} />
+    </div>
+
     <Tabs>
       <Tab title="HTML">
         <CodeEditor name="text" value={widget.panes ? widget.panes[0]?.text : ''} onChange={handleChange} />

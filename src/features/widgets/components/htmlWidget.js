@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import Mustache from 'mustache';
 import { SendRequest } from '../../../hooks/usePost';
 import HtmlFrame from "./htmlFrame";
+import parse from 'html-react-parser';
 
 const HtmlWidget = ({ html, customer, widget }) => {
   var [data, setData] = useState({});
@@ -61,7 +62,25 @@ const HtmlWidget = ({ html, customer, widget }) => {
     }
   }, [html, data, customer])
 
-  return <HtmlFrame htmlContent={output} cssContent={widget.css} scriptCode={``} />
+  var useIframe = widget?.settings?.['useIframe'];
+
+  if (useIframe) {
+    return <HtmlFrame htmlContent={output} cssContent={widget.css} />
+  } else {
+    let renderedOutput = null;
+
+    try {
+      // Attempt to parse and render output
+      renderedOutput = <>{parse(output ?? '')}</>;
+    } catch (error) {
+      // Handle parsing or rendering error
+      console.error('Error parsing or rendering output:', error);
+      // Provide a fallback or error message
+      renderedOutput = <p>Error parsing or rendering output</p>;
+    }
+
+    return renderedOutput;
+  }
 }
 
 export default HtmlWidget;
