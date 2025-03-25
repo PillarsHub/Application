@@ -65,7 +65,11 @@ const HtmlWidget = ({ html, customer, widget }) => {
   var useIframe = widget?.settings?.['useIframe'];
 
   if (useIframe) {
-    return <HtmlFrame htmlContent={output} cssContent={widget.css} />
+    var clone =  {...customer, widgets: [], cards: []};
+    delete clone.widgets;
+    delete clone.cards;
+    delete clone.__typename;
+    return <HtmlFrame htmlContent={output} cssContent={widget.css} data={{ customer: clone, data: data }} />
   } else {
     let renderedOutput = null;
 

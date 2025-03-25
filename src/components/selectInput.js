@@ -11,16 +11,17 @@ const SelectInput = ({ className, name, value, onChange, disabled, emptyOption, 
 
   const childValues = Children.toArray(children)
     .filter(child => child?.props?.value !== undefined)
-    .map(child => child.props.value);
+    .map(child => child.props.value?.toString());
 
-  const isValidValue = childValues.includes(value)
+  const isValidValue = childValues.includes(value?.toString())
 
-  return <> <select className={className ?? 'form-select'} name={name} value={isValidValue ? value : ""} disabled={disabled} onChange={handleChange}>
-    {emptyOption && !isValidValue && <option value="" disabled={true}>{emptyOption}</option>}
-    {Children.map(children, child =>
-      <>{child} - {value}</>
-    )}
-  </select>
+  return <>
+    <select className={className ?? 'form-select'} name={name} value={isValidValue ? value : ""} disabled={disabled} onChange={handleChange}>
+      {emptyOption && !isValidValue && <option value="" disabled={true}>{emptyOption}</option>}
+      {Children.map(children, child =>
+        <>{child}</>
+      )}
+    </select>
   </>
 }
 
