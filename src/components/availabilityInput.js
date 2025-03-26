@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { useQuery, gql } from "@apollo/client";
 import DataLoading from "../components/dataLoading";
 import SelectInput from './selectInput';
-import NumericInput from './numericInput';
+import TextInput from './textInput';
 import EmptyContent from './emptyContent';
 
 var GET_DATA = gql`query {
@@ -50,7 +50,7 @@ const AvailabilityInput = ({ name, value, resourceName, onChange }) => {
 
   const handleAdd = () => {
     if (!value) value = [];
-    value.push({ key: 'Rank', volume: allRanks[0]?.id });
+    value.push({ key: 'Rank', operator: "Exactly", value: allRanks[0]?.id });
     onChange(name, value);
   }
 
@@ -71,8 +71,9 @@ const AvailabilityInput = ({ name, value, resourceName, onChange }) => {
         <table className="table table-sm mb-0">
           <thead>
             <tr>
-              <th className="ps-3 w-50">Term</th>
-              <th className="w-50">Requirement</th>
+              <th>Term</th>
+              <th>op</th>
+              <th>Requirement</th>
               <th className="w-1"></th>
             </tr>
           </thead>
@@ -83,6 +84,7 @@ const AvailabilityInput = ({ name, value, resourceName, onChange }) => {
                   <SelectInput name="key" value={requirement.key} onChange={(n, v) => handleChange(index, n, v)} emptyText="Select Requirement">
                     {hasRank && <option value="Rank">Rank</option>}
                     <option value="CustType">Customer Type</option>
+                    <option value="language">Language</option>
                     {allValues && allValues.map((value) => {
                       return <option key={value.valueId} value={value.valueId}>
                         {value.name} ({value.valueId})
@@ -91,47 +93,35 @@ const AvailabilityInput = ({ name, value, resourceName, onChange }) => {
                   </SelectInput>
                 </td>
                 <td>
-                  {requirement.key == "Rank" && <SelectInput name="volume" value={requirement.volume} onChange={(n, v) => handleChange(index, n, v)}>
+                  <SelectInput name="operator" value={requirement.operator} onChange={(n, v) => handleChange(index, n, v)}>
+                    <option value="equal">Exactly</option>
+                    <option value="NotEqual">Not Exactly</option>
+                    <option value="LessThan">Less than</option>
+                    <option value="GreaterThan">More than</option>
+                    <option value="GreaterThanOrEqual">At Least</option>
+                    <option value="LessThanOrEqual">At Most</option>
+                  </SelectInput>
+                </td>
+                <td>
+                  {requirement.key == "Rank" && <SelectInput name="value" value={requirement.value} onChange={(n, v) => handleChange(index, n, v)}>
                     {allRanks && allRanks.map((value) => {
                       return <option key={value.id} value={value.id}>
                         {value.name}
                       </option>
                     })}
                   </SelectInput>}
-                  {requirement.key == "CustType" && <div className="input-group">
-                    <button type="button" className="btn dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                      {requirement.exact ? 'Exactly' : 'At Least'}
-                    </button>
-                    <div className="dropdown-menu">
-                      <a className="dropdown-item" href="#" onClick={(e) => { handleChange(index, "exact", true); e.preventDefault(); }}>
-                        Exactly
-                      </a>
-                      <a className="dropdown-item" href="#" onClick={(e) => { handleChange(index, "exact", false); e.preventDefault(); }}>
-                        At Least
-                      </a>
-                    </div>
-                    <SelectInput name="volume" value={requirement.volume} onChange={(n, v) => handleChange(index, n, v)}>
+                  {requirement.key == "CustType" && <>
+                    <SelectInput name="value" value={requirement.value} onChange={(n, v) => handleChange(index, n, v)}>
                       {allCustTypes && allCustTypes.map((value) => {
                         return <option key={value.id} value={value.id}>
                           {value.name}
                         </option>
                       })}
                     </SelectInput>
-                  </div>}
-                  {requirement.key != "Rank" && requirement.key != "CustType" && <div className="input-group">
-                    <button type="button" className="btn dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                      {requirement.exact ? 'Exactly' : 'At Least'}
-                    </button>
-                    <div className="dropdown-menu">
-                      <a className="dropdown-item" href="#" onClick={(e) => { handleChange(index, "exact", true); e.preventDefault(); }}>
-                        Exactly
-                      </a>
-                      <a className="dropdown-item" href="#" onClick={(e) => { handleChange(index, "exact", false); e.preventDefault(); }}>
-                        At Least
-                      </a>
-                    </div>
-                    <NumericInput name="volume" value={requirement.volume} onChange={(n, v) => handleChange(index, n, v)} />
-                  </div>}
+                  </>}
+                  {requirement.key != "Rank" && requirement.key != "CustType" && <>
+                    <TextInput name="value" value={requirement.value} onChange={(n, v) => handleChange(index, n, v)} />
+                  </>}
                 </td>
                 <td>
                   <button className="btn btn-ghost-secondary btn-icon" onClick={() => handleDelete(index)} >
@@ -148,7 +138,7 @@ const AvailabilityInput = ({ name, value, resourceName, onChange }) => {
           <button className="btn ms-auto" onClick={handleAdd} >Add Requirement</button>
         </div>
       </div>
-    </div>
+    </div >
   </>
 }
 
