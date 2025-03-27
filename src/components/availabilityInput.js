@@ -50,7 +50,11 @@ const AvailabilityInput = ({ name, value, resourceName, onChange }) => {
 
   const handleAdd = () => {
     if (!value) value = [];
-    value.push({ key: 'Rank', operator: "Exactly", value: allRanks[0]?.id });
+    if (allRanks.length > 0) {
+      value.push({ key: 'Rank', operator: "Equal", value: allRanks[0]?.id });
+    } else {
+      value.push({ key: 'CustType', operator: "Equal", value: allCustTypes[0]?.id });
+    }
     onChange(name, value);
   }
 
@@ -94,7 +98,7 @@ const AvailabilityInput = ({ name, value, resourceName, onChange }) => {
                 </td>
                 <td>
                   <SelectInput name="operator" value={requirement.operator} onChange={(n, v) => handleChange(index, n, v)}>
-                    <option value="equal">Exactly</option>
+                    <option value="Equal">Exactly</option>
                     <option value="NotEqual">Not Exactly</option>
                     <option value="LessThan">Less than</option>
                     <option value="GreaterThan">More than</option>
