@@ -32,7 +32,7 @@ const TreeSettings = () => {
 
   const dId = `T${params.treeId}DB`;
   const { data, loading, error } = useFetch(`/api/v1/dashboards/${dId}`, {}, { id: dId, children: [{}, {}, { children: [] }] });
-  const { widgets, loading: wLoading, error: wError, CreateWidget, DeleteWidget } = useWidgets();
+  const { widgets, loading: wLoading, error: wError, refetch, CreateWidget, DeleteWidget, PublishWidget } = useWidgets();
   const [dashboardId, setDashboardId] = useState();
   const [showDel, setShowDel] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
@@ -80,10 +80,30 @@ const TreeSettings = () => {
     });
   }
 
+  const handlePublish = (id, publish) => {
+    const widget = findId(items, id);
+    PublishWidget(widget.item.widgetId, publish, () => {
+      refetch();
+    })
+  }
+
   const handleDelhide = () => setShowDel(false);
   const handleDelShow = (id) => {
     setCurrent(findId(items, id).item);
     setShowDel(true)
+  }
+
+  const handleFacePublish = (face, publish) => {
+    var widgetId = '';
+    if (face == 'front') {
+      widgetId = frontId;
+    } else if (face == 'back') {
+      widgetId = backId;
+    }
+
+    PublishWidget(widgetId, publish, () => {
+      refetch();
+    })
   }
 
   const handleFaceDelete = (face) => {
@@ -253,7 +273,7 @@ const TreeSettings = () => {
                 </>}
                 {widgets && frontId && <>
                   <div className="mb-3" style={{ width: "300px", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>
-                    <SortGridItem id={frontId} col={12} item={{ id: 'front', widgetId: frontId }} pageId={pageId} widgets={widgets} trees={treeData?.trees} onAdd={handleAddShow} onResize={handleResize} onDelete={handleFaceDelete} styles={{}} />
+                    <SortGridItem id={frontId} col={12} item={{ id: 'front', widgetId: frontId }} pageId={pageId} widgets={widgets} trees={treeData?.trees} onAdd={handleAddShow} onResize={handleResize} onDelete={handleFaceDelete} onPublish={handleFacePublish} styles={{}} />
                   </div>
                 </>}
               </div>
@@ -272,7 +292,7 @@ const TreeSettings = () => {
                 </>}
                 {widgets && backId && <>
                   <div className="mb-3" style={{ width: "300px", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>
-                    <SortGridItem id={backId} col={12} item={{ id: 'back', widgetId: backId }} pageId={pageId} widgets={widgets} trees={treeData?.trees} onAdd={handleAddShow} onResize={handleResize} onDelete={handleFaceDelete} styles={{}} />
+                    <SortGridItem id={backId} col={12} item={{ id: 'back', widgetId: backId }} pageId={pageId} widgets={widgets} trees={treeData?.trees} onAdd={handleAddShow} onResize={handleResize} onDelete={handleFaceDelete} onPublish={handleFacePublish} styles={{}} />
                   </div>
                 </>}
 
@@ -307,7 +327,7 @@ const TreeSettings = () => {
               <SortableContext items={items.map((item) => item.title)} strategy={rectSwappingStrategy}>
                 <div className="row row-cards row-deck mb-3">
                   {items && items.map((item, itemIndex) => {
-                    return <SortGridItem key={item.id} id={item.id} col={item.columns} item={item} pageId={pageId} widgets={widgets} trees={treeData?.trees} onAdd={handleAddShow} onResize={handleResize} onDelete={handleDelShow} styles={activeIndex === itemIndex ? { opacity: 0 } : {}} />
+                    return <SortGridItem key={item.id} id={item.id} col={item.columns} item={item} pageId={pageId} widgets={widgets} trees={treeData?.trees} onAdd={handleAddShow} onResize={handleResize} onDelete={handleDelShow} onPublish={handlePublish} styles={activeIndex === itemIndex ? { opacity: 0 } : {}} />
                   })}
                 </div>
               </SortableContext>
