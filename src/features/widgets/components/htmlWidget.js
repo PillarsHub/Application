@@ -5,10 +5,11 @@ import { SendRequest } from '../../../hooks/usePost';
 import HtmlFrame from "./htmlFrame";
 import parse from 'html-react-parser';
 
-const HtmlWidget = ({ html, customer, widget }) => {
+const HtmlWidget = ({ html, customer, widget, isPreview }) => {
   var [data, setData] = useState({});
   var [query, setQuery] = useState({});
-  var [output, setOutput] = useState();
+  var [output, setOutput] = useState('<div>Loading</div>');
+  var [authCode, setAuthCode] = useState('');
 
   useEffect(() => {
     if (widget) {
@@ -18,13 +19,27 @@ const HtmlWidget = ({ html, customer, widget }) => {
           setQuery({ method: pane.imageUrl?.toLowerCase(), query: pane.title });
         }
       }
+
+      var useAuthCode = widget?.settings?.['useAuthorizationCode'];
+      if (useAuthCode) {
+        if (isPreview) {
+          setAuthCode('PREVIEW_ONLY_AUTH_TOKEN_DO_NOT_USE_FOR_REAL_AUTH')
+        } else {
+          const encodedUsername = encodeURIComponent(customer.emailAddress);
+          SendRequest('GET', `/Authentication/GetAuthorizationCode?username=${encodedUsername}`, {}, (data) => {
+            setAuthCode(data.token)
+          }, () => {
+            setAuthCode('');
+          });
+        }
+      }
     }
   }, [widget])
 
   useEffect(() => {
     if (query && query.query) {
       if (query.method == "api") {
-        var url = Mustache.render(query.query, { customer: customer, data: data });
+        var url = Mustache.render(query.query, { customer: customer, authorizationCode: authCode, data: data });
         try {
           SendRequest('GET', url, {}, (data) => {
             setData(data)
@@ -54,22 +69,22 @@ const HtmlWidget = ({ html, customer, widget }) => {
   useEffect(() => {
     if (html) {
       try {
-        var renderedHTML = Mustache.render(html, { customer: customer, data: data });
+        var renderedHTML = Mustache.render(html, { customer: customer, authorizationCode: authCode, data: data });
         setOutput(renderedHTML);
       } catch {
         //Nothing
       }
     }
-  }, [html, data, customer])
+  }, [html, data, customer, authCode])
 
   var useIframe = widget?.settings?.['useIframe'];
 
   if (useIframe) {
-    var clone =  {...customer, widgets: [], cards: []};
+    var clone = { ...customer, widgets: [], cards: [] };
     delete clone.widgets;
     delete clone.cards;
     delete clone.__typename;
-    return <HtmlFrame htmlContent={output} cssContent={widget.css} data={{ customer: clone, data: data }} />
+    return <HtmlFrame htmlContent={output} cssContent={widget.css} data={{ customer: clone, authorizationCode: authCode, data: data }} />
   } else {
     let renderedOutput = null;
 
@@ -83,7 +98,7 @@ const HtmlWidget = ({ html, customer, widget }) => {
       renderedOutput = <p>Error parsing or rendering output</p>;
     }
 
-    return renderedOutput;
+    return renderedOutput
   }
 }
 
@@ -92,5 +107,6 @@ export default HtmlWidget;
 HtmlWidget.propTypes = {
   html: PropTypes.string.isRequired,
   customer: PropTypes.object.isRequired,
-  widget: PropTypes.object.isRequired
+  widget: PropTypes.object.isRequired,
+  isPreview: PropTypes.object.isRequired
 }

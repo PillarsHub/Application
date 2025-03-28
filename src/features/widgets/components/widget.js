@@ -392,7 +392,7 @@ function Content(widget, customer, compensationPlans, trees, isPreview, widgetVa
 
   if (widget.type == WidgetTypes.Html) {
     const html = widget.panes ? widget.panes[0]?.text : '';
-    return <HtmlWidget html={html} customer={customer} widget={widget} />
+    return <HtmlWidget html={html} customer={customer} widget={widget} isPreview={isPreview}/>
   }
 
   if (widget.type == WidgetTypes.Earnings) {
