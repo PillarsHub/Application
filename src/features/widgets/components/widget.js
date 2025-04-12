@@ -404,9 +404,9 @@ function Content(widget, customer, compensationPlans, trees, isPreview, widgetVa
   }
 
   if (widget.type == WidgetTypes.Orders) {
-    //var overrides = widget.panes?.map((p) => ({ title: p.title, display: p.text, show: p.imageUrl.toLowerCase() == 'true' }));
+    var useExternalIds = (widget?.settings?.['useExternalIds'] ?? false);
     return <>
-      <OrdersWidget customer={customer} widget={widget} />
+      <OrdersWidget customer={customer} widget={widget} useExternalId={useExternalIds} />
     </>
   }
 

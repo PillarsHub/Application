@@ -15,6 +15,7 @@ var GET_DATA = gql`query ($offset: Int!, $first: Int!, $nodeIds: [String]!) {
     totalOrders
     orders(offset: $offset, first: $first) {
       id
+      externalIds
       orderDate
       invoiceDate
       orderType
@@ -42,7 +43,7 @@ var GET_DATA = gql`query ($offset: Int!, $first: Int!, $nodeIds: [String]!) {
   }
 }`;
 
-const OrdersWidget = ({ customer }) => {
+const OrdersWidget = ({ customer, useExternalId }) => {
   const { loading, error, data, variables, refetch } = useQuery(GET_DATA, {
     variables: { offset: 0, first: 10, nodeIds: [customer?.id] },
   });
@@ -117,7 +118,10 @@ const OrdersWidget = ({ customer }) => {
             return <tr key={order.id} className={show ? '' : 'text-muted'}>
               <td>
                 <span className="text-muted">
-                  <a className="text-reset" href={`/customers/${customer.id}/Orders/${order.id}`}>{order.id}</a>
+                  <a className="text-reset" href={`/customers/${customer.id}/Orders/${order.id}`}>
+                  {!useExternalId && <>{order.id}</>}
+                  {useExternalId && <>{order.externalIds || order.id}</>}
+                  </a>
                 </span>
               </td>
               <td>
@@ -156,7 +160,8 @@ export default OrdersWidget;
 
 OrdersWidget.propTypes = {
   customer: PropTypes.object.isRequired,
-  widget: PropTypes.object.isRequired
+  widget: PropTypes.object.isRequired,
+  useExternalId: PropTypes.bool.isRequired
 }
 
 

@@ -11,6 +11,7 @@ import SocialLinksContent from "./socialLinksContent";
 import HtmlContent from "./htmlContent";
 import EarningsContent from "./earningsContent";
 import RecruiterContent from "./recruiterContent";
+import OrdersContent from "./ordersContent";
 
 const WidgetContent = ({ widget, updateWidget, trees, definitions, customerTypes }) => {
 
@@ -33,6 +34,8 @@ const WidgetContent = ({ widget, updateWidget, trees, definitions, customerTypes
       return <HtmlContent widget={widget} updateWidget={updateWidget} />
     case WidgetTypes.Earnings:
       return <EarningsContent widget={widget} updateWidget={updateWidget} />
+    case WidgetTypes.Orders:
+      return <OrdersContent widget={widget} updateWidget={updateWidget} />
     case WidgetTypes.Recruiter:
       return <RecruiterContent widget={widget} updateWidget={updateWidget} trees={trees} customerTypes={customerTypes} />;
   }

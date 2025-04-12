@@ -13,6 +13,7 @@ var GET_DATA = gql`query ($orderids: [String]!, $nodeIds: [String]!) {
       totalOrders
       orders(idList: $orderids) {
         id
+        externalIds
         orderDate
         invoiceDate
         orderType
@@ -21,6 +22,7 @@ var GET_DATA = gql`query ($orderids: [String]!, $nodeIds: [String]!) {
           name
         }
         tracking
+        trackingUrl
         subTotal
         shipping
         tax
@@ -105,7 +107,7 @@ const OrderDetail = () => {
                 <div className="card">
 
                   <div className="card-header">
-                    <h3 className="card-title">Order {order?.id}</h3>
+                    <h3 className="card-title">Order {order?.id} {order?.externalIds && <>({order?.externalIds})</>}</h3>
                     {/* <div className="card-actions btn-actions">
                       <div className="dropdown">
                         <a href="#" className="btn-action" data-bs-toggle="dropdown" aria-expanded="false">
@@ -141,7 +143,12 @@ const OrderDetail = () => {
                       <dd className="col-6">Status</dd>
                       <dd className="col-6 text-end">{order?.statusDetail?.name ?? order?.status}</dd>
                       <dd className="col-6">Tracking</dd>
-                      <dd className="col-6 text-end">{order?.tracking}</dd>
+                      <dd className="col-6 text-end">
+                        {!order?.trackingUrl && <>{order?.tracking}</>}
+                        {order?.trackingUrl && <>
+                          <a className="link" href={order.trackingUrl} target="_blank" rel="noreferrer">{order?.tracking}</a>
+                        </>}
+                      </dd>
 
                       <dd className="col-6">Notes</dd>
                       <dd className="col-6">{data?.notes}</dd>
