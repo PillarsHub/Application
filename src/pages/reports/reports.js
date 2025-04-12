@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useLocation } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 import { useFetch } from "../../hooks/useFetch";
 import PageHeader from "../../components/pageHeader";
 import DataLoading from "../../components/dataLoading";
@@ -7,6 +7,7 @@ import ReportList from "./reportList";
 
 const Reports = () => {
   const location = useLocation();
+  let params = useParams()
   const hashVariable = location.hash.substring(1);
   const [tab, setTab] = useState(hashVariable !== '' ? hashVariable : 1);
   const { loading, error, data } = useFetch(`/api/v1/Reports/Categories`);
@@ -20,7 +21,7 @@ const Reports = () => {
 
   let tabName = data?.find((el) => el.id == tab) ?? { name: '' };
 
-  return <PageHeader title="Reports" preTitle="Report Center">
+  return <PageHeader title="Reports" preTitle="Report Center" customerId={params.customerId}>
     <div className="page-body">
 
       <div className="container-xl">
@@ -47,7 +48,7 @@ const Reports = () => {
               <div className="card-header">
                 <h2 className="mb-0">{tabName.name} Reports</h2>
               </div>
-              <ReportList categoryId={tab} />
+              <ReportList categoryId={tab} customerId={params.customerId}/>
             </div>
           </div>
         </div>

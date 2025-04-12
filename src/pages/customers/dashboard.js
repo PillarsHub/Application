@@ -10,21 +10,21 @@ import WidgetContainer from "../../features/widgets/components/widgetContainer";
 const Dashboard = () => {
   let params = useParams()
   const [data, setData] = useState();
-  const [loaded, setLoaded] = useState(false);
+  const [noContent, setNoContent] = useState(false);
 
   const showTitle = false;
   const title = (GetScope() == undefined && showTitle) ? data?.customers[0]?.fullName : '';
   const preTitle = (GetScope() == undefined && showTitle) ? 'Dashboard' : '';
 
   const handleNoContent = () => {
-    setLoaded(true);
+    setNoContent(true);
   }
 
   return <>
     <PageHeader title={title} preTitle={preTitle} pageId="dashboard" customerId={params.customerId}>
       <div className="container-xl">
         <WidgetContainer customerId={params.customerId} dashboardId="PDB" onLoad={(d) => setData(d)} onEmpty={handleNoContent} />
-        {loaded && <>
+        {noContent && <>
           <div className="row row-cards">
             <div className="col-md-12">
               <div className="card">

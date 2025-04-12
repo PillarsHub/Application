@@ -100,8 +100,8 @@ const AvailabilityInput = ({ name, value, resourceName, onChange }) => {
                   <SelectInput name="operator" value={requirement.operator} onChange={(n, v) => handleChange(index, n, v)}>
                     <option value="Equal">Exactly</option>
                     <option value="NotEqual">Not Exactly</option>
-                    <option value="LessThan">Less than</option>
-                    <option value="GreaterThan">More than</option>
+                    {/* <option value="LessThan">Less than</option>
+                    <option value="GreaterThan">More than</option> */}
                     <option value="GreaterThanOrEqual">At Least</option>
                     <option value="LessThanOrEqual">At Most</option>
                   </SelectInput>
@@ -116,7 +116,7 @@ const AvailabilityInput = ({ name, value, resourceName, onChange }) => {
                   </SelectInput>}
                   {requirement.key == "CustType" && <>
                     <SelectInput name="value" value={requirement.value} onChange={(n, v) => handleChange(index, n, v)}>
-                      {allCustTypes && allCustTypes.map((value) => {
+                      {allCustTypes && allCustTypes.sort((a, b) => a.id - b.id).map((value) => {
                         return <option key={value.id} value={value.id}>
                           {value.name}
                         </option>

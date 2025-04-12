@@ -34,7 +34,7 @@ const CustomerDetailSettings = () => {
 
   const { data, loading, error } = useFetch(`/api/v1/dashboards/${initId}`, {}, { id: initId, children: [] });
   const { widgets, loading: wLoading, error: wError, refetch, CreateWidget, DeleteWidget, PublishWidget } = useWidgets();
-  const [dashboardId, setDashboardId] = useState();
+  const [dashboardMeta, setDashboardMeta] = useState();
   const [showDel, setShowDel] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [current, setCurrent] = useState(false);
@@ -44,10 +44,24 @@ const CustomerDetailSettings = () => {
 
   useEffect(() => {
     if (data) {
-      setDashboardId(data.id);
+      setDashboardMeta({ id: data.id, name: data.name, type: data.type, description: data.description });
       setItems(data.children);
     }
   }, [data]);
+
+  const handleSave = () => {
+    const item = {
+      id: dashboardMeta.id,
+      name: dashboardMeta.name,
+      type: dashboardMeta.type,
+      description: dashboardMeta.description,
+      children: items
+    }
+    SendRequest("PUT", "/api/v1/dashboards/" + item.id, item, () => {
+    }, (error, code) => {
+      alert(code + ": " + error);
+    });
+  }
 
   useEffect(() => {
     if (items && !initialRender.current) {
@@ -63,17 +77,7 @@ const CustomerDetailSettings = () => {
   if (wError) return <DataError error={wError} />;
   if (loading) return <DataLoading />
   if (wLoading) return <DataLoading />
-
-  const handleSave = () => {
-    const item = {
-      id: dashboardId,
-      children: items
-    }
-    SendRequest("PUT", "/api/v1/dashboards/" + item.id, item, () => {
-    }, (error, code) => {
-      alert(code + ": " + error);
-    });
-  }
+  if (!dashboardMeta) return <DataLoading />
 
   const handlePublish = (id, publish) => {
     var item = findId(items, id).item;
@@ -221,12 +225,12 @@ const CustomerDetailSettings = () => {
     return null;
   };
 
-  let pageName = capitalizeFirstLetter(dashboardId ?? 'A');
-  if (pageName == 'CSDB') pageName = "Customer Detail";
-  if (pageName == 'PDB') pageName = "Dashboard";
+  let pageName = capitalizeFirstLetter((dashboardMeta?.name ?? '') == '' ? dashboardMeta?.id : dashboardMeta?.name);
+  if (dashboardMeta.id == 'CSDB') pageName = "Customer Detail";
+  if (dashboardMeta.id == 'PDB') pageName = "Dashboard";
 
   return <>
-    <PageHeader title={`${pageName} Settings`} breadcrumbs={[{ title: `Pages`, link: `/settings/pages` }, { title: "Edit Page" }]}>
+    <PageHeader title={`${pageName} Settings`} postTitle={dashboardMeta?.description} breadcrumbs={[{ title: `Pages`, link: `/settings/pages` }, { title: "Edit Page" }]}>
       <CardHeader>
         <button className="btn btn-default" onClick={handleAddShow}>
           <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-layout-grid-add" width="40" height="40" viewBox="0 0 24 24" strokeWidth="1" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M4 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z"></path><path d="M14 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z"></path><path d="M4 14m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z"></path><path d="M14 17h6m-3 -3v6"></path></svg>
@@ -243,7 +247,7 @@ const CustomerDetailSettings = () => {
               <SortableContext items={items.map((item) => item.title)} strategy={rectSwappingStrategy}>
                 <div className="row row-cards row-deck mb-3">
                   {items && items.map((item, itemIndex) => {
-                    return <SortGridItem key={item.id} id={item.id} col={item.columns} item={item} pageId={dashboardId} widgets={widgets} trees={treeData?.trees} onAdd={handleAddShow} onResize={handleResize} onDelete={handleDelShow} onPublish={handlePublish} styles={activeIndex === itemIndex ? { opacity: 0 } : {}} />
+                    return <SortGridItem key={item.id} id={item.id} col={item.columns} item={item} pageId={dashboardMeta.id} widgets={widgets} trees={treeData?.trees} onAdd={handleAddShow} onResize={handleResize} onDelete={handleDelShow} onPublish={handlePublish} styles={activeIndex === itemIndex ? { opacity: 0 } : {}} />
                   })}
                 </div>
               </SortableContext>

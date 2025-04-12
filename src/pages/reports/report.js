@@ -26,7 +26,7 @@ const Report = () => {
 
   useEffect(() => {
     if (meta) {
-      const scope = GetScope();
+      const scope = GetScope() ?? params.customerId;
       const customerFilter = meta.filters.find(filter => filter.inputType === 'CustomerId');
 
       if (customerFilter && scope) {
@@ -84,8 +84,10 @@ const Report = () => {
   }
 
   var showPaging = (data?.totalRows ?? 1) > 0;
+  var crumbUrl = `/reports`;
+  if (params.customerId) crumbUrl = `/customers/${params.customerId}/reports`;
 
-  return <PageHeader title={meta.name} breadcrumbs={[{ title: 'Reports', link: '/reports' }, { title: meta.categoryName, link: `/reports#${meta.categoryId}` }]}>
+  return <PageHeader title={meta.name} breadcrumbs={[{ title: 'Reports', link: crumbUrl }, { title: meta.categoryName, link: `${crumbUrl}#${meta.categoryId}` }]} customerId={params.customerId}>
     <CardHeader>
       <div className="btn-list">
         {downloadLink && <a className="btn btn-default btn-sm-icon" href={downloadLink} target="_blank" rel="noreferrer">

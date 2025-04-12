@@ -81,6 +81,7 @@ const Pages = lazy(() => import("./pages/settings/pages"));
 const ReportQuery = lazy(() => import("./pages/reports/reportQuery"));
 const PlacementSuite = lazy(() => import("./pages/customers/placementSuite"));
 const QueryBuilder = lazy(() => import("./pages/tools/queryBuilder"));
+const CustomerPage = lazy(() => import("./pages/customers/customerPage"));
 
 function App() {
   const { token, setToken, clearToken } = useToken();
@@ -127,7 +128,11 @@ function App() {
               <Route path="customers/:customerId/commissions" element={<CommissionsDetail />} />
               <Route path="customers/:customerId/commissions/:bonusId" element={<CommissionsBonusDetail />} />
               <Route path="customers/:customerId/tree/:treeId" element={<CustomerTree />} />
-              <Route path="customers/:customerId/placements" element={<PlacementSuite /> } />
+              <Route path="customers/:customerId/placements" element={<PlacementSuite />} />
+              <Route path="customers/:customerId/reports" element={<Reports />} />
+              <Route path="customers/:customerId/reports/:reportId" element={<Report />} />
+              <Route path="customers/:customerId/media" element={<MediaList />} />
+              <Route path="customers/:customerId/:pageId" element={<CustomerPage />} />
               <Route path="inventory/stores" element={<Stores />} />
               <Route path="inventory/categories" element={<Categories />} />
               <Route path="inventory/products" element={<Products />} />

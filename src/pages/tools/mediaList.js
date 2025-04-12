@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import PageHeader, { CardHeader } from "../../components/pageHeader";
 import { useFetch } from "../../hooks/useFetch";
 import { SendRawRequest, SendRequest } from "../../hooks/usePost";
@@ -16,8 +17,9 @@ const MAX_DOCUMENT_SIZE = 25 * 1024 * 1024; // 25 MB (adjust the size as needed)
 const MAX_THUMBNAIL_SIZE = 1024 * 1024; // 1 MB (adjust the size as needed)
 
 const MediaList = () => {
+  let params = useParams()
   const maxImages = 50;
-  const showPublished = GetScope() != undefined;
+  const showPublished = GetScope() != undefined || params.customerId != undefined;
   const [showAdd, setShowAdd] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
@@ -245,9 +247,10 @@ const MediaList = () => {
   }
 
   let filteredData = data?.filter(item => (searchLanguage === "" || item.language === searchLanguage));
+  var hasScope = GetScope() != undefined || params.customerId != undefined;
 
   return <>
-    <PageHeader title="Documents & Media">
+    <PageHeader title="Documents & Media" customerId={params.customerId}>
       <CardHeader>
         <div className="d-flex">
           <div className="me-3">
@@ -262,7 +265,7 @@ const MediaList = () => {
               </form>
             </div>
           </div>
-          {GetScope() == undefined &&
+          {!hasScope &&
             <button className="btn btn-primary" onClick={handleShowAdd}>
               Add Document
             </button>
@@ -320,7 +323,7 @@ const MediaList = () => {
                             <a href={doc.url} target="blank">{doc.title}</a>
                           </h3>
                           <div className="card-actions btn-actions">
-                            {GetScope() == undefined && <>
+                            {!hasScope && <>
                               <div className="col-auto">
                                 <div className="dropdown">
                                   <a href="#" className="btn-action dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
@@ -354,7 +357,7 @@ const MediaList = () => {
                                     return <span key={tag} className="badge bg-blue-lt me-1">{tag}</span>
                                   })}
                                 </span>
-                                {GetScope() == undefined && <>
+                                {!hasScope && <>
                                   <div className="col-auto">
                                     {!doc.published && <span className="badge badge-outline text-warning" onClick={handlePublish} >Not Published</span>}
                                   </div>

@@ -100,7 +100,7 @@ const Countries = () => {
               return item.active ? <tr key={item.iso2}>
                 <td>{item.name}</td>
                 <td>{item.iso2?.toUpperCase()}</td>
-                <td>{data.currencies.find(i => i.iso3 == item.currency).name}</td>
+                <td>{data.currencies.find(i => i.iso3 == item.currency)?.name}</td>
                 <td>{item.addTax ? 'Yes' : 'No'}</td>
                 <td>{item.taxRate}</td>
                 <td>

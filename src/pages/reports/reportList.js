@@ -4,13 +4,13 @@ import { GetScope } from "../../features/authentication/hooks/useToken"
 import { useFetch } from "../../hooks/useFetch";
 import DataLoading from "../../components/dataLoading";
 
-const ReportList = ({ categoryId }) => {
+const ReportList = ({ categoryId, customerId }) => {
   const { loading, error, data } = useFetch(`/api/v1/Reports/?categoryId=${categoryId}`);
 
   if (loading) return <DataLoading />;
   if (error) return `Error! ${error}`;
 
-  const hasScope = GetScope() != undefined;
+  const hasScope = GetScope() != undefined || customerId != undefined;
 
   return <>
     <div className="table-responsive">
@@ -29,7 +29,12 @@ const ReportList = ({ categoryId }) => {
           {data && data.map((report) => {
             return <tr key={report.id}>
               <td>
-                <a href={`/reports/${report.id}`} className="text-reset">{report.name}</a>
+                {customerId && <>
+                  <a href={`/customers/${customerId}/reports/${report.id}`} className="text-reset">{report.name}</a>
+                </>}
+                {!customerId && <>
+                  <a href={`/reports/${report.id}`} className="text-reset">{report.name}</a>
+                </>}
               </td>
               <td className="text-muted d-none d-sm-table-cell">
                 {report.description}
@@ -39,7 +44,7 @@ const ReportList = ({ categoryId }) => {
                   {report.visibility}
                 </td>
                 <td className="text-muted d-none d-sm-table-cell">
-                 {/*  <a className="btn btn-ghost-secondary btn-icon" href={`/reports/${report.id}/edit`} >
+                  {/*  <a className="btn btn-ghost-secondary btn-icon" href={`/reports/${report.id}/edit`} >
                     <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-edit" width="40" height="40" viewBox="0 0 24 24" strokeWidth="1" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1"></path><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z"></path><path d="M16 5l3 3"></path></svg>
                   </a>
                   <a className="btn btn-ghost-secondary btn-icon" href={`/reports/${report.id}/edit`} >
@@ -59,5 +64,6 @@ const ReportList = ({ categoryId }) => {
 export default ReportList;
 
 ReportList.propTypes = {
-  categoryId: PropTypes.string
+  categoryId: PropTypes.string,
+  customerId: PropTypes.string
 }

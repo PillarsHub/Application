@@ -30,7 +30,7 @@ const SortableRow = ({ id, data, internalPages, onEdit, onDelete }) => {
     return status;
   }
 
-  var pageIndex = internalPages.findIndex(p => p.url.toLowerCase() == data.url.toLowerCase());
+  var pageIndex = internalPages.findIndex(p => p.url?.toLowerCase() == data.url?.toLowerCase());
   let page = internalPages[pageIndex];
 
   return (

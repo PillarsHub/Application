@@ -14,12 +14,15 @@ import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-ki
 
 const Navigation = () => {
   const { data, loading, error } = useFetch('/api/v1/Menus');
+  const { data: dashboards, loading: dashLoading, error: dashError } = useFetch("/api/v1/Dashboards");
   const [activeIndex, setActiveIndex] = useState(0);
   const [menuItems, setMenuItems] = useState();
   const [activeLink, setActiveLink] = useState(false);
   const [dialogError, setDialogError] = useState();
   const [show, setShow] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
+
+  const [pages, setPages] = useState([]);
 
   const [loaded, setLoaded] = useState(false);
   const isFirstRender = useRef(true);
@@ -55,6 +58,42 @@ const Navigation = () => {
     }
   }, [menuItems])
 
+  useEffect(() => {
+    if (dashboards) {
+      const internalPages = [
+        { url: '/customers', title: 'Recent Customers', type: "Corporate" },
+        { url: '/reports', title: 'Reports', type: "Corporate" },
+        { url: '/commissions/periods', title: 'Commission Periods', type: "Corporate" },
+        { url: '/commissions/payables', title: 'Commission Payables', type: "Corporate" },
+        { url: '/commissions/paid', title: 'Commissions Paid', type: "Corporate" },
+        { url: '/inventory/products', title: 'Product List', type: "Corporate" },
+        { url: '/inventory/categories', title: 'Category List', type: "Corporate" },
+        { url: '/inventory/stores', title: 'Store List', type: "Corporate" },
+        { url: '/tools/adjustments', title: 'Commission Adjustments', type: "Corporate" },
+        { url: '/schedule', title: 'Event Calendar', type: "Corporate" },
+        { url: '/media', title: 'Media Library', type: "Corporate" },
+        { url: '/training', title: 'Training Course Admin', type: "Corporate" },
+
+        { url: '/customers/{customerId}/summary', title: 'Customer Details', type: "Customer" },
+        { url: '/customers/{customerId}/team', title: 'Customer Team', type: "Customer" },
+        { url: '/customers/{customerId}/dashboard', title: 'Dashboard', type: "Customer" },
+        { url: '/customers/{customerId}/orders', title: 'Customer Orders', type: "Customer" },
+        { url: '/customers/{customerId}/reports', title: 'Customer Reports', type: "Customer" },
+        { url: '/customers/{customerId}/autoships', title: 'Customer Autoships', type: "Customer" },
+        { url: '/customers/{customerId}/commissions', title: 'Customer Commissions', type: "Customer" },
+        { url: '/customers/{customerId}/training', title: 'Training Courses', type: "Customer" },
+        { url: '/customers/{customerId}/account/profile', title: 'Customer Account', type: "Customer" },
+        { url: '/customers/{customerId}/media', title: 'Media Library', type: "Customer" },
+      ]
+
+      const merged = internalPages
+        .map(a => ({ url: a.url, title: a.title, type: a.type }))
+        .concat(dashboards.filter(b => b.type !== 'System').map(b => ({ url: `/customers/{customerId}/${b.id}`, title: b.name, type: b.type })));
+
+      setPages(merged);
+    }
+  }, [dashboards])
+
   const handleSetTab = (index) => {
     setActiveIndex(index);
   }
@@ -86,11 +125,11 @@ const Navigation = () => {
   const handleShow = (id) => {
     const activeMenu = menuItems[activeIndex];
     var item = activeMenu.items.find(item => item.id === id)
-    if (!item) item = { url: internalPages[0].url };
+    if (!item) item = { url: pages[0].url };
 
     let type = "Label";
     if (item.url) {
-      var pageIndex = internalPages.findIndex(p => p.url.toLowerCase() == item.url.toLowerCase())
+      var pageIndex = pages.findIndex(p => p.url.toLowerCase() == item.url.toLowerCase())
       type = pageIndex > -1 ? "Page" : "Url";
     }
 
@@ -163,33 +202,11 @@ const Navigation = () => {
   };
 
   const items = menuItems ? menuItems[activeIndex].items : [];
-
-  const internalPages = [
-    { url: '/customers', title: 'Recent Customers' },
-    { url: '/reports', title: 'Reports' },
-    { url: '/commissions/periods', title: 'Commission Periods' },
-    { url: '/commissions/payables', title: 'Commission Payables' },
-    { url: '/commissions/paid', title: 'Commissions Paid' },
-    { url: '/inventory/products', title: 'Product List' },
-    { url: '/inventory/categories', title: 'Category List' },
-    { url: '/inventory/stores', title: 'Store List' },
-    { url: '/tools/adjustments', title: 'Commission Adjustments' },
-    { url: '/schedule', title: 'Event Calendar' },
-    { url: '/media', title: 'Media Library' },
-    { url: '/training', title: 'Training Course Admin' },
-    { url: '/customers/{customerId}/summary', title: 'Customer Details' },
-    { url: '/customers/{customerId}/team', title: 'Customer Team' },
-    { url: '/customers/{customerId}/dashboard', title: 'Dashboard' },
-    { url: '/customers/{customerId}/orders', title: 'Customer Orders' },
-    { url: '/customers/{customerId}/autoships', title: 'Customer Autoships' },
-    { url: '/customers/{customerId}/commissions', title: 'Customer Commissions' },
-    { url: '/customers/{customerId}/training', title: 'Training Courses' },
-    { url: '/customers/{customerId}/account/profile', title: 'Customer Account' }
-  ]
+  const menuType = menuItems ? menuItems[activeIndex].type : "";
 
   return <>
     <PageHeader title="Navigation" preTitle="Settings">
-      <SettingsNav title="Navigation" loading={loading} error={error} pageId="navigation">
+      <SettingsNav title="Navigation" loading={loading || dashLoading} error={error || dashError} pageId="navigation">
         {/* <div className="card-header"><span className="card-title">System Menus</span></div> */}
         <div className="card-header inverted">
           <ul className="nav nav-tabs card-header-tabs">
@@ -215,7 +232,7 @@ const Navigation = () => {
                 </thead>
                 <tbody>
                   {items.map(item => (
-                    <SortableRow key={item.id} id={item.id} data={item} internalPages={internalPages} onEdit={handleShow} onDelete={handleShowDelete} />
+                    <SortableRow key={item.id} id={item.id} data={item} internalPages={pages} onEdit={handleShow} onDelete={handleShowDelete} />
                   ))}
                 </tbody>
               </table>
@@ -281,8 +298,7 @@ const Navigation = () => {
               <label className="form-label">Status</label>
               <SelectInput name="status" value={activeLink?.status} errorText={dialogError?.status} onChange={handleChage}>
                 <option value="Enabled">Visible</option>
-                <option value="Corporate">Corporate</option>
-                <option value="Customer">Customer</option>
+                {menuType == 'Customer' && <option value="Corporate">Corporate</option>}
                 <option value="Disabled">Hidden</option>
               </SelectInput>
             </div>
@@ -299,7 +315,7 @@ const Navigation = () => {
                 <label className="form-label">Destination Page</label>
                 <SelectInput name="url" value={activeLink?.url} errorText={dialogError?.url} onChange={handleChage}>
                   <option disabled selected value=""> -- Select a page -- </option>
-                  {internalPages.map((page) => {
+                  {pages.filter(p => p.type == menuType).map((page) => {
                     return <option key={page} value={page.url}>{page.title}</option>
                   })}
                 </SelectInput>
