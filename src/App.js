@@ -82,6 +82,7 @@ const ReportQuery = lazy(() => import("./pages/reports/reportQuery"));
 const PlacementSuite = lazy(() => import("./pages/customers/placementSuite"));
 const QueryBuilder = lazy(() => import("./pages/tools/queryBuilder"));
 const CustomerPage = lazy(() => import("./pages/customers/customerPage"));
+const CorporatePage = lazy(() => import("./pages/corporatePage"));
 
 function App() {
   const { token, setToken, clearToken } = useToken();
@@ -184,6 +185,7 @@ function App() {
               <Route path="settings/company" element={<Company />} />
               <Route path="settings/trees" element={<PlacementRules />} />
               <Route path="settings/orderstatuses" element={<OrderStatuses />} />
+              <Route path="page/:pageId" element={<CorporatePage />} />
               <Route path="*" element={<NoPage />} />
             </Route>
           </Routes>

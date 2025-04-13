@@ -40,7 +40,7 @@ const HtmlContent = ({ widget, updateWidget }) => {
   return <>
     <div className="mb-3 border-bottom">
       <Switch name="useIframe" value={widget?.settings?.['useIframe']} title="Use IFrame (allows Javascript)" onChange={handleWidgetSettingsChange} />
-      <Switch name="useAuthorizationCode" value={widget?.settings?.['useAuthorizationCode']} title="Use useAuthorizationCode" onChange={handleWidgetSettingsChange} />
+      <Switch name="useAuthorizationCode" value={widget?.settings?.['useAuthorizationCode']} title="Use AuthorizationCode" onChange={handleWidgetSettingsChange} />
     </div>
 
     <Tabs>

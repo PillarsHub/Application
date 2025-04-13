@@ -392,7 +392,7 @@ function Content(widget, customer, compensationPlans, trees, isPreview, widgetVa
 
   if (widget.type == WidgetTypes.Html) {
     const html = widget.panes ? widget.panes[0]?.text : '';
-    return <HtmlWidget html={html} customer={customer} widget={widget} isPreview={isPreview}/>
+    return <HtmlWidget html={html} customer={customer} widget={widget} isPreview={isPreview} />
   }
 
   if (widget.type == WidgetTypes.Earnings) {
@@ -412,7 +412,7 @@ function Content(widget, customer, compensationPlans, trees, isPreview, widgetVa
 
   return <div id={`wdg_${widget.id}`} className={`card`}>
     <div className="card-body">
-      {JSON.stringify(widget)}
+      <EmptyContent text={JSON.stringify(widget)} />
     </div>
   </div>
 }

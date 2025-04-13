@@ -88,7 +88,10 @@ const Navigation = () => {
 
       const merged = internalPages
         .map(a => ({ url: a.url, title: a.title, type: a.type }))
-        .concat(dashboards.filter(b => b.type !== 'System').map(b => ({ url: `/customers/{customerId}/${b.id}`, title: b.name, type: b.type })));
+        .concat(dashboards.filter(b => b.type !== 'System').map(b => {
+          var urlBase = b.type == "Customer" ? `/customers/{customerId}` : '/page';
+          return ({ url: `${urlBase}/${b.id}`, title: b.name, type: b.type })
+        }));
 
       setPages(merged);
     }
