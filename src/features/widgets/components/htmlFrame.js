@@ -14,6 +14,11 @@ const HtmlFrame = ({ htmlContent, cssContent, data }) => {
   const iframeRef = useRef(null);
   const [frameId] = useState(() => 'frame_' + generateUUID());
   const [iframeHeight, setIframeHeight] = useState("150px"); // Default height
+  const [contentVersion, setContentVersion] = useState(0);
+
+  useEffect(() => {
+    setContentVersion(prev => prev + 1);
+  }, [htmlContent, cssContent]);
 
   const fullHtml = `
     <html>
@@ -98,7 +103,7 @@ const HtmlFrame = ({ htmlContent, cssContent, data }) => {
   useEffect(() => {
     const handleMessage = (event) => {
       const { type, frameId: incomingFrameId } = event.data || {};
-  
+
       // Iframe asks for the object
       if (type === 'requestJavaObject' && incomingFrameId === frameId) {
         iframeRef.current?.contentWindow?.postMessage({
@@ -107,20 +112,21 @@ const HtmlFrame = ({ htmlContent, cssContent, data }) => {
           payload: data
         }, '*');
       }
-  
+
       // Iframe resizes
       if (type === 'resizeIframe' && incomingFrameId === frameId) {
         console.log("B-" + incomingFrameId + ' - ' + event.data.height);
         setIframeHeight(`${event.data.height}px`);
       }
     };
-  
+
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
   }, []);
 
   return <>
     {htmlContent && <iframe
+      key={`frame_${frameId}_${contentVersion}`}
       ref={iframeRef}
       srcDoc={fullHtml}
       sandbox="allow-popups allow-modals allow-scripts allow-popups-to-escape-sandbox"

@@ -49,7 +49,7 @@ const HtmlWidget = ({ html, customer, widget, isPreview }) => {
         } catch (error) {
           setData({ error: `${error}` });
         }
-      } else {
+      } else if (isLikelyGraphQLQuery(query.query)) {
         var ttt = { query: query.query, variables: { customerId: customer.id } };
         SendRequest('POST', 'https://api.pillarshub.com/graphql', ttt, (r) => {
           if (r.errors) {
@@ -64,7 +64,7 @@ const HtmlWidget = ({ html, customer, widget, isPreview }) => {
     } else {
       setData({});
     }
-  }, [query, customer])
+  }, [query, customer?.id])
 
   useEffect(() => {
     if (html) {
@@ -72,7 +72,7 @@ const HtmlWidget = ({ html, customer, widget, isPreview }) => {
         var renderedHTML = Mustache.render(html, { customer: customer, authorizationCode: authCode, data: data });
         setOutput(renderedHTML);
       } catch {
-        //Nothing
+        //doNothing
       }
     }
   }, [html, data, customer, authCode])
@@ -84,7 +84,9 @@ const HtmlWidget = ({ html, customer, widget, isPreview }) => {
     delete clone.widgets;
     delete clone.cards;
     delete clone.__typename;
-    return <HtmlFrame htmlContent={output} cssContent={widget.css} data={{ customer: clone, authorizationCode: authCode, data: data }} />
+    return <>
+      <HtmlFrame htmlContent={output} cssContent={widget.css} data={{ customer: clone, authorizationCode: authCode, data: data }} />
+    </>
   } else {
     let renderedOutput = null;
 
@@ -101,6 +103,24 @@ const HtmlWidget = ({ html, customer, widget, isPreview }) => {
     return renderedOutput
   }
 }
+
+function isLikelyGraphQLQuery(query) {
+  if (typeof query !== 'string') return false;
+
+  // Remove leading comments and empty lines
+  const cleaned = query
+    .split('\n')
+    .filter(line => !line.trim().startsWith('#') && line.trim() !== '')
+    .join('\n')
+    .trim();
+
+  // Basic checks: must start with a GraphQL keyword or opening brace, and contain at least one closing brace
+  const startsWithKeyword = /^(query|mutation|subscription|fragment)?\s*[{(]/.test(cleaned);
+  const hasBraces = /{[^}]*}/.test(cleaned);
+
+  return startsWithKeyword && hasBraces;
+}
+
 
 export default HtmlWidget;
 

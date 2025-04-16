@@ -107,7 +107,7 @@ const AvailabilityInput = ({ name, value, resourceName, onChange }) => {
                   </SelectInput>
                 </td>
                 <td>
-                  {requirement.key == "Rank" && <SelectInput name="value" value={requirement.value} onChange={(n, v) => handleChange(index, n, v)}>
+                  {requirement.key == "Rank" && <SelectInput name="value" emptyOption="Select Rank" value={requirement.value} onChange={(n, v) => handleChange(index, n, v)}>
                     {allRanks && allRanks.map((value) => {
                       return <option key={value.id} value={value.id}>
                         {value.name}
@@ -115,7 +115,7 @@ const AvailabilityInput = ({ name, value, resourceName, onChange }) => {
                     })}
                   </SelectInput>}
                   {requirement.key == "CustType" && <>
-                    <SelectInput name="value" value={requirement.value} onChange={(n, v) => handleChange(index, n, v)}>
+                    <SelectInput name="value" value={requirement.value} emptyOption="Select Type" onChange={(n, v) => handleChange(index, n, v)}>
                       {allCustTypes && allCustTypes.sort((a, b) => a.id - b.id).map((value) => {
                         return <option key={value.id} value={value.id}>
                           {value.name}
