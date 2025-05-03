@@ -5,7 +5,7 @@ import AutoComplete from '../../../components/autocomplete';
 import Switch from '../../../components/switch';
 import { SendRequest } from "../../../hooks/usePost";
 
-const ChangePlacementModal = ({ tree, treeId, placement, refetch }) => {
+const ChangePlacementModal = ({ tree, treeId, placement, refreshNode }) => {
   const [showModal, setModalShow] = useState();
   const [activeItem, setActiveItem] = useState();
   const [disclamer, setDisclamer] = useState(false);
@@ -48,8 +48,8 @@ const ChangePlacementModal = ({ tree, treeId, placement, refetch }) => {
     setModalShow(false);
 
     var url = `/api/v1/Trees/${treeId}/Nodes/${activeItem.nodeId}`;
-    SendRequest('PUT', url, activeItem, () => {
-      refetch();
+    SendRequest('PUT', url, activeItem, (n) => {
+      refreshNode(n);
     }, (error) => {
       alert('Error: ' + error);
     });
@@ -111,5 +111,5 @@ ChangePlacementModal.propTypes = {
   tree: PropTypes.any,
   treeId: PropTypes.string.isRequired,
   placement: PropTypes.string.isRequired,
-  refetch: PropTypes.func.isRequired
+  refreshNode: PropTypes.func.isRequired
 }

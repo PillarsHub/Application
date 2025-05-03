@@ -73,7 +73,7 @@ const ProductPricing = () => {
     setActiveItem(values => ({ ...values, [name]: value }))
   }
 
-  const volumes = data.sourceGroups.filter((sg) => sg.sourceType == 'SUM_VALUE' && sg.dataType == 'DECIMAL').map((sg) => sg.id);
+  const volumes = data.sourceGroups.filter((sg) => sg.id.toLowerCase() != 'mbonus' && sg.sourceType == 'SUM_VALUE' && sg.dataType == 'DECIMAL').map((sg) => sg.id);
   const product = data.products[0];
 
   const handleClose = () => setShow(false);

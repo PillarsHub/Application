@@ -6,7 +6,7 @@ import Widget from "../../../features/widgets/components/widget";
 const TreeNode = ({ node, dashboard, trees, date }) => {
 
   if (node == undefined || node.customer == undefined) {
-    return <div className="card d-flex flex-column" style={{ maxWidth: '115px', margin: 'auto' }}>
+    return <div className="card d-flex flex-column" style={{ maxWidth: '140px', margin: 'auto', textTransform: "capitalize" }}>
       <div className="card-body text-center">
         <h3 className="align-items-center">
           <span className='cardTitle'>

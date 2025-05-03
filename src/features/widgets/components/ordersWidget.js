@@ -63,7 +63,7 @@ const OrdersWidget = ({ customer, useExternalId }) => {
     );
 
     // Step 2: Extract volumeId from each volume
-    const volumeIds = allVolumes.map(volume => volume.volumeId);
+    const volumeIds = allVolumes.filter(item => item.volume != 0).map(volume => volume.volumeId);
 
     // Step 3: Get unique volumeIds using Set
     const uniqueVolumeIds = [...new Set(volumeIds)];
@@ -141,7 +141,7 @@ const OrdersWidget = ({ customer, useExternalId }) => {
               <td>{order.orderType}</td>
               {uniqueVolumeIds.map((volumeId, index) => {
                 const volume = getVolumeForVolumeId(order, volumeId);
-                return <td key={index}>{volume !== null ? volume : 'N/A'}</td>
+                return <td key={index}>{(volume !== null ? volume : 0) == 0 ? '-' : volume}</td>
               })}
               <td>{order.total.toLocaleString("en-US", { style: 'currency', currency: order?.priceCurrency ?? 'USD' })}</td>
               <td>{order.statusDetail?.name ?? order.status}</td>

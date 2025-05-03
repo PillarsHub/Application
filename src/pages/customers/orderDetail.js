@@ -1,10 +1,16 @@
-import React from "react-dom/client";
+import React, { useState, useEffect } from 'react';
 import { useParams } from "react-router-dom"
 import { useQuery, gql } from "@apollo/client";
+import { SendRequest } from "../../hooks/usePost";
+import { GetToken, GetScope } from "../../features/authentication/hooks/useToken";
 import PageHeader from "../../components/pageHeader";
 import DataLoading from "../../components/dataLoading";
+import NumericInput from "../../components/numericInput";
+import DateTimeInput from "../../components/dateTimeInput";
+import AutoComplete from "../../components/autocomplete";
 import LocalDate from "../../util/LocalDate";
 import DataError from "../../components/dataError";
+import Modal from "../../components/modal";
 
 var GET_DATA = gql`query ($orderids: [String]!, $nodeIds: [String]!) {
     customers(idList: $nodeIds) {
@@ -13,6 +19,7 @@ var GET_DATA = gql`query ($orderids: [String]!, $nodeIds: [String]!) {
       totalOrders
       orders(idList: $orderids) {
         id
+        customerId
         externalIds
         orderDate
         invoiceDate
@@ -64,22 +71,101 @@ var GET_DATA = gql`query ($orderids: [String]!, $nodeIds: [String]!) {
         }
       }
     }
+    sourceGroups{
+      id
+      sourceType
+      dataType
+    }
   }`;
 
 const OrderDetail = () => {
   let params = useParams()
-  const { loading, error, data } = useQuery(GET_DATA, {
+  const [showEdit, setShowEdit] = useState(false);
+  const [showMove, setShowMove] = useState(false);
+  const [orderUpdate, setOrderUpdate] = useState();
+  const [order, setOrder] = useState();
+  const { loading, error, data, refetch } = useQuery(GET_DATA, {
     variables: { orderids: [params.orderId], nodeIds: [params.customerId] },
   });
+
+  let showOrderMenu = GetToken()?.environmentId == 10432;
+  if (GetScope()) showOrderMenu = false;
+
+  useEffect(() => {
+    if (data) {
+      setOrder(data?.customers[0].orders[0]);
+    }
+  }, [data]);
 
   if (loading) return <DataLoading />;
   if (error) return <DataError error={error} />;
 
-  let order = data?.customers[0].orders[0];
+  const handleHideMove = () => setShowMove(false);
+  const handleShowMove = () => {
+    setOrderUpdate(order);
+    setShowMove(true);
+  }
+
+  const handleHideEdit = () => setShowEdit(false);
+  const handleShowEdit = () => {
+    setOrderUpdate(order);
+    setShowEdit(true);
+  }
+
+  const handleEditChange = (name, value) => {
+    setOrderUpdate(o => ({ ...o, [name]: value }));
+  }
+
+  const handleLineItemChange = (index, volumeId, newValue) => {
+    setOrderUpdate(prevOrder => {
+      const updatedLineItems = [...prevOrder.lineItems];
+      const item = { ...updatedLineItems[index] };
+
+      const updatedVolume = [...(item.volume ?? [])];
+      const volumeIndex = updatedVolume.findIndex(v => v.volumeId?.toLowerCase() === volumeId.toLowerCase());
+
+      if (volumeIndex >= 0) {
+        updatedVolume[volumeIndex] = { ...updatedVolume[volumeIndex], volume: newValue };
+      } else {
+        updatedVolume.push({ volumeId, volume: newValue });
+      }
+
+      item.volume = updatedVolume;
+      updatedLineItems[index] = item;
+
+      return { ...prevOrder, lineItems: updatedLineItems };
+    });
+  };
+
+  const handleUpdateOrder = () => {
+    const cleanedOrder = stripTypename(orderUpdate);
+    const patch = createOrderPatchDocument(order, cleanedOrder);
+
+    const customerPatch = patch.find(p => p.path === "/customerId");
+    const newCustomerId = customerPatch?.value;
+
+    if (patch.length > 0) {
+      SendRequest("PATCH", `/api/v1/Orders/${order.id}`, patch, () => {
+        setShowEdit(false);
+        setShowMove(false);
+        if (newCustomerId && newCustomerId !== order.customerId) {
+          window.location = `/customers/${newCustomerId}/orders/${order.id}`;
+        } else {
+          refetch();
+        }
+      }, (error) => {
+        alert("Err:" + JSON.stringify(error));
+      })
+    } else {
+      setShowEdit(false);
+      setShowMove(false);
+    }
+  }
+
   let address = order?.shipAddress;
 
   const groupedVolumes = {};
-  order.lineItems?.forEach((item) => {
+  order?.lineItems?.forEach((item) => {
     const volumes = item.volume;
     if (volumes && Array.isArray(volumes)) {
       volumes.forEach((volume) => {
@@ -95,6 +181,8 @@ const OrderDetail = () => {
     }
   });
 
+  const volumes = data.sourceGroups.filter((sg) => sg.id.toLowerCase() != 'mbonus' && sg.sourceType == 'SUM_VALUE' && sg.dataType == 'DECIMAL').map((sg) => sg.id);
+
   let totalPaid = order?.payments?.reduce((a, payment) => a + payment?.amount ?? 0, 0) ?? 0;
 
   return <>
@@ -105,38 +193,39 @@ const OrderDetail = () => {
             <div className="row row-cards">
               <div className="col-12">
                 <div className="card">
-
                   <div className="card-header">
                     <h3 className="card-title">Order {order?.id} {order?.externalIds && <>({order?.externalIds})</>}</h3>
-                    {/* <div className="card-actions btn-actions">
-                      <div className="dropdown">
-                        <a href="#" className="btn-action" data-bs-toggle="dropdown" aria-expanded="false">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="19" r="1"></circle><circle cx="12" cy="5" r="1"></circle></svg>
-                        </a>
-                        <div className="dropdown-menu dropdown-menu-end" >
-                          <a href="#" className="dropdown-item" data-bs-toggle="modal" data-bs-target="#modal-edit">Edit</a>
-                          <a href="#" className="dropdown-item" data-bs-toggle="modal" data-bs-target="#modal-cancel">Cancel</a>
-                          <a href="#" className="dropdown-item" data-bs-toggle="modal" data-bs-target="#modal-move">Move</a>
-                          <a href="#" className="dropdown-item" /* onclick="printInvoice();" / >Print Invoice</a>
+                    {showOrderMenu && <>
+                      <div className="card-actions btn-actions">
+                        <div className="dropdown">
+                          <a href="#" className="btn-action" data-bs-toggle="dropdown" aria-expanded="false">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="19" r="1"></circle><circle cx="12" cy="5" r="1"></circle></svg>
+                          </a>
+                          <div className="dropdown-menu dropdown-menu-end" >
+                            <button className="dropdown-item" onClick={handleShowEdit}>Adjust Volume/Date</button>
+                            <button className="dropdown-item" onClick={handleShowMove} >Transfer Order</button>
+                          </div>
                         </div>
-                      </div> 
-                    </div>*/}
+                      </div>
+                    </>}
                   </div>
 
                   <div className="card-body">
 
                     <dl className="row">
                       <dd className="col-6">Order Date</dd>
-                      <dd className="col-6 text-end"><LocalDate dateString={order.orderDate} /></dd>
+                      <dd className="col-6 text-end"><LocalDate dateString={order?.orderDate} /></dd>
                       <dd className="col-6">Invoice Date</dd>
-                      <dd className="col-6 text-end"><LocalDate dateString={order.invoiceDate} /></dd>
+                      <dd className="col-6 text-end"><LocalDate dateString={order?.invoiceDate} /></dd>
                       <dd className="col-6">Order Type</dd>
                       <dd className="col-6 text-end">{order?.orderType}</dd>
 
                       {groupedVolumes && Object.entries(groupedVolumes).map(([volumeId, volumeSum]) => {
+                        var volumeRounded = Math.round(volumeSum * 1000) / 1000;
+                        if (volumeRounded == 0) return <></>;
                         return <>
                           <dd className="col-6">{volumeId}</dd>
-                          <dd className="col-6 text-end">{Math.round(volumeSum * 1000) / 1000}</dd>
+                          <dd className="col-6 text-end">{volumeRounded}</dd>
                         </>
                       })}
 
@@ -301,158 +390,175 @@ const OrderDetail = () => {
         </div>
       </div>
 
+      <Modal showModal={showEdit} onHide={handleHideEdit}>
+        <div className="modal-header">
+          <h5 className="modal-title">Adjust Volume/Date</h5>
+          <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
 
-      <div className="modal modal-blur fade" id="modal-edit" tabIndex="-1" role="dialog" aria-hidden="true">
-        <div className="modal-dialog modal-md modal-dialog-centered" role="document">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h5 className="modal-title">Edit Order</h5>
-              <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div className="modal-body">
-              <div className="row">
-                <div className="col-md-12">
-                  <div className="mb-3">
-                    <label className="form-label required">Name</label>
-                    <input className="form-control" />
-                  </div>
-                </div>
-                <div className="col-md-12">
-                  <div className="mb-3">
-                    <div className="divide-y">
-                      <div>
-                        <label className="row">
-                          <span className="col">Allow Ordering</span>
-                          <span className="col-auto">
-                            <label className="form-check form-check-single form-switch">
-                              <input className="form-check-input" type="checkbox" checked="" />
-                            </label>
-                          </span>
-                        </label>
-                      </div>
-                      <div>
-                        <label className="row">
-                          <span className="col">Default Store</span>
-                          <span className="col-auto">
-                            <label className="form-check form-check-single form-switch">
-                              <input className="form-check-input" type="checkbox" />
-                            </label>
-                          </span>
-                        </label>
-                      </div>
-                      <div>
-                        <label className="row">
-                          <span className="col">Is Point-of-Sale</span>
-                          <span className="col-auto">
-                            <label className="form-check form-check-single form-switch">
-                              <input className="form-check-input" type="checkbox" checked="" />
-                            </label>
-                          </span>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+        <div className="modal-body">
+          <div className="row">
+            <div className="col-md-12">
+              <div className="mb-3">
+                <label className="form-label">Invoice Date</label>
+                <DateTimeInput name="invoiceDate" value={orderUpdate?.invoiceDate} onChange={handleEditChange} />
+                <span className="text-danger"></span>
               </div>
             </div>
-            <div className="modal-footer">
-              <a href="#" className="btn btn-link link-secondary" data-bs-dismiss="modal">
-                Cancel
-              </a>
-              <a href="#" className="btn btn-primary ms-auto" data-bs-dismiss="modal">
-                <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-                Create new report
-              </a>
-            </div>
           </div>
         </div>
-      </div>
+        <div className="table-responsive">
+          <table className="table table-vcenter card-table">
+            <thead>
+              <tr>
+                <th>Product</th>
+                {volumes && volumes.map((volumeId) => {
+                  return <th key={volumeId} className="w-5" style={{ minWidth: "100px" }} >{volumeId}</th>
+                })}
+              </tr>
+            </thead>
+            <tbody>
+              {orderUpdate?.lineItems && orderUpdate?.lineItems.map((item, index) => {
+                return <tr key={item.productId}>
+                  <td>
+                    <p className="mb-1">{item.description}</p>
+                  </td>
+                  {volumes && volumes.map((volumeId) => {
+                    const volumeEntry = item.volume?.find(v => v.volumeId === volumeId);
+                    return <td key={volumeId}><NumericInput name={volumeId} value={volumeEntry?.volume} onChange={(name, value) => handleLineItemChange(index, name, value)} /></td>
+                  })}
+                </tr>
+              })}
+            </tbody>
+          </table>
+        </div>
 
+        <div className="modal-footer">
+          <a href="#" className="btn btn-link link-secondary" data-bs-dismiss="modal">
+            Cancel
+          </a>
+          <button type="submit" className="btn btn-primary ms-auto" onClick={handleUpdateOrder}>
+            Update Order
+          </button>
+        </div>
+      </Modal>
 
-      <div className="modal modal-blur fade" id="modal-move" tabIndex="-1" role="dialog" aria-hidden="true">
-        <div className="modal-dialog modal-md modal-dialog-centered" role="document">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h5 className="modal-title">Move Order</h5>
-              <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div className="modal-body">
-              <div className="row">
-                <div className="col-md-12">
-                  <div className="mb-3">
-                    <label className="form-label required">Name</label>
-                    <input className="form-control" />
-                  </div>
-                </div>
-                <div className="col-md-12">
-                  <div className="mb-3">
-                    <div className="divide-y">
-                      <div>
-                        <label className="row">
-                          <span className="col">Allow Ordering</span>
-                          <span className="col-auto">
-                            <label className="form-check form-check-single form-switch">
-                              <input className="form-check-input" type="checkbox" checked="" />
-                            </label>
-                          </span>
-                        </label>
-                      </div>
-                      <div>
-                        <label className="row">
-                          <span className="col">Default Store</span>
-                          <span className="col-auto">
-                            <label className="form-check form-check-single form-switch">
-                              <input className="form-check-input" type="checkbox" />
-                            </label>
-                          </span>
-                        </label>
-                      </div>
-                      <div>
-                        <label className="row">
-                          <span className="col">Is Point-of-Sale</span>
-                          <span className="col-auto">
-                            <label className="form-check form-check-single form-switch">
-                              <input className="form-check-input" type="checkbox" checked="" />
-                            </label>
-                          </span>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+      <Modal showModal={showMove} onHide={handleHideMove} >
+        <div className="modal-header">
+          <h5 className="modal-title">Transfer Order</h5>
+          <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div className="modal-body">
+          <div className="row">
+            <div className="col-md-12">
+              <div className="mb-3">
+                <label className="form-label">Place Under</label>
+                <AutoComplete name="customerId" value={orderUpdate?.customerId ?? ""} onChange={handleEditChange} />
+                <span className="text-danger"></span>
               </div>
             </div>
-            <div className="modal-footer">
-              <a href="#" className="btn btn-link link-secondary" data-bs-dismiss="modal">
-                Cancel
-              </a>
-              <a href="#" className="btn btn-primary ms-auto" data-bs-dismiss="modal">
-                <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-                Create new report
-              </a>
-            </div>
           </div>
         </div>
-      </div>
-
-
-
-      <div className="modal modal-blur fade" id="modal-cancel" tabIndex="-1" role="dialog" aria-hidden="true">
-        <div className="modal-dialog modal-sm modal-dialog-centered" role="document">
-          <div className="modal-content">
-            <div className="modal-body">
-              <div className="modal-title">Are you sure?</div>
-              <div>If you proceed, you will lose all your personal data.</div>
-            </div>
-            <div className="modal-footer">
-              <button type="button" className="btn btn-link link-secondary me-auto" data-bs-dismiss="modal">Cancel</button>
-              <button type="button" className="btn btn-danger" data-bs-dismiss="modal">Yes, delete all my data</button>
-            </div>
-          </div>
+        <div className="modal-footer">
+          <a href="#" className="btn btn-link link-secondary" data-bs-dismiss="modal">
+            Cancel
+          </a>
+          <button className="btn btn-primary ms-auto" onClick={handleUpdateOrder}>
+            Place Node
+          </button>
         </div>
-      </div>
+      </Modal>
+
     </PageHeader>
   </>
 }
+
+function createOrderPatchDocument(originalOrder, updatedOrder) {
+  const patch = [];
+
+  // Compare customerId
+  if (originalOrder.customerId !== updatedOrder.customerId) {
+    patch.push({
+      op: "replace",
+      path: "/customerId",
+      value: updatedOrder.customerId
+    });
+  }
+
+  // Compare invoiceDate
+  const updatedInvoiceDate = updatedOrder.invoiceDate === "" ? null : updatedOrder.invoiceDate;
+  if (originalOrder.invoiceDate !== updatedInvoiceDate) {
+    patch.push({
+      op: "replace",
+      path: "/invoiceDate",
+      value: updatedInvoiceDate
+    });
+  }
+
+  // Helper to normalize and compare volumes case-insensitively
+  const normalizeVolumes = (volumes) => {
+    return (volumes ?? [])
+      .map(v => ({
+        volumeId: v.volumeId.toLowerCase(),
+        volume: v.volume
+      }))
+      .sort((a, b) => a.volumeId.localeCompare(b.volumeId));
+  };
+
+  // Compare line items
+  const lineItemsChanged = (() => {
+    const original = originalOrder.lineItems ?? [];
+    const updated = updatedOrder.lineItems ?? [];
+    if (original.length !== updated.length) return true;
+
+    for (let i = 0; i < original.length; i++) {
+      const orig = original[i];
+      const upd = updated[i];
+
+      if (orig.productId !== upd.productId) return true;
+
+      const origVolumes = normalizeVolumes(orig.volume);
+      const updVolumes = normalizeVolumes(upd.volume);
+
+      if (origVolumes.length !== updVolumes.length) return true;
+
+      for (let j = 0; j < origVolumes.length; j++) {
+        if (
+          origVolumes[j].volumeId !== updVolumes[j].volumeId ||
+          origVolumes[j].volume !== updVolumes[j].volume
+        ) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  })();
+
+  if (lineItemsChanged) {
+    patch.push({
+      op: "replace",
+      path: "/lineItems",
+      value: updatedOrder.lineItems
+    });
+  }
+
+  return patch;
+}
+
+
+function stripTypename(obj) {
+  if (Array.isArray(obj)) {
+    return obj.map(stripTypename);
+  } else if (obj !== null && typeof obj === "object") {
+    // eslint-disable-next-line no-unused-vars
+    const { __typename, ...rest } = obj;
+    return Object.fromEntries(
+      Object.entries(rest).map(([k, v]) => [k, stripTypename(v)])
+    );
+  }
+  return obj;
+}
+
 
 export default OrderDetail;

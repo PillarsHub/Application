@@ -64,6 +64,10 @@ const CustomerTree = () => {
     setPlacement(node);
   }
 
+  const handleRefreshNode = () => {
+    refetch();
+  }
+
   useEffect(() => {
     if (data && data?.customers?.[0]) {
       treeBorad('box', params.customerId, params.treeId, periodDate, '/graphql',
@@ -122,7 +126,7 @@ const CustomerTree = () => {
       <PlacementSuite nodeId={params.customerId} treeId={params.treeId} shows={showPlacementSuite} onHide={() => setShowPlacementSuite(false)} handlePlaceNode={handleShow} />
     </PageHeader>
 
-    <ChangePlacementModal tree={tree} treeId={params.treeId} placement={placement} refetch={refetch} />
+    <ChangePlacementModal tree={tree} treeId={params.treeId} placement={placement} refreshNode={handleRefreshNode} />
 
   </>
 }
