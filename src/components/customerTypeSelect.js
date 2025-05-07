@@ -13,7 +13,9 @@ const CustomerTypeSelect = ({ className, name, value, onChange, placeholder = '-
   const { loading, error, data } = useQuery(GET_PERIOD_DETAILS, {});
 
   const handleChange = (event) => {
-    onChange(name, event.target.value);
+    const selectedValue = event.target.value;
+    const parsedValue = selectedValue === '' ? '' : Number(selectedValue);
+    onChange(name, parsedValue);
   };
 
   if (loading) return <span>-</span>;

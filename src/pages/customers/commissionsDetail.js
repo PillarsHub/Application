@@ -37,9 +37,7 @@ const CommissionsDetail = () => {
                 <PeriodPicker periodId={periodId} setPeriodId={handlePeriodChange} />
               </div>
             </div>
-
             <EarningsTable customerId={params.customerId} periodId={periodId} />
-
           </div>
         </div>
       </div>}

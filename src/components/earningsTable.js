@@ -12,26 +12,26 @@ var GET_DATA = gql`query ($nodeIds: [String]!, $period: BigInt!) {
     id
     fullName
   }
+  period(id: $period) {
+    id
+    begin
+    end
+    status
+    bonuses(nodeIds: $nodeIds) {
+      bonusId
+      nodeId
+      amount
+      bonusTitle
+      description
+      level
+      rank
+      released
+      percent
+      commissionDate
+      volume
+    } 
+  }
   compensationPlans {
-    periods(at: $period) {
-      id
-      begin
-      end
-      status
-      bonuses(nodeIds: $nodeIds) {
-        bonusId
-        nodeId
-        amount
-        bonusTitle
-        description
-        level
-        rank
-        released
-        percent
-        commissionDate
-        volume
-      } 
-    }
     ranks{
       id
       name
@@ -40,6 +40,7 @@ var GET_DATA = gql`query ($nodeIds: [String]!, $period: BigInt!) {
 }`;
 
 const EarningsTable = ({ customerId, periodId, overrides }) => {
+  if (periodId == 0) return <></>;
   const { data, loading, error } = useQuery(GET_DATA, {
     variables: { nodeIds: [customerId], period: parseInt(periodId) },
   });
@@ -48,13 +49,13 @@ const EarningsTable = ({ customerId, periodId, overrides }) => {
   if (error) return <DataError error={error} />
 
   var plan = data?.compensationPlans.find(item =>
-    item.periods.some(subItem => subItem.bonuses)
+    item.ranks.some(subItem => subItem.id)
   ) || null;
 
   let ranks = plan?.ranks;
   let bonuses = [];
-  if (plan?.periods[0]?.bonuses) {
-    bonuses = [...plan.periods[0].bonuses];
+  if (data?.period?.bonuses) {
+    bonuses = [...data.period.bonuses];
     bonuses.sort((a, b) => (a.bonusId > b.bonusId) ? 1 : -1);
   }
 

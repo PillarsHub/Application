@@ -137,10 +137,8 @@ const Widget = ({ widget, customer, compensationPlans, trees, isPreview = false,
     setWDate(value);
   }
 
-  const handlePeriodChange = (pId, u) => {
-    if (u) {
+  const handlePeriodChange = (pId) => {
       setWidgetValues(v => ({ ...v, periodId: Number(pId) }));
-    }
   };
 
   const styleTag = {
@@ -157,7 +155,7 @@ const Widget = ({ widget, customer, compensationPlans, trees, isPreview = false,
       </>}
       {widget.showDatePicker && widget.type == WidgetTypes.Earnings && <>
         <div className="card-actions">
-          <PeriodPicker periodId={widgetValues?.periodId ?? 0} setPeriodId={handlePeriodChange} />
+          <PeriodPicker periodId={widgetValues?.periodId} setPeriodId={handlePeriodChange} />
         </div>
       </>}
 
