@@ -86,7 +86,7 @@ const BonusDetail = () => {
                 </thead>
                 <tbody>
                   {period.bonuses && period.bonuses.map((bonus) => {
-                    return <tr key={bonus.bonusId}>
+                    return <tr key={`${bonus.bonusId}_${bonus.nodeId}_${bonus.level}`}>
                       <td className="text-center">
                         {bonus.customer && <Avatar name={bonus.customer?.fullName} url={bonus.customer?.profileImage} size="xs" />}
                       </td>
