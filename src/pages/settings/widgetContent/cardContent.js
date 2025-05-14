@@ -62,7 +62,7 @@ const CardContent = ({ widget, definitions, updateWidget }) => {
       });
     });
 
-    if (!foundDefinition && value.toLowerCase() == "rank") {
+    if (!foundDefinition && (value.toLowerCase() == "rank" || value.toLowerCase() == "highrank")) {
       foundDefinition = {
         name: "Current Rank",
         valueId: "Rank",
@@ -94,7 +94,7 @@ const CardContent = ({ widget, definitions, updateWidget }) => {
       let newValues = null;
 
       if (value) {
-        if (prev.title.toLowerCase() === "rank") {
+        if (prev.title.toLowerCase() === "rank" || prev.title.toLowerCase() === "highrank") {
           const definition = definitions.find(item => item.ranks?.length > 0);
           newValues = definition
             ? definition.ranks.map(rank => ({ value: rank.id, text: rank.name }))
@@ -132,6 +132,7 @@ const CardContent = ({ widget, definitions, updateWidget }) => {
   return <>
     <div className="mb-2 border-bottom">
       <Switch name="showDatePicker" value={widget?.showDatePicker} title="Enable Date Selector" onChange={handleWidgetChange} />
+      <Switch name="pageDatePicker" value={widget?.settings?.['pageDatePicker']} title="Date affects all page widgets" onChange={handleWidgetSettingsChange} />
     </div>
 
     <div className="mb-2 border-bottom">
@@ -195,6 +196,7 @@ const CardContent = ({ widget, definitions, updateWidget }) => {
               </optgroup>
               <optgroup label="Commission Values">
                 <option value="Rank">Rank</option>
+                <option value="HighRank">Highest Rank</option>
                 {definitions && definitions.map((plan) => {
                   return (plan.definitions && plan.definitions.map((definition) => {
                     return <option key={`${plan.id}_${definition.valueId}`} value={definition.valueId}>{definition.name} ({definition.valueId})</option>

@@ -28,6 +28,10 @@ var GET_DATA = gql`query {
     id
     name
   }
+  customerStatuses {
+    id
+    name
+  }
 }`;
 
 const AvailabilityInput = ({ name, value, resourceName, onChange }) => {
@@ -41,6 +45,7 @@ const AvailabilityInput = ({ name, value, resourceName, onChange }) => {
   const allValues = [].concat(...data.compensationPlans.map(obj => obj.definitions));
   const allRanks = [].concat(...data.compensationPlans.map(obj => obj.ranks));
   const allCustTypes = [].concat(...data.customerTypes);
+  const allStatusTypes = [].concat(...data.customerStatuses);
   const hasRank = allRanks.length > 0;
 
   const handleChange = (row, nme, val) => {
@@ -88,6 +93,7 @@ const AvailabilityInput = ({ name, value, resourceName, onChange }) => {
                   <SelectInput name="key" value={requirement.key} onChange={(n, v) => handleChange(index, n, v)} emptyText="Select Requirement">
                     {hasRank && <option value="Rank">Rank</option>}
                     <option value="CustType">Customer Type</option>
+                    <option value="Status">Customer Status</option>
                     <option value="language">Language</option>
                     {allValues && allValues.map((value) => {
                       return <option key={value.valueId} value={value.valueId}>
@@ -123,7 +129,16 @@ const AvailabilityInput = ({ name, value, resourceName, onChange }) => {
                       })}
                     </SelectInput>
                   </>}
-                  {requirement.key != "Rank" && requirement.key != "CustType" && <>
+                  {requirement.key == "Status" && <>
+                    <SelectInput name="value" value={requirement.value} emptyOption="Select Type" onChange={(n, v) => handleChange(index, n, v)}>
+                      {allStatusTypes && allStatusTypes.sort((a, b) => a.id - b.id).map((value) => {
+                        return <option key={value.id} value={value.id}>
+                          {value.name}
+                        </option>
+                      })}
+                    </SelectInput>
+                  </>}
+                  {requirement.key != "Rank" && requirement.key != "CustType" && requirement.key != "Status" && <>
                     <TextInput name="value" value={requirement.value} onChange={(n, v) => handleChange(index, n, v)} />
                   </>}
                 </td>

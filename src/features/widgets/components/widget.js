@@ -8,9 +8,9 @@ import { ToLocalDate } from "../../../util/LocalDate";
 import Avatar from '../../../components/avatar';
 import Calendar from '../../../components/calendar';
 import RankAdvance from '../../../components/rankAdvance';
+import RankAdvance2 from '../../../components/rankAdvance2';
 import PeriodDatePicker from "../../../components/periodDatePicker";
 
-import "./widget.css";
 import EmptyContent from "../../../components/emptyContent";
 import SocialMediaLink from "../../../components/socialMediaLink";
 import { SocialMediaPlatforms } from "../../../components/socialMediaIcon";
@@ -20,6 +20,7 @@ import PeriodPicker from "../../../components/periodPicker";
 import RecruiterWidget from "./recruiterWidget";
 import OrdersWidget from "./ordersWidget";
 import ProfileWidget from "./profileWidget";
+import DataLoading from "../../../components/dataLoading";
 
 var GET_CUSTOMER = gql`query ($nodeIds: [String]!, $periodDate: Date!) {
   customers(idList: $nodeIds) {
@@ -66,6 +67,25 @@ var GET_CUSTOMER = gql`query ($nodeIds: [String]!, $periodDate: Date!) {
       }
     }
   }
+  compensationPlans {
+    period(date: $periodDate) {
+      rankAdvance(nodeIds: $nodeIds) {
+        nodeId
+        rankId
+        rankName
+        requirements {
+          maintanance
+          conditions {
+            legCap
+            legValue
+            required
+            value
+            valueId
+          }
+        }
+      }
+    }
+  }
 }`;
 
 const generateUUID = () => {
@@ -76,10 +96,11 @@ const generateUUID = () => {
   }
 };
 
-const Widget = ({ widget, customer, compensationPlans, trees, isPreview = false, date, periodId, supressQuery = false }) => {
+const Widget = ({ widget, customer, compensationPlans, trees, isPreview = false, date, setDate, periodId, supressQuery = false }) => {
   const [wDate, setWDate] = useState(date);
   const [loading, setLoading] = useState(false);
   const [sCustomer, setSCustomer] = useState(customer);
+  const [sCompPlan, setSCompPlan] = useState(compensationPlans);
   const [widgetValues, setWidgetValues] = useState(date);
 
   const [widgetId] = useState(() => 'wd_' + generateUUID());
@@ -97,6 +118,7 @@ const Widget = ({ widget, customer, compensationPlans, trees, isPreview = false,
           .then((result) => {
             setLoading(false);
             setSCustomer(result.data?.customers[0]);
+            setSCompPlan(result.data?.compensationPlans);
           })
           .catch((error) => {
             setLoading(false);
@@ -105,13 +127,6 @@ const Widget = ({ widget, customer, compensationPlans, trees, isPreview = false,
       }
     }, [wDate]);
   }
-
-  useEffect(() => {
-    if (widget && widget.type == WidgetTypes.Earnings) {
-      var pId = periodId ?? 0;//(widget?.settings?.['periodId']?.trim() ?? 0);
-      setWidgetValues({ periodId: pId })
-    }
-  }, [widget]);
 
   if (widget == undefined) return <EmptyContent title="Widget not found" text="Please check your widget library to verify it has been configured correctly." />;
 
@@ -130,38 +145,72 @@ const Widget = ({ widget, customer, compensationPlans, trees, isPreview = false,
   const modifiedCss = widget?.css?.replace(/([^,{}]+)(?=\s*{)/g, (match) => `.${widgetId} ${match}`) ?? '';
 
   useEffect(() => {
+    if (widget) {
+      if (widget.showDatePicker && !supressQuery && widget.type == WidgetTypes.Earnings) {
+        setWidgetValues(v => ({
+          ...v,
+          tabbedUI: widget?.settings?.['tabbedUI'] ?? false,
+          hideOpen: widget?.settings?.['hideOpen'] ?? false,
+          hideEnd: widget?.settings?.['hideEnd'] ?? false,
+          localTime: widget?.settings?.['localTime'] ?? true,
+          hideTime: widget?.settings?.['hideTime'] ?? false,
+          defaultPlan: Number(widget?.settings?.['defaultPlan'] ?? null),
+          defaultIndex: Number(widget?.settings?.['defaultIndex'] ?? 0),
+          planIds: widget?.settings?.['planIds'] ? widget.settings['planIds'].split(',').map(Number) : null
+        }));
+      }
+    }
+  }, [widget])
+
+  useEffect(() => {
+    setSCompPlan(compensationPlans);
+  }, [compensationPlans]);
+
+  useEffect(() => {
     setSCustomer(customer);
   }, [customer]);
 
   const handleDateChange = (name, value) => {
-    setWDate(value);
+    var pageDatePicker = (widget?.settings?.['pageDatePicker'] ?? false);
+    if (pageDatePicker) {
+      setDate(value);
+    } else {
+      setWDate(value);
+    }
   }
 
+  useEffect(() => {
+    if (periodId) {
+      setWidgetValues(v => ({ ...v, periodId: Number(periodId) }));
+    }
+  }, [periodId]);
+
   const handlePeriodChange = (pId) => {
-      setWidgetValues(v => ({ ...v, periodId: Number(pId) }));
+    setWidgetValues(v => ({ ...v, periodId: Number(pId) }));
   };
 
   const styleTag = {
     __html: modifiedCss,
   };
 
+
   return <div style={{ display: "contents" }} className={widgetId}><div className={`card h-100 ${isPreview ? '' : ''}`} style={inlineStyle}>
-    {widget.title && <div className="card-header" style={{ backgroundColor: (widget?.headerColor ?? '#ffffff') }}>
+    {(widget.title || widget.showDatePicker) && <div className="card-header" style={{ backgroundColor: (widget?.headerColor ?? '#ffffff') }}>
       <h3 className={`card-title ${msStyle} ${meStyle}`}>{widget.title}</h3>
-      {widget.showDatePicker && widget.type != WidgetTypes.Earnings && <>
+      {widget.showDatePicker && !supressQuery && widget.type != WidgetTypes.Earnings && <>
         <div className="card-actions">
           <PeriodDatePicker name="date" value={wDate} onChange={handleDateChange} />
         </div>
       </>}
-      {widget.showDatePicker && widget.type == WidgetTypes.Earnings && <>
+      {widget.showDatePicker && !supressQuery && widget.type == WidgetTypes.Earnings && <>
         <div className="card-actions">
-          <PeriodPicker periodId={widgetValues?.periodId} setPeriodId={handlePeriodChange} />
+          <PeriodPicker periodId={widgetValues?.periodId} setPeriodId={handlePeriodChange} options={widgetValues} />
         </div>
       </>}
 
     </div>}
     <style dangerouslySetInnerHTML={styleTag} />
-    {Content(widget, sCustomer, compensationPlans, trees, isPreview, widgetValues, loading)}
+    {Content(widget, sCustomer, sCompPlan, trees, isPreview, widgetValues, loading)}
   </div></div>
 }
 
@@ -304,7 +353,8 @@ function Content(widget, customer, compensationPlans, trees, isPreview, widgetVa
   }
 
   if (widget.type == WidgetTypes.Rank) {
-    let rankAdvance = compensationPlans.flatMap(plan => plan.period || []).find(period => period.rankAdvance?.length > 0)?.rankAdvance || null;
+    if (loading) return <><DataLoading /></>
+    let rankAdvance = compensationPlans?.flatMap(plan => plan.period || []).find(period => period.rankAdvance?.length > 0)?.rankAdvance || null;
     let currentRank = customer?.cards?.[0]?.values.find(v => v.valueId.toLowerCase() == 'rank')?.value ?? 0;
 
     var showRankId = (widget?.settings?.['showRankId'] ?? false);
@@ -312,9 +362,9 @@ function Content(widget, customer, compensationPlans, trees, isPreview, widgetVa
 
     var valueMap = widget?.panes?.map(p => ({ valueId: p.title, text: p.text, description: p.description }));
 
-    return <>
-      <RankAdvance currentRank={currentRank} ranks={rankAdvance} showRankId={showRankId} showItemPercent={itemPercent ? false : true} valueMap={valueMap} />
-    </>
+    var v2 = false;
+    if (v2) return <RankAdvance2 currentRank={currentRank} ranks={rankAdvance} showRankId={showRankId} showItemPercent={itemPercent ? false : true} valueMap={valueMap} />
+    return <RankAdvance currentRank={currentRank} ranks={rankAdvance} showRankId={showRankId} showItemPercent={itemPercent ? false : true} valueMap={valueMap} />
   }
 
   if (widget.type == WidgetTypes.Upline) {
@@ -395,7 +445,6 @@ function Content(widget, customer, compensationPlans, trees, isPreview, widgetVa
 
   if (widget.type == WidgetTypes.Earnings) {
     var overrides = widget.panes?.map((p) => ({ title: p.title, display: p.text, show: p.imageUrl.toLowerCase() == 'true' }));
-
     return <>
       <EarningsTable customerId={customer.id} periodId={widgetValues?.periodId ?? 0} overrides={overrides} />
     </>
@@ -424,6 +473,7 @@ Widget.propTypes = {
   trees: PropTypes.any.isRequired,
   isPreview: PropTypes.bool,
   date: PropTypes.string.isRequired,
+  setDate: PropTypes.func.isRequired,
   supressQuery: PropTypes.bool,
   periodId: PropTypes.number
 }

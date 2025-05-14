@@ -34,6 +34,7 @@ var GET_DATA = gql`query ($orderids: [String]!, $nodeIds: [String]!) {
         shipping
         tax
         total
+        currencyCode
         shipAddress {
           countryCode
           stateCode
@@ -352,34 +353,34 @@ const OrderDetail = () => {
                           <p className="mb-1">{item.description}</p>
                         </td>
                         <td className="text-center">{item.quantity}</td>
-                        <td className="text-end">{item.price.toLocaleString("en-US", { style: 'currency', currency: item?.priceCurrency ?? 'USD' })}</td>
-                        <td className="text-end">{(item.price * item.quantity).toLocaleString("en-US", { style: 'currency', currency: item?.priceCurrency ?? 'USD' })}</td>
+                        <td className="text-end">{item.price.toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</td>
+                        <td className="text-end">{(item.price * item.quantity).toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</td>
                       </tr>
                     })}
 
                     <tr>
                       <td colSpan="3" className="strong text-end">Subtotal</td>
-                      <td className="text-end">{order?.subTotal.toLocaleString("en-US", { style: 'currency', currency: order?.priceCurrency ?? 'USD' })}</td>
+                      <td className="text-end">{order?.subTotal.toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</td>
                     </tr>
                     <tr>
                       <td colSpan="3" className="strong text-end">Shipping</td>
-                      <td className="text-end">{order?.shipping.toLocaleString("en-US", { style: 'currency', currency: order?.priceCurrency ?? 'USD' })}</td>
+                      <td className="text-end">{order?.shipping.toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</td>
                     </tr>
                     <tr>
                       <td colSpan="3" className="strong text-end">Tax {order?.taxRate > 0 ? `(${order?.taxRate} %)` : ''} </td>
-                      <td className="text-end">{order?.tax.toLocaleString("en-US", { style: 'currency', currency: order?.priceCurrency ?? 'USD' })}</td>
+                      <td className="text-end">{order?.tax.toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</td>
                     </tr>
                     <tr className="table-light">
                       <td colSpan="3" className="font-weight-bold text-uppercase text-end"><strong>Invoice Total</strong></td>
-                      <td className="font-weight-bold text-end"><strong>{order?.total.toLocaleString("en-US", { style: 'currency', currency: order?.priceCurrency ?? 'USD' })}</strong></td>
+                      <td className="font-weight-bold text-end"><strong>{order?.total.toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</strong></td>
                     </tr>
                     <tr>
                       <td colSpan="3" className="font-weight-bold text-uppercase text-end">Total Paid</td>
-                      <td className="font-weight-bold text-end">{totalPaid?.toLocaleString("en-US", { style: 'currency', currency: order?.priceCurrency ?? 'USD' })}</td>
+                      <td className="font-weight-bold text-end">{totalPaid?.toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</td>
                     </tr>
                     <tr>
                       <td colSpan="3" className="font-weight-bold text-uppercase text-end">Total Due</td>
-                      <td className="font-weight-bold text-end">{(order?.total - totalPaid)?.toLocaleString("en-US", { style: 'currency', currency: order?.priceCurrency ?? 'USD' })}</td>
+                      <td className="font-weight-bold text-end">{(order?.total - totalPaid)?.toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</td>
                     </tr>
                   </tbody>
                 </table>

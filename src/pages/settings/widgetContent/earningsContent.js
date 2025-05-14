@@ -54,10 +54,53 @@ const EarningsContent = ({ widget, updateWidget, }) => {
     })
   }
 
+  const handleWidgetSettingsChange = (name, value) => {
+    updateWidget((v) => ({
+      ...v,
+      settings: {
+        ...v.settings,
+        [name]: value,
+      },
+    }));
+  };
+
   return <>
     <div className="mb-2 border-bottom">
       <Switch name="showDatePicker" value={widget?.showDatePicker} title="Enable Date Selector" onChange={handleWidgetChange} />
     </div>
+    {widget?.showDatePicker && <>
+      <div className="row row-cards mb-3 border-bottom">
+        <div className="col-md-3">
+          <Switch name="tabbedUI" value={widget?.settings?.['tabbedUI']} title="Use Tabbed UI" onChange={handleWidgetSettingsChange} />
+        </div>
+        <div className="col-md-3">
+          <Switch name="hideOpen" value={widget?.settings?.['hideOpen']} title="Hide Open Periods" onChange={handleWidgetSettingsChange} />
+        </div>
+        <div className="col-md-3">
+          <Switch name="hideTime" value={widget?.settings?.['hideTime']} title="Hide Time" onChange={handleWidgetSettingsChange} />
+        </div>
+        <div className="col-md-3">
+          <Switch name="hideEnd" value={widget?.settings?.['hideEnd']} title="Hide Period End" onChange={handleWidgetSettingsChange} />
+        </div>
+        <div className="col-md-3 mb-3">
+          <label className="form-label">defaultIndex</label>
+          <TextInput name="defaultIndex" value={widget?.settings?.['defaultIndex']} onChange={handleWidgetSettingsChange} />
+        </div>
+        <div className="col-md-3 mb-3">
+          <label className="form-label">defaultPlan</label>
+          <TextInput name="defaultPlan" value={widget?.settings?.['defaultPlan']} onChange={handleWidgetSettingsChange} />
+        </div>
+        <div className="col-md-3 mb-3">
+          <label className="form-label">planIds</label>
+          <TextInput name="planIds" value={widget?.settings?.['planIds']} onChange={handleWidgetSettingsChange} />
+        </div>
+
+      </div>
+    </>
+    }
+
+
+    {/* tabbedUI: true, hideOpen: false, localTime: true, hideTime: false, defaultPlan: 386, defaultIndex: 1, planIds: [386, 309] */}
 
     <div className="row row-cards">
       {widget.panes && widget.panes?.map((pane) => {

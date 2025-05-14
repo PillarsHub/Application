@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import PropTypes from 'prop-types';
 import { useQuery, gql } from "@apollo/client";
 import { useFetch } from "../../../hooks/useFetch";
@@ -150,10 +150,9 @@ var GET_WIDGETS = gql`query {
   }
 }`;
 
-const WidgetContainer = ({ customerId, dashboardId, periodId, onLoad, onEmpty }) => {
-  const [periodDate] = useState(new Date().toISOString());
+const WidgetContainer = forwardRef(({ customerId, dashboardId, periodId, onLoad, onEmpty }, ref) => {
+  const [periodDate, setPeriodDate] = useState(new Date().toISOString());
   const { data: dashboard, loading: dbLoading, error: dbError } = useFetch(`/api/v1/dashboards/${dashboardId}`, {}, { isEmpty: true });
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState();
   const [data, setData] = useState();
@@ -165,23 +164,38 @@ const WidgetContainer = ({ customerId, dashboardId, periodId, onLoad, onEmpty })
 
   useEffect(() => {
     if (dashboard) {
-      setLoading(true);
-      refetch({ nodeIds: [customerId], customerId: customerId, periodDate: periodDate })
-        .then((result) => {
-          setLoading(false);
-          if (onLoad) onLoad(result.data);
-          if (dashboard.isEmpty) {
-            if (onEmpty) onEmpty(result.data);
-          } else {
-            setData(result.data);
-          }
-        })
-        .catch((error) => {
-          setLoading(false);
-          setError(error);
-        });
+      doRefresh();
     }
-  }, [dashboard])
+  }, [dashboard, periodDate])
+
+  useImperativeHandle(ref, () => ({
+    refreshData: () => {
+      doRefresh();
+    }
+  }));
+
+  const handleDateChange = (value) => {
+    setPeriodDate(value);
+  }
+
+  const doRefresh = () => {
+    setLoading(true);
+    refetch({ nodeIds: [customerId], customerId: customerId, periodDate: periodDate }, { fetchPolicy: 'no-cache' })
+      .then((result) => {
+        setLoading(false);
+        if (onLoad) onLoad(result.data);
+        if (dashboard.isEmpty) {
+          if (onEmpty) onEmpty(result.data);
+        } else {
+          setData(result.data);
+        }
+      })
+      .catch((error) => {
+        alert(error);
+        setLoading(false);
+        setError(error);
+      });
+  }
 
   if (loading || dbLoading) return <DataLoading />;
   if (dbError) return <DataError error={dbError} />;
@@ -197,13 +211,13 @@ const WidgetContainer = ({ customerId, dashboardId, periodId, onLoad, onEmpty })
   return <>
     <div className="row row-deck row-cards">
       {dashboard && dashboard?.children && dashboard.children.map((card) => {
-        return buildCard(card, widgets, customer, compensationPlans, trees, periodDate, periodId);
+        return buildCard(card, widgets, customer, compensationPlans, trees, periodDate, handleDateChange, periodId);
       })}
     </div>
   </>
-}
+});
 
-function buildCard(card, widgets, customer, compensationPlans, trees, date, periodId) {
+function buildCard(card, widgets, customer, compensationPlans, trees, date, onDateChange, periodId) {
   if ((card?.widgetId || card?.children) && widgets !== undefined) {
     let widget = widgets.find((w) => w.id === card?.widgetId ?? '');
     if (widget?.state == 1) return <>
@@ -216,12 +230,12 @@ function buildCard(card, widgets, customer, compensationPlans, trees, date, peri
     if (!widget && (!card.children || card.children.length == 0)) return <></>
 
     return <div key={card?.id} className={`col-sm-12 col-lg-${card?.columns > 6 ? '12' : '6'} col-xl-${card?.columns}`}>
-      {card?.widgetId && widget && <Widget key={card?.widgetId} widget={widget} customer={customer} compensationPlans={compensationPlans} trees={trees} date={date} periodId={periodId} />}
+      {card?.widgetId && widget && <Widget key={card?.widgetId} widget={widget} customer={customer} compensationPlans={compensationPlans} trees={trees} date={date} setDate={onDateChange} periodId={periodId} />}
       {card.children && card.children.length > 0 && <>
         <div className="card card-borderless card-transparent">
           <div className="row row-cards row-deck">
             {card.children.map((c) => {
-              return buildCard(c, widgets, customer, compensationPlans, trees, date);
+              return buildCard(c, widgets, customer, compensationPlans, trees, date, onDateChange, periodId);
             })}
           </div>
         </div>
@@ -233,6 +247,8 @@ function buildCard(card, widgets, customer, compensationPlans, trees, date, peri
 }
 
 export default WidgetContainer
+
+WidgetContainer.displayName = 'WidgetContainer';
 
 WidgetContainer.propTypes = {
   dashboardId: PropTypes.string.isRequired,

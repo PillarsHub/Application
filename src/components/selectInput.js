@@ -9,10 +9,19 @@ const SelectInput = ({ className, name, value, onChange, disabled, emptyOption, 
     onChange(name, value);
   };
 
-  const childValues = Children.toArray(children)
-    .filter(child => child?.props?.value !== undefined)
-    .map(child => child.props.value?.toString());
+  // Recursive function to get all valid values from children, including optgroups
+  const getChildValues = (children) => {
+    return Children.toArray(children).flatMap(child => {
+      if (child.type === 'optgroup') {
+        return getChildValues(child.props.children);
+      } else if (child.props.value !== undefined) {
+        return child.props.value?.toString();
+      }
+      return [];
+    });
+  };
 
+  const childValues = getChildValues(children);
   const isValidValue = childValues.includes(value?.toString())
 
   return <>

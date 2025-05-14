@@ -104,7 +104,7 @@ function buildCard(card, widgets, customer, compensationPlans, trees, date) {
     if (!widget && (!card.children || card.children.length == 0)) return <></>
 
     return <div key={card?.id} className={`col-sm-12 col-lg-${card?.columns > 6 ? '12' : '6'} col-xl-${card?.columns}`}>
-      {card?.widgetId && widget && <Widget key={card?.widgetId} widget={widget} customer={customer} compensationPlans={compensationPlans} trees={trees} date={date} supressQuery={true} />}
+      {card?.widgetId && widget && <Widget key={card?.widgetId} widget={widget} customer={customer} compensationPlans={compensationPlans} trees={trees} date={date} setDate={() => { }} supressQuery={true} />}
       {card.children && card.children.length > 0 && <>
         <div className="card card-borderless card-transparent">
           <div className="row row-cards row-deck">

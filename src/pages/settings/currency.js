@@ -4,12 +4,13 @@ import Modal from "../../components/modal";
 import { useFetch } from "../../hooks/useFetch";
 import { SendRequest } from "../../hooks/usePost";
 import SettingsNav from './settingsNav';
-
+import TextInput from "../../components/textInput"
 
 const Currency = () => {
   const [show, setShow] = useState(false);
+  const [errors, setErrors] = useState();
   const [activeItem, setActiveItem] = useState({});
-  const { data, loading, error, refetch } = useFetch('/api/v1/currencies?offset=0&count=100');
+  const { data, loading, error: error, refetch } = useFetch('/api/v1/currencies', { offset: 0, count: 100 });
 
   if (error) return `Error! ${error}`;
 
@@ -29,21 +30,20 @@ const Currency = () => {
 
   const handleSubmit = async e => {
     e.preventDefault();
-    setShow(false);
+    setErrors();
 
-    var url = "/api/v1/currencies";
-    var method = "POST";
+    if (!activeItem.iso3) setErrors(e => ({ ...e, iso3: "Currency Code is required" }));
+    if (!activeItem.name) setErrors(e => ({ ...e, name: "Name is required" }));
 
-    if (!activeItem.isNew) {
-      url += `/${activeItem.iso3}`;
-      method = "PUT";
+    if (activeItem.iso3 && activeItem.name) {
+      setShow(false);
+      var url = "/api/v1/currencies/" + activeItem.iso3;
+      SendRequest("PUT", url, activeItem, () => {
+        refetch();
+      }, (error) => {
+        setErrors(error);
+      });
     }
-
-    SendRequest(method, url, activeItem, () => {
-      refetch();
-    }, (error) => {
-      alert(error);
-    });
   }
 
 
@@ -109,15 +109,13 @@ const Currency = () => {
           <div className="col-md-12">
             <div className="mb-3">
               <label className="form-label">Currency Code</label>
-              <input className="form-control" name="iso3" value={activeItem.iso3 || ""} onChange={handleChange} />
-              <span className="text-danger"></span>
+              <TextInput name="iso3" value={activeItem.iso3} errorText={errors?.iso3} onChange={handleChange} />
             </div>
           </div>
           <div className="col-md-12">
             <div className="mb-3">
               <label className="form-label">Name</label>
-              <input className="form-control" name="name" value={activeItem.name || ""} onChange={handleChange} />
-              <span className="text-danger"></span>
+              <TextInput name="name" value={activeItem.name} errorText={errors?.name} onChange={handleChange} />
             </div>
           </div>
           <div className="col-md-4">

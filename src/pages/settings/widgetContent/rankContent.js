@@ -105,6 +105,10 @@ const RankContent = ({ widget, definitions, updateWidget }) => {
     setEditItem((v) => ({ ...v, [name]: value }));
   }
 
+  const handleWidgetChange = (name, value) => {
+    updateWidget((v) => ({ ...v, [name]: value }));
+  }
+
   const handleWidgetSettingsChange = (name, value) => {
     updateWidget((v) => ({
       ...v,
@@ -117,9 +121,11 @@ const RankContent = ({ widget, definitions, updateWidget }) => {
 
   return <>
     <div className="mb-3 border-bottom">
-      <Switch name="showRankId" value={widget?.settings?.['showRankId']} title="Show Rank Index" onChange={handleWidgetSettingsChange} />
+      <Switch name="showDatePicker" value={widget?.showDatePicker} title="Enable Date Selector" onChange={handleWidgetChange} />
+      <Switch name="pageDatePicker" value={widget?.settings?.['pageDatePicker']} title="Date affects all page widgets" onChange={handleWidgetSettingsChange} />
     </div>
     <div className="mb-3 border-bottom">
+      <Switch name="showRankId" value={widget?.settings?.['showRankId']} title="Show Rank Index" onChange={handleWidgetSettingsChange} />
       <Switch name="itemPercent" value={widget?.settings?.['itemPercent']} title="Hide Item Percent" onChange={handleWidgetSettingsChange} />
     </div>
     <div className="row row-cards">

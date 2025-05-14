@@ -150,16 +150,25 @@ const Report = () => {
                         var colValue = row.values[column.name] ?? '';
                         var textEnd = column.dataType == "Currency";
                         var name = row.values["fullName"] ?? row.values["firstName"] + " " + row.values["lastName"];
-                        var id = row.values["id"];
+                        var drilldownLink = null;//;
+                        if (column.drillDownType) {
+                          if (column.drillDownType == "Customer") {
+                            drilldownLink = `/customers/${row.values[column.drillDownSource]}/summary`;
+                          } else if (column.drillDownType == "Order") {
+                            drilldownLink = `/customers/${row.values[column.drillDownSource]}/orders/${row.values[column.drillDownSource2]}`;
+                          } else {
+                            drilldownLink = row.values[column.drillDownSource];
+                          }
+                        }
 
                         if (column.dataType == "Hidden") return <></>;
                         return <td key={`${row.rowNumber}_${index}`} className={textEnd ? 'text-end' : ''} style={{ whiteSpace: 'nowrap' }}>
-                          {column.drillDown && <>
-                            <a className="text-reset" href={`/customers/${id}/summary`}>
+                          {drilldownLink && <>
+                            <a className="text-reset" href={drilldownLink} target="_blank" rel="noreferrer">
                               {FormatColumn(column.dataType, colValue, name)}
                             </a>
                           </>}
-                          {!column.drillDown && <>
+                          {!drilldownLink && <>
                             {FormatColumn(column.dataType, colValue, name)}
                           </>}
                         </td>

@@ -12,7 +12,7 @@ const NumericInput = ({ className = 'form-control', name, value = 0, onChange, d
   const inputClass = (errorText || errored) ? `${className} is-invalid` : className;
 
   return <>
-    <input type="number" className={inputClass} name={name} value={value > 0 ? value : ''} disabled={disabled ?? false} autoComplete='off' onChange={handleChange}></input>
+    <input type="number" className={inputClass} name={name} value={value !== 0 ? value : ''} disabled={disabled ?? false} autoComplete='off' onChange={handleChange}></input>
     {errorText && <div className="invalid-feedback">{errorText}</div>}
   </>
 }

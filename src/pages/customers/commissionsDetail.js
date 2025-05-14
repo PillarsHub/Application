@@ -27,7 +27,6 @@ const CommissionsDetail = () => {
     <div className="container-xl">
       <WidgetContainer customerId={params.customerId} dashboardId="earnings" periodId={Number(periodId)} onLoad={(d) => setData(d)} onEmpty={handleNoContent} />
 
-
       {loaded && data && <div className="row row-deck row-cards">
         <div className="col-12">
           <div className="card mb-3">

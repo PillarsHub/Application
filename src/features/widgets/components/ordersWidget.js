@@ -28,6 +28,7 @@ var GET_DATA = gql`query ($offset: Int!, $first: Int!, $nodeIds: [String]!) {
       tracking
       subTotal
       total
+      currencyCode
       lineItems
       {
         productId
@@ -85,8 +86,6 @@ const OrdersWidget = ({ customer, useExternalId }) => {
     return Math.round(total * 1000) / 1000;
   };
 
-
-
   const uniqueVolumeIds = getUniqueVolumeIds(orders);
 
   if (!data?.customers?.[0]) {
@@ -119,8 +118,8 @@ const OrdersWidget = ({ customer, useExternalId }) => {
               <td>
                 <span className="text-muted">
                   <a className="text-reset" href={`/customers/${customer.id}/Orders/${order.id}`}>
-                  {!useExternalId && <>{order.id}</>}
-                  {useExternalId && <>{order.externalIds || order.id}</>}
+                    {!useExternalId && <>{order.id}</>}
+                    {useExternalId && <>{order.externalIds || order.id}</>}
                   </a>
                 </span>
               </td>
@@ -143,7 +142,7 @@ const OrdersWidget = ({ customer, useExternalId }) => {
                 const volume = getVolumeForVolumeId(order, volumeId);
                 return <td key={index}>{(volume !== null ? volume : 0) == 0 ? '-' : volume}</td>
               })}
-              <td>{order.total.toLocaleString("en-US", { style: 'currency', currency: order?.priceCurrency ?? 'USD' })}</td>
+              <td>{order.total.toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</td>
               <td>{order.statusDetail?.name ?? order.status}</td>
             </tr>
           })}

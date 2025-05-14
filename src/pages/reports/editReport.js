@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate  } from "react-router-dom"
+import { useParams, useNavigate } from "react-router-dom"
 import { useFetch } from "../../hooks/useFetch";
 import { SendRequest } from "../../hooks/usePost";
 import PageHeader from "../../components/pageHeader";
@@ -37,7 +37,7 @@ const EditReport = () => {
   useEffect(() => {
     if (error) {
       if (error.code == 404) {
-        setReport({categoryId: 1, Query: 'query {}'});
+        setReport({ categoryId: 1, Query: 'query {}' });
       } else {
         setErrorDisplay(error);
       }
@@ -369,9 +369,30 @@ const EditReport = () => {
               </SelectInput>
             </div>
           </div>
-          <div className="mb-3">
-            <Switch title="Link to Resource" name="drillDown" value={activeItem?.drillDown} onChange={handleActiveChange} />
+          <div className="col-4">
+            <div className="mb-3">
+              <label className="form-label">Drilldown Type</label>
+              <SelectInput name="drillDownType" value={activeItem?.drillDownType} onChange={handleActiveChange}>
+                <option value="">None</option>
+                <option value="Customer">Customer</option>
+                <option value="Order">Order</option>
+                <option value="Url">Url</option>
+              </SelectInput>
+            </div>
           </div>
+          {activeItem?.drillDownType && <div className="col-4">
+            <div className="mb-3">
+              {activeItem?.drillDownType == "Url" && <label className="form-label">Url Column</label>}
+              {activeItem?.drillDownType !== "Url" && <label className="form-label">Customer Id Column</label>}
+              <TextInput name="drillDownSource" value={activeItem?.drillDownSource} onChange={handleActiveChange} />
+            </div>
+          </div>}
+          {activeItem?.drillDownType == "Order" && <div className="col-4">
+            <div className="mb-3">
+              <label className="form-label">Order Id Column</label>
+              <TextInput name="drillDownSource2" value={activeItem?.drillDownSource2} onChange={handleActiveChange} />
+            </div>
+          </div>}
           <div className="col-12">
             <Switch title="Skip row if empty" name="hideRowIfEmpty" value={activeItem?.hideRowIfEmpty} onChange={handleActiveChange} />
           </div>
@@ -382,7 +403,7 @@ const EditReport = () => {
           Cancel
         </a>
         <button type="submit" className="btn btn-primary ms-auto" onClick={handleColumnSubmit}>
-          Save Currency
+          Update Column
         </button>
       </div>
     </Modal>

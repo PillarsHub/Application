@@ -18,14 +18,14 @@ const AccountMenu = () => {
   return <>
 
     {user?.SSO && <>
-      <span className="nav-link d-flex lh-1 text-reset p-0">
+      <span className="nav-link d-flex lh-1 text-reset p-0 text-truncate">
         <Avatar name={`${user?.firstName} ${user?.lastName}`} size="sm" />
         <span className="ps-2 d-none d-sm-block" >{user?.firstName} {user?.lastName}</span>
       </span>
     </>}
 
     {!user?.SSO && <>
-      <a href="#" className="nav-link d-flex lh-1 text-reset p-0 dropdown-toggle " data-bs-toggle="dropdown" aria-label="Open user menu">
+      <a href="#" className="nav-link d-flex lh-1 text-reset p-0 dropdown-toggle" data-bs-toggle="dropdown" aria-label="Open user menu">
         <Avatar name={`${user?.firstName} ${user?.lastName}`} size="sm" />
         <span className="ps-2 d-none d-sm-block" >{user?.firstName} {user?.lastName}</span>
       </a>

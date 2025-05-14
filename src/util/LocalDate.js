@@ -11,17 +11,33 @@ LocalDate.propTypes = {
   hideTime: PropTypes.bool
 };
 
-function ToLocalDate(dateString, hideTime)
-{
+function ToLocalDate(dateString, hideTime) {
   if (dateString == null || dateString == '') return '';
-  
-  if (!dateString.endsWith("Z"))
-  {
+
+  if (!dateString.endsWith("Z")) {
     dateString += "Z";
   }
 
   const dateObject = new Date(Date.parse(dateString));
 
+  return ToLocal(dateObject, hideTime);
+}
+
+function FormatDate(dateString, hideTime) {
+  if (dateString == null || dateString == '') return '';
+
+  if (!dateString.endsWith("Z")) {
+    dateString += "Z";
+  }
+
+  const dateObject = new Date(Date.parse(dateString));
+  const offsetMinutes = dateObject.getTimezoneOffset();
+  const adjustedDate = new Date(dateObject.getTime() - offsetMinutes * 60000);
+
+  return ToLocal(adjustedDate, hideTime);
+}
+
+function ToLocal(dateObject, hideTime) {
   let options = {
     year: 'numeric',
     month: 'long',
@@ -30,8 +46,7 @@ function ToLocalDate(dateString, hideTime)
     minute: '2-digit'
   };
 
-  if (hideTime)
-  {
+  if (hideTime) {
     options = {
       year: 'numeric',
       month: 'long',
@@ -44,4 +59,4 @@ function ToLocalDate(dateString, hideTime)
 }
 
 export default LocalDate;
-export {ToLocalDate};
+export { ToLocalDate, FormatDate };
