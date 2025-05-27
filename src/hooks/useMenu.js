@@ -1,11 +1,30 @@
 import { useState, useEffect } from 'react';
-import { Get } from "../hooks/useFetch";
+import { useQuery, gql } from "@apollo/client";
 import { GetToken } from "../features/authentication/hooks/useToken";
 
-export default function useMenu() {
+var GET_CUSTOMER_MENU = gql`query ($customerId: String!) {
+  menus (customerId: $customerId){
+    id
+    name
+    type
+    items{
+      icon
+      status
+      title
+      url
+    }
+  }
+}`;
+
+export default function useMenu(customerId) {
   const [loading, setLoading] = useState(false);
-  const [error] = useState(false);
+  const [error, setError] = useState(false);
   const [menu, setMenu] = useState([]);
+
+  const { refetch } = useQuery(GET_CUSTOMER_MENU, {
+    variables: { customerId: customerId },
+    skip: true, // Initially skip the query
+  });
 
   useEffect(() => {
     setMenu(() => {
@@ -20,19 +39,22 @@ export default function useMenu() {
   }, []);
 
   useEffect(() => {
-    if (menu == undefined) {
-      let path = '/api/v1/Menus';
-
-      Get(path, (data) => {
-        setLoading(false);
-        SetMenuInLocalStorage(data, GetToken()?.environmentId);
-        setMenu(data);
-      }, () => {
-        setLoading(false);
-        setMenu([]);
-      })
+    if (customerId && menu == undefined) {
+      refetch({ customerId: customerId })
+        .then((result) => {
+          let menus = result.data.menus;
+          setLoading(false);
+          SetMenuInLocalStorage(menus, GetToken()?.environmentId);
+          setMenu(menus);
+        })
+        .catch((error) => {
+          alert('Error: ' + JSON.stringify(error))
+          setLoading(false);
+          setError(error);
+          setMenu([]);
+        });
     }
-  }, [menu]);
+  }, [menu, customerId]);
 
   return { data: menu, loading, error };
 }

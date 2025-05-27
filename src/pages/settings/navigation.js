@@ -8,6 +8,7 @@ import TextInput from "../../components/textInput";
 import SelectInput from "../../components/selectInput";
 import SettingsNav from "./settingsNav";
 import SortableRow from "./sortableRow";
+import AvailabilityInput from "../../components/availabilityInput";
 
 import { DndContext, closestCenter, useSensor, useSensors, PointerSensor } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
@@ -21,6 +22,7 @@ const Navigation = () => {
   const [dialogError, setDialogError] = useState();
   const [show, setShow] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
+  const [modalTab, setModalTab] = useState(1);
 
   const [pages, setPages] = useState([]);
 
@@ -137,6 +139,7 @@ const Navigation = () => {
     }
 
     setActiveLink({ ...item, type: type })
+    setModalTab(1);
     setShow(true);
   }
 
@@ -273,79 +276,97 @@ const Navigation = () => {
       </div>
     </Modal>
 
-    <Modal showModal={show} onHide={handleHide}>
-      <div className="modal-header">
+    {activeLink && <Modal showModal={show} onHide={handleHide}>
+      <div className="modal-header border-bottom-0">
         <h5 className="modal-title">Navigation Link</h5>
         <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <div className="modal-body">
-        <div className="row">
-          <div className="col-md-3">
-            <div className="mb-3">
-              <label className="form-label">Type</label>
-              <SelectInput name="type" value={activeLink?.type} errorText={dialogError?.type} onChange={handleChage}>
-                <option value="Page">Page</option>
-                <option value="Url">Url</option>
-                <option value="Label">Label</option>
-              </SelectInput>
-            </div>
-          </div>
-          <div className="col-md-6">
-            <div className="mb-3">
-              <label className="form-label">Title</label>
-              <TextInput name="title" value={activeLink?.title} errorText={dialogError?.title} onChange={handleChage} />
-            </div>
-          </div>
-          <div className="col-md-3">
-            <div className="mb-3">
-              <label className="form-label">Status</label>
-              <SelectInput name="status" value={activeLink?.status} errorText={dialogError?.status} onChange={handleChage}>
-                <option value="Enabled">Visible</option>
-                {menuType == 'Customer' && <option value="Corporate">Corporate</option>}
-                <option value="Disabled">Hidden</option>
-              </SelectInput>
-            </div>
-          </div>
-          <div className="col-md-12">
-            {activeLink.type == "Url" &&
+      <div className="card border-bottom-0">
+        {menuType == 'Customer' && <div className="card-header">
+          <ul className="nav nav-tabs card-header-tabs" data-bs-toggle="tabs" role="tablist">
+            <li className="nav-item" role="presentation">
+              <button className={`nav-link ${modalTab == 1 ? 'active' : ''}`} onClick={() => setModalTab(1)} >Content</button>
+            </li>
+            <li className="nav-item" role="presentation">
+              <button className={`nav-link ${modalTab == 2 ? 'active' : ''}`} onClick={() => setModalTab(2)}>Requirements</button>
+            </li>
+          </ul>
+        </div>}
+
+        {modalTab == 1 && <div className="card-body">
+          <div className="row">
+            <div className="col-md-3">
               <div className="mb-3">
-                <label className="form-label">Destination Url</label>
-                <TextInput name="url" value={activeLink?.url} errorText={dialogError?.url} onChange={handleChage} />
-              </div>
-            }
-            {activeLink.type == "Page" &&
-              <div className="mb-3">
-                <label className="form-label">Destination Page</label>
-                <SelectInput name="url" value={activeLink?.url} errorText={dialogError?.url} onChange={handleChage}>
-                  <option disabled selected value=""> -- Select a page -- </option>
-                  {pages.filter(p => p.type == menuType).map((page) => {
-                    return <option key={page} value={page.url}>{page.title}</option>
-                  })}
+                <label className="form-label">Type</label>
+                <SelectInput name="type" value={activeLink?.type} errorText={dialogError?.type} onChange={handleChage}>
+                  <option value="Page">Page</option>
+                  <option value="Url">Url</option>
+                  <option value="Label">Label</option>
                 </SelectInput>
               </div>
-            }
-          </div>
-          {activeLink.type != "Label" && <div className="col-md-12">
-            <div className="mb-3">
-              <label className="form-label">SVG Icon</label>
-              <div className="input-group mb-2">
-                <span className="input-group-text">
-                  {activeLink?.icon && parse(activeLink?.icon)}
-                </span>
-                <TextInput name="icon" value={activeLink?.icon} errorText={dialogError?.icon} onChange={handleChage} />
-              </div>
-              <small className="form-hint">
-                An SVG element representing the icon for the menu item. <a href="https://tabler.io/icons" target="_blank" rel="noreferrer">More Information</a>
-              </small>
             </div>
-          </div>}
-        </div>
+            <div className="col-md-6">
+              <div className="mb-3">
+                <label className="form-label">Title</label>
+                <TextInput name="title" value={activeLink?.title} errorText={dialogError?.title} onChange={handleChage} />
+              </div>
+            </div>
+            <div className="col-md-3">
+              <div className="mb-3">
+                <label className="form-label">Status</label>
+                <SelectInput name="status" value={activeLink?.status} errorText={dialogError?.status} onChange={handleChage}>
+                  <option value="Enabled">Visible</option>
+                  {menuType == 'Customer' && <option value="Corporate">Corporate</option>}
+                  <option value="Disabled">Hidden</option>
+                </SelectInput>
+              </div>
+            </div>
+            <div className="col-md-12">
+              {activeLink.type == "Url" &&
+                <div className="mb-3">
+                  <label className="form-label">Destination Url</label>
+                  <TextInput name="url" value={activeLink?.url} errorText={dialogError?.url} onChange={handleChage} />
+                </div>
+              }
+              {activeLink.type == "Page" &&
+                <div className="mb-3">
+                  <label className="form-label">Destination Page</label>
+                  <SelectInput name="url" value={activeLink?.url} errorText={dialogError?.url} onChange={handleChage}>
+                    <option disabled selected value=""> -- Select a page -- </option>
+                    {pages.filter(p => p.type == menuType).map((page) => {
+                      return <option key={page} value={page.url}>{page.title}</option>
+                    })}
+                  </SelectInput>
+                </div>
+              }
+            </div>
+            {activeLink.type != "Label" && <div className="col-md-12">
+              <div className="mb-3">
+                <label className="form-label">SVG Icon</label>
+                <div className="input-group mb-2">
+                  <span className="input-group-text">
+                    {activeLink?.icon && parse(activeLink?.icon)}
+                  </span>
+                  <TextInput name="icon" value={activeLink?.icon} errorText={dialogError?.icon} onChange={handleChage} />
+                </div>
+                <small className="form-hint">
+                  An SVG element representing the icon for the menu item. <a href="https://tabler.io/icons" target="_blank" rel="noreferrer">More Information</a>
+                </small>
+              </div>
+            </div>}
+          </div>
+        </div>}
+
+        {modalTab == 2 && <div className="m-1 bodered">
+          <AvailabilityInput name="availability" resourceName="" value={activeLink?.availability ?? []} onChange={handleChage} />
+        </div>}
+
       </div>
       <div className="modal-footer">
         <button type="button" className="btn btn-link link-secondary me-auto" data-bs-dismiss="modal">Cancel</button>
         <button type="button" className="btn btn-primary" onClick={handleItemUpdate}>Save Link</button>
       </div>
-    </Modal>
+    </Modal>}
   </>
 }
 

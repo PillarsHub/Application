@@ -120,14 +120,54 @@ const RankContent = ({ widget, definitions, updateWidget }) => {
   };
 
   return <>
-    <div className="mb-3 border-bottom">
-      <Switch name="showDatePicker" value={widget?.showDatePicker} title="Enable Date Selector" onChange={handleWidgetChange} />
-      <Switch name="pageDatePicker" value={widget?.settings?.['pageDatePicker']} title="Date affects all page widgets" onChange={handleWidgetSettingsChange} />
-    </div>
-    <div className="mb-3 border-bottom">
-      <Switch name="showRankId" value={widget?.settings?.['showRankId']} title="Show Rank Index" onChange={handleWidgetSettingsChange} />
-      <Switch name="itemPercent" value={widget?.settings?.['itemPercent']} title="Hide Item Percent" onChange={handleWidgetSettingsChange} />
-    </div>
+    <div className="row ">
+      <div className="col-4 border-end">
+        <div className="mb-3">
+          <Switch name="showDatePicker" value={widget?.showDatePicker} title="Enable Date Selector" onChange={handleWidgetChange} />
+          <Switch name="pageDatePicker" value={widget?.settings?.['pageDatePicker']} title="Date affects all page widgets" onChange={handleWidgetSettingsChange} />
+        </div>
+        <div className="mb-3">
+          <Switch name="showRankId" value={widget?.settings?.['showRankId']} title="Show Rank Index" onChange={handleWidgetSettingsChange} />
+          <Switch name="itemPercent" value={widget?.settings?.['itemPercent']} title="Hide Item Percent" onChange={handleWidgetSettingsChange} />
+        </div>
+      </div>
+      <div className="col-8">
+        <div className="row">
+          <div className="col-6 mb-3">
+            <label className="form-label">Chart Type</label>
+            <SelectInput name="chartType" value={widget?.settings?.['chartType']} onChange={handleWidgetSettingsChange} >
+              <option value="1">Type 1</option>
+              <option value="2">Type 2</option>
+              <option value="3">Type 3</option>
+            </SelectInput>
+          </div>
+          <div className="col-6 mb-3">
+            <label className="form-label">Rank Title Position</label>
+            <SelectInput name="titleType" value={widget?.settings?.['titleType']} onChange={handleWidgetSettingsChange} >
+              <option value="1">Header Title</option>
+              <option value="2">Under Chart</option>
+            </SelectInput>
+          </div>
+          <div className="col-6 mb-3">
+            <label className="form-label">Requirements Type</label>
+            <SelectInput name="requirementType" value={widget?.settings?.['requirementType']} onChange={handleWidgetSettingsChange} >
+              <option value="1">Table</option>
+              <option value="2">Progress</option>
+              <option value="3">Button</option>
+            </SelectInput>
+          </div>
+          <div className="col-6 mb-3">
+            <label className="form-label">Title</label>
+            <SelectInput name="tabType" value={widget?.settings?.['tabType']} onChange={handleWidgetSettingsChange} >
+              <option value="0">Hidden</option>
+              <option value="1">Current / Last / High</option>
+              <option value="2">Current / Last</option>
+              <option value="3">Current / High</option>
+            </SelectInput>
+          </div>
+        </div>
+      </div>
+    </div >
     <div className="row row-cards">
       {widget?.panes && widget.panes.map((p, index) => {
         return <div key={p.id} className="col-sm-6 col-lg-4">

@@ -74,9 +74,9 @@ const AvailabilityInput = ({ name, value, resourceName, onChange }) => {
     <div className="card">
       {isEmpty && <EmptyContent title="No Requirements" text={`This ${resourceName} will be visible to all customers`} />}
       {!isEmpty && <>
-        <div className="card-header">
+        {resourceName && <div className="card-header">
           <h3 className="card-title text-capitalize">{resourceName} Requirements</h3>
-        </div>
+        </div>}
         <table className="table table-sm mb-0">
           <thead>
             <tr>
@@ -95,6 +95,7 @@ const AvailabilityInput = ({ name, value, resourceName, onChange }) => {
                     <option value="CustType">Customer Type</option>
                     <option value="Status">Customer Status</option>
                     <option value="language">Language</option>
+                    <option value="country">Country</option>
                     {allValues && allValues.map((value) => {
                       return <option key={value.valueId} value={value.valueId}>
                         {value.name} ({value.valueId})

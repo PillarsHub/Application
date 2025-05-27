@@ -110,7 +110,7 @@ const PeriodPicker = ({ periodId, setPeriodId, options }) => {
   }
 
   const formatDate = (date, hideTime) => {
-    if (options.localTime ?? true) {
+    if (options?.localTime ?? true) {
       return ToLocalDate(date, hideTime);
     } else {
       return FormatDate(date, hideTime);

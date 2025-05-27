@@ -10,7 +10,7 @@ import useMenu from '../../hooks/useMenu';
 const CustomerNav = ({ customerId }) => {
   const queryParams = new URLSearchParams(window.location.search);
   const periodId = queryParams.get("periodId");
-  const { data, loading, error } = useMenu();
+  const { data, loading, error } = useMenu(customerId);
 
   if (loading) return <DataLoading />
   if (error) return <DataError error={error} />
@@ -24,7 +24,7 @@ const CustomerNav = ({ customerId }) => {
     let currentHeader = null;
 
     items.forEach(item => {
-      if (item.status == 'Enabled' || item.status == 'Corporate') {
+      if (item.status.toLowerCase() == 'enabled' || item.status.toLowerCase() == 'corporate') {
         if (!item.url) {
           currentHeader = { ...item, subItems: [] };
           result.push(currentHeader);
@@ -37,7 +37,7 @@ const CustomerNav = ({ customerId }) => {
         }
       }
     });
-
+    
     return result;
   };
 

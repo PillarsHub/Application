@@ -309,3 +309,12 @@ input[type=number] {
   text-overflow: ellipsis;
   white-space: nowrap
 }
+
+.progress {
+  --tblr-progress-bg: var(--tblr-light-darken) !important;
+}
+
+.icon-xl {
+    --tblr-icon-size: 5.5rem;
+    stroke-width: .81
+}

@@ -14,9 +14,7 @@ const Currency = () => {
 
   if (error) return `Error! ${error}`;
 
-  const handleChange = (event) => {
-    const name = event.target.name;
-    const value = event.target.value;
+  const handleChange = (name, value) => {
     setActiveItem(values => ({ ...values, [name]: value }))
   }
 
@@ -121,22 +119,19 @@ const Currency = () => {
           <div className="col-md-4">
             <div className="mb-3">
               <label className="form-label">Symbol</label>
-              <input className="form-control" name="symbol" value={activeItem.symbol || ""} onChange={handleChange} />
-              <span className="text-danger"></span>
+              <TextInput name="symbol" value={activeItem.symbol} onChange={handleChange} />
             </div>
           </div>
           <div className="col-md-4">
             <div className="mb-3">
               <label className="form-label">Decimal Length</label>
-              <input className="form-control" name="decimalLength" value={activeItem.decimalLength || ""} onChange={handleChange} />
-              <span className="text-danger"></span>
+              <TextInput name="decimalLength" value={activeItem.decimalLength} onChange={handleChange} />
             </div>
           </div>
           <div className="col-md-4">
             <div className="mb-3">
               <label className="form-label">Exchange Rate</label>
-              <input className="form-control" name="exchangeRate" value={activeItem.exchangeRate || ""} onChange={handleChange} />
-              <span className="text-danger"></span>
+              <TextInput name="exchangeRate" value={activeItem.exchangeRate} onChange={handleChange} />
             </div>
           </div>
         </div>

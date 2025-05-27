@@ -8,7 +8,6 @@ import { ToLocalDate } from "../../../util/LocalDate";
 import Avatar from '../../../components/avatar';
 import Calendar from '../../../components/calendar';
 import RankAdvance from '../../../components/rankAdvance';
-import RankAdvance2 from '../../../components/rankAdvance2';
 import PeriodDatePicker from "../../../components/periodDatePicker";
 
 import EmptyContent from "../../../components/emptyContent";
@@ -21,6 +20,7 @@ import RecruiterWidget from "./recruiterWidget";
 import OrdersWidget from "./ordersWidget";
 import ProfileWidget from "./profileWidget";
 import DataLoading from "../../../components/dataLoading";
+import CardWidget from "./cardWidget";
 
 var GET_CUSTOMER = gql`query ($nodeIds: [String]!, $periodDate: Date!) {
   customers(idList: $nodeIds) {
@@ -69,6 +69,7 @@ var GET_CUSTOMER = gql`query ($nodeIds: [String]!, $periodDate: Date!) {
   }
   compensationPlans {
     period(date: $periodDate) {
+      begin
       rankAdvance(nodeIds: $nodeIds) {
         nodeId
         rankId
@@ -218,7 +219,12 @@ function Content(widget, customer, compensationPlans, trees, isPreview, widgetVa
   const [carouselId] = useState(() => 'carousel_' + + generateUUID());
 
   if (!compensationPlans) {
-    compensationPlans = [{ period: { rankAdvance: [{ rankId: 10, rankName: 'Example Rank', requirements: [{ conditions: [{ valueId: "Personal Volume", value: 20, required: 20 }, { valueId: "Group Volume", value: 90, required: 200 }] }] }] } }]
+    const periodBegin = new Date().toISOString().split('.')[0] + 'Z';
+    compensationPlans = [{ period: { begin: periodBegin, rankAdvance: [{ nodeId: 'EX456', rankId: 10, rankName: 'Example Rank', requirements: [{ conditions: [
+      { valueId: "Personal Volume", value: 17, required: 20 }, 
+      { valueId: "Group Volume", value: 90, required: 200 },
+      { valueId: "Team Volume", value: 1250, required: 1250 }
+    ] }] }] } }]
   }
 
   if (!customer) {
@@ -227,7 +233,7 @@ function Content(widget, customer, compensationPlans, trees, isPreview, widgetVa
       emailAddress: 'example@pillarshub.com', language: "en",
       phoneNumbers: [{ type: 'Mobile', number: '(555) 555-5555' }, { type: 'Work', number: '(333) 333-3333' }],
       addresses: [{ type: "Shipping", line1: '', line2: '', line3: '', city: '', stateCode: '', zip: '', countryCode: '' }],
-      cards: [{ values: [{ valueName: 'Example', valueId: 'Ex', value: '22' }] }]
+      cards: [{ values: [{ valueName: 'Example', valueId: 'Ex', value: '22' }, { valueName: 'Rank', valueId: 'Rank', value: '10' }, { valueName: 'High Rank', valueId: 'HighRank', value: '10' }] }]
     }
   }
 
@@ -261,57 +267,7 @@ function Content(widget, customer, compensationPlans, trees, isPreview, widgetVa
     var compact = (widget?.settings?.['compact'] ?? false);
     var showCustomer = (widget?.settings?.['customer'] ?? false);
 
-    const cardContent = (pane, value, compact) => {
-      if (compact) {
-        return <>
-          <dd className="col-3">{pane.text}</dd>
-          <dd className="col-9 text-end">{value}</dd>
-        </>
-      } else {
-        return <>
-          <div className="datagrid-title tooltip2">
-            {pane.text}
-            {pane.description && <span className="tooltiptext">{pane.description}</span>}
-          </div>
-          <div className="h2 datagrid-content">
-            {value}
-          </div>
-        </>
-      }
-    }
-
-    if (widget.panes) {
-      return <div className="card-body" style={{ whiteSpace: "nowrap", textOverflow: "ellipsis" }}>
-        {showCustomer && <>
-          <h1 className="d-flex align-items-center">
-            <span className="me-3">
-              <Avatar name={customer?.fullName} url={customer?.profileImage} size="sm" />
-            </span>
-            <span className='cardTitle'>{customer?.fullName}</span>
-          </h1>
-        </>}
-        <div className={compact ? '' : 'datagrid widgetDatagrid'}>
-          {widget.panes.map((pane) => {
-            const emptyValue = isPreview ? pane.values?.length > 0 ? pane.values[0].value : Math.floor(Math.random() * (5000 - 100 + 1)) + 100 : 0;
-            const stat = values?.find((s) => s.valueId == pane.title) ?? { value: emptyValue };
-            const value = loading ? '-' : pane.values?.length > 0 ? pane.values.find((m) => m.value == stat.value)?.text ?? '-' : stat.value;
-            return <div key={pane.title} className={compact ? 'row' : 'datagrid-item'} style={{ color: pane.imageUrl }}>
-              {(cardContent(pane, value, compact))}
-            </div>
-          })}
-        </div>
-      </div>
-    } else {
-      return <div className="card-body">
-        <div className="datagrid widgetDatagrid">
-          {values && values.map((stat) => {
-            return <div key={stat.valueId} className="datagrid-item">
-              {(cardContent({ text: `${stat.valueName} ${stat.valueId == stat.valueName ? `` : `(${stat.valueId})`}` }, stat.value, compact))}
-            </div>
-          })}
-        </div>
-      </div>
-    }
+    return <CardWidget customer={customer} panes={widget.panes} values={values} compact={compact} showCustomer={showCustomer} isPreview={isPreview} loading={loading} />
   }
 
   if (widget.type == WidgetTypes.Banner) {
@@ -354,17 +310,21 @@ function Content(widget, customer, compensationPlans, trees, isPreview, widgetVa
 
   if (widget.type == WidgetTypes.Rank) {
     if (loading) return <><DataLoading /></>
-    let rankAdvance = compensationPlans?.flatMap(plan => plan.period || []).find(period => period.rankAdvance?.length > 0)?.rankAdvance || null;
-    let currentRank = customer?.cards?.[0]?.values.find(v => v.valueId.toLowerCase() == 'rank')?.value ?? 0;
-
-    var showRankId = (widget?.settings?.['showRankId'] ?? false);
-    var itemPercent = (widget?.settings?.['itemPercent'] ?? false);
+    let period = compensationPlans?.flatMap(plan => plan.period || []).find(period => period.rankAdvance?.length > 0) || null;
+    let currentRank = isPreview ? 10 : customer?.cards?.[0]?.values.find(v => v.valueId.toLowerCase() == 'rank')?.value ?? 0;
 
     var valueMap = widget?.panes?.map(p => ({ valueId: p.title, text: p.text, description: p.description }));
 
-    var v2 = false;
-    if (v2) return <RankAdvance2 currentRank={currentRank} ranks={rankAdvance} showRankId={showRankId} showItemPercent={itemPercent ? false : true} valueMap={valueMap} />
-    return <RankAdvance currentRank={currentRank} ranks={rankAdvance} showRankId={showRankId} showItemPercent={itemPercent ? false : true} valueMap={valueMap} />
+    var options = {
+      chart: widget?.settings?.['chartType'] ?? 1,
+      title: widget?.settings?.['titleType'] ?? 1,
+      reqs: widget?.settings?.['requirementType'] ?? 1,
+      tabs: widget?.settings?.['tabType'] ?? 0,
+      showRankId: widget?.settings?.['showRankId'] ?? false,
+      showItemPercent: (widget?.settings?.['itemPercent'] ?? false) ? false : true
+    };
+
+    return <RankAdvance currentRank={currentRank} ranks={period?.rankAdvance || null} options={options} valueMap={valueMap} period={{ begin: period.begin }} isPreview={isPreview} />
   }
 
   if (widget.type == WidgetTypes.Upline) {

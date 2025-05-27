@@ -68,6 +68,7 @@ var GET_CUSTOMER = gql`query ($nodeIds: [String]!, $customerId: String, $periodD
   }
   compensationPlans {
     period(date: $periodDate) {
+      begin
       rankAdvance(nodeIds: $nodeIds) {
         nodeId
         rankId

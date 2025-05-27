@@ -18,10 +18,10 @@ const SortableRow = ({ id, data, internalPages, onEdit, onDelete }) => {
     transition,
   };
 
-  const mapStatus = (status) => {
+  const mapStatus = (status, availability) => {
     switch (status) {
       case "Enabled":
-        return 'Visible';
+        return availability == null || availability.length == 0 ? 'Visible' : 'Conditional';
       case "Corporate":
         return "Corporate";
       case "Disabled":
@@ -46,7 +46,7 @@ const SortableRow = ({ id, data, internalPages, onEdit, onDelete }) => {
       </td>}
       {!data.url && <th className="subheader">{data.title}</th>}
       <td>{page?.title ?? data.url}</td>
-      <td>{mapStatus(data.status)}</td>
+      <td>{mapStatus(data.status, data.availability)}</td>
       <td className={`subheader ${data.url ? '' : 'pt-0 pb-0'}`} >
         <button href="/settings/dashboard" className="btn btn-ghost-secondary btn-icon" onClick={() => onEdit(data.id)}>
           <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="40" height="40" viewBox="0 0 24 24" strokeWidth="1" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1"></path><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z"></path><path d="M16 5l3 3"></path></svg>
@@ -66,7 +66,8 @@ SortableRow.propTypes = {
     title: PropTypes.string.isRequired,
     icon: PropTypes.string.isRequired,
     url: PropTypes.string.isRequired,
-    status: PropTypes.string
+    status: PropTypes.string,
+    availability: PropTypes.any
   }).isRequired,
   internalPages: PropTypes.array.isRequired,
   onEdit: PropTypes.func.isRequired,

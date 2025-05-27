@@ -103,6 +103,7 @@ var GET_CUSTOMER = gql`query ($nodeIds: [String]!, $periodDate: Date!) {
   }
   compensationPlans {
     period(date: $periodDate) {
+      begin
       rankAdvance(nodeIds: $nodeIds) {
         nodeId
         rankId
@@ -165,7 +166,7 @@ const CustomerDetail = () => {
 
   let customer = data.customers[0] ?? { id: params.customerId, cards: [] };
   let currentRank = customer.cards[0]?.values.find(v => v.valueId.toLowerCase() == 'rank')?.value;
-  let rankAdvance = data.compensationPlans.flatMap(plan => plan.period || []).find(period => period.rankAdvance?.length > 0)?.rankAdvance || null;
+  let period = data.compensationPlans.flatMap(plan => plan.period || []).find(period => period.rankAdvance?.length > 0) || null;
   let address = customer.addresses ? customer.addresses[0] : { line1: '' };
   let trees = data.trees;
   let statuses = data.customerStatuses;
@@ -174,6 +175,15 @@ const CustomerDetail = () => {
   if (status.id == "INIT") setStatus(customer.status);
 
   if (GetScope() != undefined) return <><EmptyContent /></>
+
+  var options = {
+    chart:  1,
+    title:  2,
+    reqs:  2,
+    tabs:  1,
+    showRankId:  true,
+    showItemPercent: true
+  };
 
   return <>
     <PageHeader preTitle="Customer Detail" title={customer.fullName} pageId='summary' customerId={customer.id}>
@@ -273,7 +283,7 @@ const CustomerDetail = () => {
           </div>
           <div className="col-md-5 col-xl-4">
             <div className="card">
-              <RankAdvance currentRank={currentRank} ranks={rankAdvance} />
+              <RankAdvance currentRank={currentRank} ranks={period?.rankAdvance || null} options={options} period={{ begin: period.begin }} />
             </div>
           </div>
           <div className="col-md-5 col-xl-4">
