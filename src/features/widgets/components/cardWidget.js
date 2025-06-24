@@ -36,7 +36,7 @@ const CardWidget = ({ customer, panes, values, compact, showCustomer, isPreview,
         {panes.map((pane) => {
           const emptyValue = isPreview ? pane.values?.length > 0 ? pane.values[0].value : Math.floor(Math.random() * (5000 - 100 + 1)) + 100 : 0;
           const stat = values?.find((s) => s.valueId == pane.title) ?? { value: emptyValue };
-          const value = loading ? '-' : pane.values?.length > 0 ? pane.values.find((m) => m.value == stat.value)?.text ?? '-' : truncateDecimals(stat.value, 0).toLocaleString();
+          const value = loading ? '-' : pane.values?.length > 0 ? pane.values.find((m) => m.value == stat.value)?.text ?? '-' : truncateDecimals(stat.value, 0);
           return <div key={pane.title} className={compact ? 'row' : 'datagrid-item'} style={{ color: pane.imageUrl }}>
             {(cardContent(pane, value, compact))}
           </div>
@@ -57,11 +57,19 @@ const CardWidget = ({ customer, panes, values, compact, showCustomer, isPreview,
 }
 
 function truncateDecimals(number, digits) {
-    var multiplier = Math.pow(10, digits);
-    var adjustedNum = number * multiplier;
-    var truncatedNum = Math[adjustedNum < 0 ? 'ceil' : 'floor'](adjustedNum);
+  // Convert string input to number if possible
+  const num = typeof number === 'string' ? Number(number) : number;
 
-    return truncatedNum / multiplier;
+  // Check if num is a valid finite number
+  if (typeof num !== 'number' || !isFinite(num)) {
+    return number;  // Return original value if not a valid number
+  }
+
+  var multiplier = Math.pow(10, digits);
+  var adjustedNum = number * multiplier;
+  var truncatedNum = Math[adjustedNum < 0 ? 'ceil' : 'floor'](adjustedNum);
+
+  return (truncatedNum / multiplier).toLocaleString();
 }
 
 export default CardWidget;
