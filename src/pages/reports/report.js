@@ -80,7 +80,7 @@ const Report = () => {
   }
 
   const handleChange = (name, value) => {
-    setValues((v) => ({ ...v, [name]: value, filterUpdate: true }));
+    setValues((v) => ({ ...v, [name]: value, offset: 0, filterUpdate: true }));
   }
 
   var showPaging = (data?.totalRows ?? 1) > 0;

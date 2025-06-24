@@ -8,7 +8,7 @@ import DataError from '../../components/dataError';
 import Avatar from '../../components/avatar';
 import Pagination from '../../components/pagination';
 
-var GET_PERIOD_DETAILS = gql`query ($period: BigInt, $bonudId: String $offset: Int!, $count: Int!) {
+var GET_PERIOD_DETAILS = gql`query ($period: BigInt, $bonudId: String!, $offset: Int!, $count: Int!) {
   compensationPlans {
     name
     period: periods(at: $period) {

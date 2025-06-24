@@ -11,7 +11,6 @@ import StatusPill from './statusPill';
 import Avatar from '../../components/avatar';
 import LocalDate from "../../util/LocalDate";
 import PeriodDatePicker from '../../components/periodDatePicker';
-import DataCard from '../../components/dataCard';
 import RankAdvance from '../../components/rankAdvance';
 import { SendRequest } from '../../hooks/usePost';
 import EmptyContent from '../../components/emptyContent';
@@ -140,6 +139,7 @@ const CustomerDetail = () => {
   const [status, setStatus] = useState({ id: "INIT", name: "INIT" });
   const [periodDate, setPeriodDate] = useState(new Date().toISOString());
   const [showDelete, setShowDelete] = useState(false);
+  const [showTermDetail, setShowTermDetail] = useState(false);
 
   const { loading, error, data, refetch } = useQuery(GET_CUSTOMER, {
     variables: { nodeIds: [params.customerId], periodDate: periodDate },
@@ -152,6 +152,9 @@ const CustomerDetail = () => {
 
   if (loading) return <DataLoading />;
   if (error) return <DataError error={error} />;
+
+  const handleTermHide = () => setShowTermDetail(false);
+  const handleTermShow = () => setShowTermDetail(true);
 
   const handleHide = () => setShowDelete(false);
   const handleShow = () => setShowDelete(true);
@@ -177,11 +180,11 @@ const CustomerDetail = () => {
   if (GetScope() != undefined) return <><EmptyContent /></>
 
   var options = {
-    chart:  1,
-    title:  2,
-    reqs:  2,
-    tabs:  1,
-    showRankId:  true,
+    chart: 1,
+    title: 2,
+    reqs: 2,
+    tabs: 1,
+    showRankId: true,
     showItemPercent: true
   };
 
@@ -189,10 +192,14 @@ const CustomerDetail = () => {
     <PageHeader preTitle="Customer Detail" title={customer.fullName} pageId='summary' customerId={customer.id}>
       <CardHeader>
         <div className="btn-list">
-          <a href={`/customers/${params.customerId}/shop`} className="btn btn-default">
+
+
+          {/* <a href={`/customers/${params.customerId}/shop`} className="btn btn-default">
             <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-shopping-cart" width="24" height="24" viewBox="0 0 24 24" strokeWidth="1" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M6 19m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path><path d="M17 19m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"></path><path d="M17 17h-11v-14h-2"></path><path d="M6 5l14 1l-1 7h-13"></path></svg>
             Create Order
           </a>
+ */}
+          <PeriodDatePicker value={periodDate} onChange={handlePeriodChange} />
 
           <div className="dropdown">
             <a href="#" className="btn btn-default btn-icon" data-bs-toggle="dropdown" aria-expanded="false">
@@ -312,18 +319,67 @@ const CustomerDetail = () => {
               </div>
             </div>
           </div>
-          <div className="col-12">
+          <div className="col-4">
             <div className="card">
               <div className="card-header">
-                <h3 className="card-title">Business Overview</h3>
-                <div className="card-actions">
-                  <PeriodDatePicker value={periodDate} onChange={handlePeriodChange} />
+                <h3 className="card-title">Terms Overview</h3>
+              </div>
+              <div className="">
+                <div className="datagrid">
+                  <table className="table table-vcenter card-table">
+                    <thead>
+                      <tr>
+                        <th>Term</th>
+                        <th>Name</th>
+                        <th>Value</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {customer.cards[0]?.values && customer.cards[0]?.values.slice().sort((a, b) => a.valueId.localeCompare(b.valueId)).map((value) => {
+                        return <tr key={value.valueId}>
+                          <td><a className="text-reset" href="#" onClick={(e) => { handleTermShow(value.valueId); e.preventDefault(); return false; }}>{value.valueId}</a></td>
+                          <td>{value.valueName}</td>
+                          <td className="text-end">
+                            <a className="text-reset" href="aabb">
+                              {value.value.toLocaleString()}
+                            </a>
+                          </td>
+                        </tr>
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               </div>
-              <div className="card-body">
-                <div className="datagrid">
-                  <DataCard data={customer.cards[0]?.values} />
-                </div>
+            </div>
+          </div>
+          <div className="col-8">
+            <div className="card">
+              <div className="card-header">
+                <h3 className="card-title">Bonuses Overview</h3>
+              </div>
+              <div className="">
+                <table className="table table-vcenter card-table">
+                  <thead>
+                    <tr>
+                      <th>Term</th>
+                      <th>Name</th>
+                      <th>Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {customer.cards[0]?.values && customer.cards[0]?.values.slice().sort((a, b) => a.valueId.localeCompare(b.valueId)).map((value) => {
+                      return <tr key={value.valueId}>
+                        <td>{value.valueId}</td>
+                        <td>{value.valueName}</td>
+                        <td className="text-end">
+                          <a className="text-reset" href="aabb">
+                            {value.value.toLocaleString()}
+                          </a>
+                        </td>
+                      </tr>
+                    })}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
@@ -370,6 +426,45 @@ const CustomerDetail = () => {
       <div className="modal-footer">
         <button type="button" className="btn btn-link link-secondary me-auto" data-bs-dismiss="modal">Cancel</button>
         <button type="button" className="btn btn-danger" onClick={handleDelete}>Delete Customer</button>
+      </div>
+    </Modal>
+
+    <Modal showModal={showTermDetail} onHide={handleTermHide}>
+      <div className="modal-header">
+        <h5 className="modal-title">Term ABCD</h5>
+        <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div className="modal-body">
+
+        <table className="table table-vcenter card-table">
+          <thead></thead>
+          <tbody>
+            <tr>
+              <td>Component</td>
+              <td>CustomerVolume</td>
+            </tr>
+            <tr>
+              <td>SourceVolumeKey</td>
+              <td>QVw</td>
+            </tr>
+            <tr>
+              <td>CustomerTypeKey</td>
+              <td>CustType</td>
+            </tr>
+            <tr>
+              <td>Personal</td>
+              <td>False</td>
+            </tr>
+            <tr>
+              <td>WholesaleTypes</td>
+              <td>1</td>
+            </tr>
+            <tr>
+              <td>RetailTypes</td>
+              <td>2,3</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </Modal>
 

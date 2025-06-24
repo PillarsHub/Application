@@ -52,7 +52,7 @@ const CustomerNav = ({ customerId }) => {
 
         if (visible) {
           if (url) {
-            return <li key={menu.title} className={`nav-item ${activeClass}`}>
+            return <li key={menu.title} className={`nav-item text-center ${activeClass}`}>
               <Link className="nav-link p-0 m-0 p-md-2 m-md-1" to={`${url}${periodId ? '?periodId=' + periodId : ''}`} >
                 <span className="nav-link-icon d-md-none m-0">
                   {menu.icon && parse(menu.icon)}

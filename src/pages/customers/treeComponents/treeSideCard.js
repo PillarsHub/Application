@@ -126,7 +126,7 @@ const TreeSideCard = ({ customerId, periodDate, treeId, showModal, dashboard }) 
   const [data, setData] = useState(undefined);
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
-  
+
   const handleClose = () => setShow(false);
 
   const handleShowPlacemntModel = () => {
@@ -173,16 +173,18 @@ const TreeSideCard = ({ customerId, periodDate, treeId, showModal, dashboard }) 
           <button type="button" className="btn-close text-reset" onClick={handleClose} ></button>
         </div>
       </div>
-      <div className="card-body">
-        <h3 className="card-title" >Upline</h3>
-        <dl className="row">
-          <dd className="col-5">Name</dd>
-          <dd className="col-7 text-end">{customer.tree.upline?.fullName}</dd>
-          <dd className="col-5">Leg</dd>
-          <dd className="col-7 text-end">{customer.tree.uplineLeg}</dd>
-        </dl>
-        {(GetScope() == undefined || (GetScope() == customer.tree.uplineId && customer.tree.uplineLeg == "Holding Tank")) && <button className="btn w-100" onClick={handleShowPlacemntModel}>Change Placement</button>}
-      </div>
+      {GetScope() == undefined && <>
+        <div className="card-body">
+          <h3 className="card-title" >Upline</h3>
+          <dl className="row">
+            <dd className="col-5">Name</dd>
+            <dd className="col-7 text-end">{customer.tree.upline?.fullName}</dd>
+            <dd className="col-5">Leg</dd>
+            <dd className="col-7 text-end">{customer.tree.uplineLeg}</dd>
+          </dl>
+          {(GetScope() == undefined || (GetScope() == customer.tree.uplineId && customer.tree.uplineLeg == "Holding Tank")) && <button className="btn w-100" onClick={handleShowPlacemntModel}>Change Placement</button>}
+        </div>
+      </>}
       {dashboard && dashboard.children.length > 2 && dashboard.children[2].children && <>
         {dashboard && dashboard?.children?.[2]?.children && dashboard.children[2].children.map((card) => {
           return buildCard(card, widgets, customer, compensationPlans, trees, periodDate);

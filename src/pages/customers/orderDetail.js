@@ -307,19 +307,34 @@ const OrderDetail = () => {
 
           <div className="col-md-7 col-xl-8">
             <div className="card card-lg">
-              <div className="card-body">
-                <div className="row">
-                  <div className="col-6">
-                    <p className="h3">Shipping Address</p>
-                    <address>
-                      {address?.line1}<br />
-                      {address?.city}, {address?.state} {address?.zip}<br />
-                      {address?.country}
-                    </address>
-                  </div>
-                  <div className="col-6 text-end">
+              {/* <div className="card-header">
+                <ul className="nav nav-tabs card-header-tabs nav-fill" data-bs-toggle="tabs" role="tablist">
+                  <li className="nav-item" role="presentation">
+                    <a href="#tabs-home-7" className="nav-link active" data-bs-toggle="tab" aria-selected="false" role="tab" tabIndex="-1">Details</a>
+                  </li>
+                  <li className="nav-item" role="presentation">
+                    <a href="#tabs-profile-7" className="nav-link" data-bs-toggle="tab" aria-selected="true" role="tab">Commissions Paid</a>
+                  </li>
+                  <li className="nav-item" role="presentation">
+                    <a href="#tabs-ABC-7" className="nav-link" data-bs-toggle="tab" aria-selected="true" role="tab">History</a>
+                  </li>
+                </ul>
+              </div> */}
 
-                    {/* <dl className="row">
+              {/* <div className="tab-pane active" id="tabs-home-7" role="tabpanel"> */}
+                <div className="card-body">
+                  <div className="row">
+                    <div className="col-6">
+                      <p className="h3">Shipping Address</p>
+                      <address>
+                        {address?.line1}<br />
+                        {address?.city}, {address?.state} {address?.zip}<br />
+                        {address?.country}
+                      </address>
+                    </div>
+                    <div className="col-6 text-end">
+
+                      {/* <dl className="row">
                       <dd className="col-7">Invoice Total</dd>
                       <dd className="col-5 text-end"><strong></strong></dd>
 
@@ -332,62 +347,221 @@ const OrderDetail = () => {
                       <dd className="col-5 text-end"><strong></strong></dd>
                     </dl> */}
 
-                  </div>
-                  {/* <div className="col-12 my-5">
+                    </div>
+                    {/* <div className="col-12 my-5">
                     <h1>Order {order?.id}</h1>
                   </div> */}
-                </div>
-                <table className="table table-transparent table-responsive">
-                  <thead>
-                    <tr>
-                      <th colSpan={1}>Product</th>
-                      <th className="text-center" /* style="width: 1%" */>Qnt</th>
-                      <th className="text-end" /* style="width: 1%" */>Unit</th>
-                      <th className="text-end" /* style="width: 1%" */>Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {order?.lineItems && order?.lineItems.map((item) => {
-                      return <tr key={item.productId}>
-                        <td>
-                          <p className="mb-1">{item.description}</p>
-                        </td>
-                        <td className="text-center">{item.quantity}</td>
-                        <td className="text-end">{item.price.toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</td>
-                        <td className="text-end">{(item.price * item.quantity).toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</td>
+                  </div>
+                  <table className="table table-transparent table-responsive">
+                    <thead>
+                      <tr>
+                        <th colSpan={1}>Product</th>
+                        <th className="text-center" /* style="width: 1%" */>Qnt</th>
+                        <th className="text-end" /* style="width: 1%" */>Unit</th>
+                        <th className="text-end" /* style="width: 1%" */>Amount</th>
                       </tr>
-                    })}
+                    </thead>
+                    <tbody>
+                      {order?.lineItems && order?.lineItems.map((item) => {
+                        return <tr key={item.productId}>
+                          <td>
+                            <p className="mb-1">{item.description}</p>
+                          </td>
+                          <td className="text-center">{item.quantity}</td>
+                          <td className="text-end">{item.price.toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</td>
+                          <td className="text-end">{(item.price * item.quantity).toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</td>
+                        </tr>
+                      })}
 
-                    <tr>
-                      <td colSpan="3" className="strong text-end">Subtotal</td>
-                      <td className="text-end">{order?.subTotal.toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</td>
-                    </tr>
-                    <tr>
-                      <td colSpan="3" className="strong text-end">Shipping</td>
-                      <td className="text-end">{order?.shipping.toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</td>
-                    </tr>
-                    <tr>
-                      <td colSpan="3" className="strong text-end">Tax {order?.taxRate > 0 ? `(${order?.taxRate} %)` : ''} </td>
-                      <td className="text-end">{order?.tax.toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</td>
-                    </tr>
-                    <tr className="table-light">
-                      <td colSpan="3" className="font-weight-bold text-uppercase text-end"><strong>Invoice Total</strong></td>
-                      <td className="font-weight-bold text-end"><strong>{order?.total.toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</strong></td>
-                    </tr>
-                    <tr>
-                      <td colSpan="3" className="font-weight-bold text-uppercase text-end">Total Paid</td>
-                      <td className="font-weight-bold text-end">{totalPaid?.toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</td>
-                    </tr>
-                    <tr>
-                      <td colSpan="3" className="font-weight-bold text-uppercase text-end">Total Due</td>
-                      <td className="font-weight-bold text-end">{(order?.total - totalPaid)?.toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+                      <tr>
+                        <td colSpan="3" className="strong text-end">Subtotal</td>
+                        <td className="text-end">{order?.subTotal.toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</td>
+                      </tr>
+                      <tr>
+                        <td colSpan="3" className="strong text-end">Shipping</td>
+                        <td className="text-end">{order?.shipping.toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</td>
+                      </tr>
+                      <tr>
+                        <td colSpan="3" className="strong text-end">Tax {order?.taxRate > 0 ? `(${order?.taxRate} %)` : ''} </td>
+                        <td className="text-end">{order?.tax.toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</td>
+                      </tr>
+                      <tr className="table-light">
+                        <td colSpan="3" className="font-weight-bold text-uppercase text-end"><strong>Invoice Total</strong></td>
+                        <td className="font-weight-bold text-end"><strong>{order?.total.toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</strong></td>
+                      </tr>
+                      <tr>
+                        <td colSpan="3" className="font-weight-bold text-uppercase text-end">Total Paid</td>
+                        <td className="font-weight-bold text-end">{totalPaid?.toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</td>
+                      </tr>
+                      <tr>
+                        <td colSpan="3" className="font-weight-bold text-uppercase text-end">Total Due</td>
+                        <td className="font-weight-bold text-end">{(order?.total - totalPaid)?.toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              {/* </div> */}
+
+             {/*  <div className="tab-pane" id="tabs-profile-7" role="tabpanel">
+                <div className="">
+                  <div className="table-responsive">
+                    <table className="table card-table table-vcenter text-nowrap datatable table-ellipsis">
+                      <thead>
+                        <tr>
+
+                          <th>Paid to Customer</th>
+                          <th>Customer Id</th>
+                          <th>Bonus Name</th>
+                          <th>Level</th>
+                          <th>Amount</th>
+                          <th>Percent</th>
+                          <th>Volume</th>
+                          <th>Released</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr className="bg-light">
+                          <td className="" colSpan="10">
+                            <b>January 1 2025 Month</b>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td>
+                            <a className="text-reset" href="/Customers/9188AB5CF7/commissions?periodId=45842">
+                              Hunter Cory M Shelstad
+                            </a>
+                          </td>
+                          <td>
+                            <a className="text-reset" href="/Customers/9188AB5CF7/commissions?periodId=45842">
+                              ABCDEFG
+                            </a>
+                          </td>
+                          <td>
+                            <a className="text-reset" href="/customers/9188AB5CF7/commissions/RB Level 1?periodId=45842">
+                              Retail Bonus
+                            </a>
+                          </td>
+                          <td>1</td>
+                          <td>$10.00</td>
+                          <td>100</td>
+                          <td>10</td>
+                          <td>$10.00</td>
+                        </tr>
+                        <tr>
+                        
+                          <td>
+                            <a className="text-reset" href="/Customers/911889/commissions?periodId=45842">
+                              Tawnya Engle
+                            </a>
+                          </td>
+                          <td>
+                            <a className="text-reset" href="/Customers/911889/commissions?periodId=45842">
+                              ENGTSAD
+                            </a>
+                          </td>
+                          <td>
+                            <a className="text-reset" href="/customers/911889/commissions/RB Level 1?periodId=45842">
+                              Retail Bonus
+                            </a>
+                          </td>
+                          <td>1</td>
+                          <td>$10.00</td>
+                          <td>100</td>
+                          <td>10</td>
+                          <td>$10.00</td>
+                        </tr>
+                        <tr>
+
+                          <td>
+                            <a className="text-reset" href="/Customers/15F92/commissions?periodId=45842">
+                              Common Sense Wellness
+                            </a>
+                          </td>
+                          <td>
+                            <a className="text-reset" href="/Customers/15F92/commissions?periodId=45842">
+                              GUTGHSHSS
+                            </a>
+                          </td>
+                          <td>
+                            <a className="text-reset" href="/customers/15F92/commissions/RB Level 1?periodId=45842">
+                              Retail Bonus
+                            </a>
+                          </td>
+                          <td>1</td>
+                          <td>$30.00</td>
+                          <td>100</td>
+                          <td>30</td>
+                          <td>$0.00</td>
+                        </tr>
+                        <tr className="bg-light">
+                          <td className="" colSpan="10">
+                            <b>January 15 2025 Week</b>
+                          </td>
+                        </tr>
+                        <tr>
+
+                          <td>
+                            <a className="text-reset" href="/Customers/813309/commissions?periodId=45842">
+                              Deb Smith
+                            </a>
+                          </td>
+                          <td>
+                            <a className="text-reset" href="/Customers/813309/commissions?periodId=45842">
+                              THSLSYSNB
+                            </a>
+                          </td>
+                          <td>
+                            <a className="text-reset" href="/customers/813309/commissions/RB Level 1?periodId=45842">
+                              Retail Bonus
+                            </a>
+                          </td>
+                          <td>1</td>
+                          <td>$40.00</td>
+                          <td>100</td>
+                          <td>40</td>
+                          <td>$40.00</td>
+                        </tr>
+                        <tr>
+
+                          <td>
+                            <a className="text-reset" href="/Customers/817188/commissions?periodId=45842">
+                              Jay &amp; Norma Chaddick 
+                            </a>
+                          </td>
+                          <td>
+                            <a className="text-reset" href="/Customers/813309/commissions?periodId=45842">
+                              BHGYTTSS
+                            </a>
+                          </td>
+                          <td>
+                            <a className="text-reset" href="/customers/817188/commissions/RB Level 1?periodId=45842">
+                              Retail Bonus
+                            </a>
+                          </td>
+                          <td>1</td>
+                          <td>$30.00</td>
+                          <td>100</td>
+                          <td>30</td>
+                          <td>$30.00</td>
+                        </tr>
+                        <tr className="table-light">
+                          <td className="strong">Total</td>
+                          <td></td>
+                          <td></td>
+                          <td></td>
+                          <td className="strong">$120.00</td>
+                          <td></td>
+                          <td className="strong">120</td>
+                          <td className="strong">$90.00</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div> */}
+
             </div>
           </div>
-
         </div>
       </div>
 

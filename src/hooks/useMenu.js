@@ -48,7 +48,6 @@ export default function useMenu(customerId) {
           setMenu(menus);
         })
         .catch((error) => {
-          alert('Error: ' + JSON.stringify(error))
           setLoading(false);
           setError(error);
           setMenu([]);
