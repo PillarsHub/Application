@@ -36,7 +36,7 @@ const CardWidget = ({ customer, panes, values, compact, showCustomer, isPreview,
         {panes.map((pane) => {
           const emptyValue = isPreview ? pane.values?.length > 0 ? pane.values[0].value : Math.floor(Math.random() * (5000 - 100 + 1)) + 100 : 0;
           const stat = values?.find((s) => s.valueId == pane.title) ?? { value: emptyValue };
-          const value = loading ? '-' : pane.values?.length > 0 ? pane.values.find((m) => m.value == stat.value)?.text ?? '-' : truncateDecimals(stat.value, 0);
+          const value = loading ? '-' : pane.values?.length > 0 ? pane.values.find((m) => m.value == stat.value)?.text ?? '-' : truncateDecimals(stat.valueId, stat.value, 0);
           return <div key={pane.title} className={compact ? 'row' : 'datagrid-item'} style={{ color: pane.imageUrl }}>
             {(cardContent(pane, value, compact))}
           </div>
@@ -56,7 +56,11 @@ const CardWidget = ({ customer, panes, values, compact, showCustomer, isPreview,
   }
 }
 
-function truncateDecimals(number, digits) {
+function truncateDecimals(term, number, digits) {
+
+  if (term?.toLowerCase() == 'handle') return number;
+  if (term?.toLowerCase() == 'phone') return formatPhoneNumber(number);
+
   // Convert string input to number if possible
   const num = typeof number === 'string' ? Number(number) : number;
 
@@ -71,6 +75,27 @@ function truncateDecimals(number, digits) {
 
   return (truncatedNum / multiplier).toLocaleString();
 }
+
+function formatPhoneNumber(raw) {
+  // Remove all non-digit characters
+  const cleaned = raw.replace(/\D/g, '');
+
+  // If it starts with a 1 and is 11 digits, remove the 1 for formatting
+  const hasCountryCode = cleaned.length === 11 && cleaned.startsWith('1');
+  const digits = hasCountryCode ? cleaned.slice(1) : cleaned;
+
+  if (digits.length !== 10) {
+    return raw; // Return original if not 10 digits
+  }
+
+  const areaCode = digits.slice(0, 3);
+  const central = digits.slice(3, 6);
+  const line = digits.slice(6);
+
+  const formatted = `(${areaCode}) ${central}-${line}`;
+  return hasCountryCode ? `+1 ${formatted}` : formatted;
+}
+
 
 export default CardWidget;
 
