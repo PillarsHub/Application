@@ -88,8 +88,6 @@ const CardContent = ({ widget, definitions, updateWidget }) => {
       }
     }
 
-    alert(JSON.stringify(foundDefinition));
-
     setEditItem((v) => ({
       ...v,
       title: value,

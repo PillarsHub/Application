@@ -3,6 +3,7 @@ import { useQuery, gql } from "@apollo/client";
 import { GetScope, GetToken } from '../../features/authentication/hooks/useToken';
 import { SendRequest } from '../../hooks/usePost';
 import PageHeader, { CardHeader } from "../../components/pageHeader";
+import FormatPhoneNumber from "../../util/phoneNumberFormatter";
 import DataLoading from "../../components/dataLoading";
 import StatusPill from "./statusPill";
 import Avatar from "../../components/avatar";
@@ -141,7 +142,7 @@ const Customers = () => {
                       <td>{item.customer.customerType?.name}</td>
                       <td><StatusPill status={item.customer.status} small={true} /></td>
                       <td>
-                        {item.customer.phoneNumbers && item.customer.phoneNumbers.length > 0 && item.customer.phoneNumbers[0].number}
+                        {item.customer.phoneNumbers && item.customer.phoneNumbers.length > 0 && FormatPhoneNumber(item.customer.phoneNumbers[0].number)}
                       </td>
                       <td>{item.customer.emailAddress}</td>
                       <td><LocalDate dateString={item.customer.enrollDate} hideTime={true} /></td>

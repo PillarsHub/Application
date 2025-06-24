@@ -1,5 +1,6 @@
 import React from "react";
 import PropTypes from 'prop-types';
+import FormatPhoneNumber from '../../../util/phoneNumberFormatter';
 import Avatar from '../../../components/avatar';
 
 const CardWidget = ({ customer, panes, values, compact, showCustomer, isPreview, loading }) => {
@@ -59,7 +60,7 @@ const CardWidget = ({ customer, panes, values, compact, showCustomer, isPreview,
 function truncateDecimals(term, number, digits) {
 
   if (term?.toLowerCase() == 'handle') return number;
-  if (term?.toLowerCase() == 'phone') return formatPhoneNumber(number);
+  if (term?.toLowerCase() == 'phone') return FormatPhoneNumber(number);
 
   // Convert string input to number if possible
   const num = typeof number === 'string' ? Number(number) : number;
@@ -74,26 +75,6 @@ function truncateDecimals(term, number, digits) {
   var truncatedNum = Math[adjustedNum < 0 ? 'ceil' : 'floor'](adjustedNum);
 
   return (truncatedNum / multiplier).toLocaleString();
-}
-
-function formatPhoneNumber(raw) {
-  // Remove all non-digit characters
-  const cleaned = raw.replace(/\D/g, '');
-
-  // If it starts with a 1 and is 11 digits, remove the 1 for formatting
-  const hasCountryCode = cleaned.length === 11 && cleaned.startsWith('1');
-  const digits = hasCountryCode ? cleaned.slice(1) : cleaned;
-
-  if (digits.length !== 10) {
-    return raw; // Return original if not 10 digits
-  }
-
-  const areaCode = digits.slice(0, 3);
-  const central = digits.slice(3, 6);
-  const line = digits.slice(6);
-
-  const formatted = `(${areaCode}) ${central}-${line}`;
-  return hasCountryCode ? `+1 ${formatted}` : formatted;
 }
 
 

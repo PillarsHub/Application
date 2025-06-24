@@ -4,6 +4,7 @@ import { useQuery, gql } from "@apollo/client";
 import DataLoading from "../../../components/dataLoading";
 import DataError from "../../../components/dataError";
 import LocalDate from "../../../util/LocalDate";
+import FormatPhoneNumber from "../../../util/phoneNumberFormatter";
 import Avatar from '../../../components/avatar';
 import StatusPill from '../../../pages/customers/statusPill';
 import SocialMediaLink from "../../../components/socialMediaLink";
@@ -76,7 +77,7 @@ const ProfileWidget = ({ customer, widget }) => {
             <dd className="col-5">
               <svg xmlns="http://www.w3.org/2000/svg" className="icon me-2 text-muted" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M5 4h4l2 5l-2.5 1.5a11 11 0 0 0 5 5l1.5 -2.5l5 2v4a2 2 0 0 1 -2 2a16 16 0 0 1 -15 -15a2 2 0 0 1 2 -2"></path><path d="M15 7a2 2 0 0 1 2 2"></path><path d="M15 3a6 6 0 0 1 6 6"></path></svg>
               Phone</dd>
-            <dd className="col-7 text-end">{customer.phoneNumbers && customer.phoneNumbers.length > 0 && customer.phoneNumbers[0].number}</dd>
+            <dd className="col-7 text-end">{customer.phoneNumbers && customer.phoneNumbers.length > 0 && FormatPhoneNumber(customer.phoneNumbers[0].number)}</dd>
 
             <dd className="col-5">
               <svg xmlns="http://www.w3.org/2000/svg" className="icon me-2 text-muted" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M12 20l-3 -3h-2a3 3 0 0 1 -3 -3v-6a3 3 0 0 1 3 -3h10a3 3 0 0 1 3 3v6a3 3 0 0 1 -3 3h-2l-3 3"></path><path d="M8 9l8 0"></path><path d="M8 13l6 0"></path></svg>
