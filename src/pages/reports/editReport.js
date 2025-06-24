@@ -324,6 +324,8 @@ const EditReport = () => {
             <option value="Rank">Rank</option>
             <option value="Tree">Tree</option>
             <option value="CustomerType">CustomerType</option>
+            <option value="OrderType">OrderType</option>
+            <option value="OrderStatus">OrderStatus</option>
           </SelectInput>
         </div>
       </div>

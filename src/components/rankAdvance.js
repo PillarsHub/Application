@@ -71,7 +71,7 @@ const RankAdvance = ({ currentRank, ranks, valueMap, period, options, isPreview 
         fetchHighRank({ nodeIds: customerId })
           .then((result) => {
             var highRankId = result.data.customers?.[0]?.values?.[0].value;
-            const initialRank = ranks.slice().sort((a, b) => a.rankId - b.rankId).find(r => r.rankId > highRankId) || ranks.find(r => r.rankId === highRankId) ||
+            const initialRank = ranks.slice().sort((a, b) => a.rankId - b.rankId).find(r => r.rankId == highRankId) || ranks.find(r => r.rankId === highRankId) ||
               ranks.slice().sort((a, b) => a.rankId - b.rankId).find(r => r.rankId > currentRank) || ranks.find(r => r.rankId === currentRank) || null;
             setHighRank(initialRank);
           })
@@ -505,9 +505,7 @@ const RankAdvance = ({ currentRank, ranks, valueMap, period, options, isPreview 
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon-xl icon icon-tabler icons-tabler-outline icon-tabler-award"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M12 9m-6 0a6 6 0 1 0 12 0a6 6 0 1 0 -12 0" /><path d="M12 15l3.4 5.89l1.598 -3.233l3.598 .232l-3.4 -5.889" /><path d="M6.802 12l-3.4 5.89l3.598 -.233l1.598 3.232l3.4 -5.889" /></svg>
           </span>
           {highRank && <p className="empty-title">{highRank.rankName}{options.showRankId ? ` (${highRank.rankId})` : ''}</p>}
-          {/* <p className="empty-subtitle text-muted">
-          {'The content requested cannot be found.'}
-        </p> */}
+          {!highRank && <p className="empty-title">Your highest rank will be shown here when earned.</p>}
         </div>
       </>
     }

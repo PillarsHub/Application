@@ -62,10 +62,19 @@ const CardContent = ({ widget, definitions, updateWidget }) => {
       });
     });
 
-    if (!foundDefinition && (value.toLowerCase() == "rank" || value.toLowerCase() == "highrank")) {
+    if (!foundDefinition && (value.toLowerCase() == "rank")) {
       foundDefinition = {
         name: "Current Rank",
         valueId: "Rank",
+        comment: "Your rank shows your standing in our direct sales organization. It’s based on your sales, team growth, and contributions. A higher rank means better performance and more recognition."
+      }
+      rankValues = definitions.find(item => item.ranks?.length > 0).ranks.map((rank) => { return { value: rank.id, text: rank.name } });
+    }
+
+    if (!foundDefinition && (value.toLowerCase() == "highrank")) {
+      foundDefinition = {
+        name: "High Rank",
+        valueId: "HighRank",
         comment: "Your rank shows your standing in our direct sales organization. It’s based on your sales, team growth, and contributions. A higher rank means better performance and more recognition."
       }
       rankValues = definitions.find(item => item.ranks?.length > 0).ranks.map((rank) => { return { value: rank.id, text: rank.name } });
@@ -79,6 +88,7 @@ const CardContent = ({ widget, definitions, updateWidget }) => {
       }
     }
 
+    alert(JSON.stringify(foundDefinition));
 
     setEditItem((v) => ({
       ...v,
