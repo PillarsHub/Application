@@ -193,14 +193,16 @@ const CardContent = ({ widget, definitions, updateWidget }) => {
         <div className="row">
           <div className="col-12 mb-3">
             <label className="form-label">Source Term</label>
-            <SelectInput name="title" value={editItem?.title} emptyOption="-- Please select --" onChange={handleTermChange}>
+            {!editItem?.title?.startsWith("customData") && <SelectInput name="title" value={editItem?.title} emptyOption="-- Please select --" onChange={handleTermChange}>
               <optgroup label="Customer Values">
+                <option value="FullName">Customer Name</option>
                 <option value="CustType">Customer Type</option>
                 <option value="Status">Status</option>
                 <option value="Email">Email</option>
                 <option value="Handle">Handle</option>
                 <option value="EnrollDate">Enroll Date</option>
                 <option value="Phone">Phone</option>
+                <option value="customData">Custom Field...</option>
               </optgroup>
               <optgroup label="Commission Values">
                 <option value="Rank">Rank</option>
@@ -211,7 +213,21 @@ const CardContent = ({ widget, definitions, updateWidget }) => {
                   }))
                 })}
               </optgroup>
-            </SelectInput>
+            </SelectInput>}
+            {editItem?.title?.startsWith("customData") ? (
+              <div className="input-group input-group-flat">
+                <span className="input-group-text">
+                  customData.
+                </span>
+                <TextInput
+                  className="form-control ps-0"
+                  name="title"
+                  value={editItem.title === "customData" ? "" : editItem.title.replace(/^customData\.?/, "")}
+                  onChange={(n, v) => handleTermChange(n, `customData.${v}`)}
+                />
+              </div>
+
+            ) : null}
           </div>
           <div className="col-12 mb-3">
             <label className="form-label">Title</label>

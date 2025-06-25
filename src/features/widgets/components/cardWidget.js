@@ -37,7 +37,14 @@ const CardWidget = ({ customer, panes, values, compact, showCustomer, isPreview,
         {panes.map((pane) => {
           const emptyValue = isPreview ? pane.values?.length > 0 ? pane.values[0].value : Math.floor(Math.random() * (5000 - 100 + 1)) + 100 : 0;
           const stat = values?.find((s) => s.valueId == pane.title) ?? { value: emptyValue };
-          const value = loading ? '-' : pane.values?.length > 0 ? pane.values.find((m) => m.value == stat.value)?.text ?? '-' : truncateDecimals(stat.valueId, stat.value, 0);
+          let value = loading ? '-' : pane.values?.length > 0 ? pane.values.find((m) => m.value == stat.value)?.text ?? '-' : truncateDecimals(stat.valueId, stat.value, 0);
+
+          if (pane.title.startsWith("customData")) {
+            const trimmedKey = pane.title.replace(/^customData\./, "");
+            const parsed = typeof customer?.customData === "string" ? {} : customer?.customData;
+            value = parsed?.[trimmedKey] ?? "";
+          }
+
           return <div key={pane.title} className={compact ? 'row' : 'datagrid-item'} style={{ color: pane.imageUrl }}>
             {(cardContent(pane, value, compact))}
           </div>

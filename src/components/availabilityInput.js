@@ -90,7 +90,7 @@ const AvailabilityInput = ({ name, value, resourceName, onChange }) => {
             {value && value.map((requirement, index) => {
               return <tr key={index}>
                 <td>
-                  <SelectInput name="key" value={requirement.key} onChange={(n, v) => handleChange(index, n, v)} emptyText="Select Requirement">
+                  {!requirement.key?.startsWith("customData") && <SelectInput name="key" value={requirement.key} onChange={(n, v) => handleChange(index, n, v)} emptyText="Select Requirement">
                     {hasRank && <option value="Rank">Rank</option>}
                     <option value="CustType">Customer Type</option>
                     <option value="Status">Customer Status</option>
@@ -101,7 +101,23 @@ const AvailabilityInput = ({ name, value, resourceName, onChange }) => {
                         {value.name} ({value.valueId})
                       </option>
                     })}
-                  </SelectInput>
+                    <option value="customData">Custom Field...</option>
+                  </SelectInput>}
+                  {requirement.key?.startsWith("customData") ? (
+                    <div className="input-group input-group-flat">
+                      <span className="input-group-text">
+                        customData.
+                      </span>
+                      <TextInput
+                        className="form-control ps-0"
+                        name="key"
+                        value={requirement.key === "customData" ? "" : requirement.key.replace(/^customData\.?/, "")}
+                        onChange={(n, v) => handleChange(index, n, `customData.${v}`)}
+                      />
+                    </div>
+
+                  ) : null}
+
                 </td>
                 <td>
                   <SelectInput name="operator" value={requirement.operator} onChange={(n, v) => handleChange(index, n, v)}>

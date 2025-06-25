@@ -52,6 +52,7 @@ var GET_CUSTOMER = gql`query ($nodeIds: [String]!, $customerId: String, $periodD
         valueId
       }
     }
+    customData
   }
   trees {
     id

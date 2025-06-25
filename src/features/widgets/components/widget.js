@@ -66,6 +66,7 @@ var GET_CUSTOMER = gql`query ($nodeIds: [String]!, $periodDate: Date!) {
         valueId
       }
     }
+    customData
   }
   compensationPlans {
     period(date: $periodDate) {
@@ -256,6 +257,7 @@ function Content(widget, customer, compensationPlans, trees, isPreview, widgetVa
   if (widget.type == WidgetTypes.Card) {
     var values = [
       ...(customer.cards[0]?.values || []),
+      { valueName: "Customer Name", valueId: "FullName", value: customer.fullName },
       { valueName: "Customer Type", valueId: "CustType", value: customer.customerType.name },
       { valueName: "Status", valueId: "Status", value: customer.status.name },
       { valueName: "Email", valueId: "Email", value: customer.emailAddress },
