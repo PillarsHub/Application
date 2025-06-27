@@ -12,6 +12,7 @@ import TextArea from "../../components/textArea";
 import Switch from "../../components/switch";
 import Modal from "../../components/modal";
 import FilterInput from "./filterInput";
+import NumericInput from "../../components/numericInput";
 
 const filterDelType = "del_filter";
 const columnDelType = "del_column";
@@ -68,10 +69,10 @@ const EditReport = () => {
   const handleDeleteShow = (id, type) => {
     if (type == filterDelType) {
       var fIndex = report.filters.findIndex(f => f.id == id);
-      setActiveItem({ index: fIndex, type: type });
+      setActiveItem({ idx: fIndex, type: type });
     } else {
       var cIndex = report.dataColumns.findIndex(f => f.name == id);
-      setActiveItem({ index: cIndex, type: type });
+      setActiveItem({ idx: cIndex, type: type });
     }
     setShowDelete(true);
   }
@@ -82,9 +83,9 @@ const EditReport = () => {
       var newColumns = r.dataColumns;
 
       if (activeItem.type == filterDelType) {
-        newFilters.splice(activeItem.index, 1);
+        newFilters.splice(activeItem.idx, 1);
       } else {
-        newColumns.splice(activeItem.index, 1);
+        newColumns.splice(activeItem.idx, 1);
       }
 
       return { ...r, filters: newFilters, dataColumns: newColumns }
@@ -95,9 +96,9 @@ const EditReport = () => {
   const handleFilterClose = () => setShowFilter(false);
   const handleFilterShow = (filterId) => {
 
-    var index = report.filters.findIndex(f => f.id == filterId);
-    var item = index > -1 ? report.filters[index] : { inputType: 'Text' };
-    item.index = index;
+    var idx = report.filters.findIndex(f => f.id == filterId);
+    var item = idx > -1 ? report.filters[idx] : { inputType: 'Text' };
+    item.idx = idx;
 
     setActiveItem(item);
     setShowFilter(true);
@@ -106,10 +107,10 @@ const EditReport = () => {
   const handleFilterSubmit = () => {
     setReport(r => {
       var newFilters = r.filters;
-      if (activeItem.index == -1) {
+      if (activeItem.idx == -1) {
         newFilters.push(activeItem);
       } else {
-        newFilters[activeItem.index] = activeItem;
+        newFilters[activeItem.idx] = activeItem;
       }
 
       return { ...r, filters: newFilters }
@@ -121,9 +122,9 @@ const EditReport = () => {
   const handleColumnClose = () => setShowColumn(false);
   const handleColumnShow = (columnName) => {
 
-    var index = report.dataColumns.findIndex(f => f.name == columnName);
-    var item = index > -1 ? report.dataColumns[index] : { dataType: 'String' };
-    item.index = index;
+    var idx = report.dataColumns.findIndex(f => f.name == columnName);
+    var item = idx > -1 ? report.dataColumns[idx] : { dataType: 'String' };
+    item.idx = idx;
 
     setActiveItem(item);
     setShowColumn(true);
@@ -132,10 +133,10 @@ const EditReport = () => {
   const handleColumnSubmit = () => {
     setReport(r => {
       var newColumns = r.dataColumns;
-      if (activeItem.index == -1) {
+      if (activeItem.idx == -1) {
         newColumns.push(activeItem);
       } else {
-        newColumns[activeItem.index] = activeItem;
+        newColumns[activeItem.idx] = activeItem;
       }
 
       return { ...r, dataColumns: newColumns }
@@ -254,6 +255,7 @@ const EditReport = () => {
                       <tr>
                         <th>Name</th>
                         <th>Title</th>
+                        <th>Index</th>
                         <th>Type</th>
                         <th>Skip row if empty</th>
                         <th className="w-1"></th>
@@ -264,6 +266,7 @@ const EditReport = () => {
                         return <tr key={column.name}>
                           <td>{column.name}</td>
                           <td>{column.title}</td>
+                          <td>{column.index}</td>
                           <td>{column.dataType}</td>
                           <td>{column.hideRowIfEmpty ? 'Yes' : "No"}</td>
                           <td>
@@ -354,7 +357,7 @@ const EditReport = () => {
           <TextInput name="title" value={activeItem?.title} onChange={handleActiveChange} />
         </div>
         <div className="row">
-          <div className="col-12">
+          <div className="col-8">
             <div className="mb-3">
               <label className="form-label">Type</label>
               <SelectInput name="dataType" value={activeItem?.dataType} onChange={handleActiveChange} >
@@ -369,6 +372,12 @@ const EditReport = () => {
                 <option value="Percent">Percent</option>
                 <option value="Image">Image</option>
               </SelectInput>
+            </div>
+          </div>
+          <div className="col-4">
+            <div className="mb-3">
+              <label className="form-label">Index</label>
+              <NumericInput name="index" value={activeItem?.index ?? 0} onChange={(name, value) => handleActiveChange(name, value === 0 ? null : value)}  />
             </div>
           </div>
           <div className="col-4">
