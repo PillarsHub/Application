@@ -1,6 +1,7 @@
 
 
 function FormatPhoneNumber(raw) {
+  if (typeof raw !== 'string') return raw;
   // Remove all non-digit characters
   const cleaned = raw.replace(/\D/g, '');
 
