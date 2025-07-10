@@ -32,12 +32,6 @@ var GET_PERIOD_DETAILS = gql`query ($period: BigInt, $bonudId: String!, $offset:
           fullName
           profileImage
         }
-        details {
-          amount
-          source {
-            externalId
-          }
-        }
       }
     }
     ranks{
