@@ -370,9 +370,8 @@ const RankAdvance = ({ currentRank, ranks, valueMap, period, options, isPreview 
         </li>
       </ul>
     </div>}
-    {activeTab !== 3 && options.chart > 0 && options.title != 2 && <div className={`${options.chart == 2 ? 'm-auto' : ''}`}> <Chart key={options.chart} options={chart} series={chart.series} type={chart.chart.type} height={chart.chart.height} /></div >}
-    {
-      activeTab !== 3 && options.title == 2 && <div className={`row ${options.chart == 2 ? 'm-auto' : ''}`}>
+    {activeTab !== 3 && options.chart > 0 && options.title == 1 && <div className={`${options.chart == 2 ? 'm-auto' : ''}`}> <Chart key={options.chart} options={chart} series={chart.series} type={chart.chart.type} height={chart.chart.height} /></div >}
+    {activeTab !== 3 && options.title == 2 && <div className={`row ${options.chart == 2 ? 'm-auto' : ''}`}>
         <div className="col ms-3">
           <button className="page-link tab-link text-muted" style={{ height: "100%", float: "left" }} onClick={handlePrevRank}>
             <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><polyline points="15 6 9 12 15 18" /></svg>
@@ -383,6 +382,23 @@ const RankAdvance = ({ currentRank, ranks, valueMap, period, options, isPreview 
           <h3 className="card-title text-center ms-auto" style={{ color: "var(--tblr-card-color)" }}>{activeRank.rankName}{options.showRankId ? ` (${activeRank.rankId})` : ''}</h3>
         </div>
         <div className="col me-3">
+          <button className="page-link tab-link ms-auto text-muted" style={{ height: "100%", float: "right" }} onClick={handleNextRank}>
+            <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><polyline points="9 6 15 12 9 18" /></svg>
+          </button>
+        </div>
+      </div>
+    }
+    {activeTab !== 3 && options.title == 3 && <div className={`row ${options.chart == 2 ? 'm-auto' : ''}`}>
+        {options.chart > 0 && <Chart key={options.chart} options={chart} series={chart.series} type={chart.chart.type} height={chart.chart.height} />}
+        <div className="col">
+          <button className="page-link tab-link text-muted" style={{ height: "100%", float: "left" }} onClick={handlePrevRank}>
+            <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><polyline points="15 6 9 12 15 18" /></svg>
+          </button>
+        </div>
+        <div className="col-auto overflow-hidden">
+          <h3 className="card-title text-center ms-auto mt-2" style={{ color: "var(--tblr-card-color)" }}>{activeRank.rankName}{options.showRankId ? ` (${activeRank.rankId})` : ''}</h3>
+        </div>
+        <div className="col">
           <button className="page-link tab-link ms-auto text-muted" style={{ height: "100%", float: "right" }} onClick={handleNextRank}>
             <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><polyline points="9 6 15 12 9 18" /></svg>
           </button>

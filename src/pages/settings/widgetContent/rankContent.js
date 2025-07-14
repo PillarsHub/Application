@@ -145,7 +145,8 @@ const RankContent = ({ widget, definitions, updateWidget }) => {
             <label className="form-label">Rank Title Position</label>
             <SelectInput name="titleType" value={widget?.settings?.['titleType']} onChange={handleWidgetSettingsChange} >
               <option value="1">Header Title</option>
-              <option value="2">Under Chart</option>
+              <option value="2">Centered</option>
+              <option value="3">Under Chart</option>
             </SelectInput>
           </div>
           <div className="col-6 mb-3">

@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom"
 import { useQuery, gql } from "@apollo/client";
 import { SendRequest } from "../../hooks/usePost";
 import { GetToken, GetScope } from "../../features/authentication/hooks/useToken";
+import Tabs, { Tab } from "../../components/tabs";
 import PageHeader from "../../components/pageHeader";
 import DataLoading from "../../components/dataLoading";
 import NumericInput from "../../components/numericInput";
@@ -11,6 +12,7 @@ import AutoComplete from "../../components/autocomplete";
 import LocalDate from "../../util/LocalDate";
 import DataError from "../../components/dataError";
 import Modal from "../../components/modal";
+import OrderDetailBonuses from './orderDetailBonuses';
 
 var GET_DATA = gql`query ($orderids: [String]!, $nodeIds: [String]!) {
     customers(idList: $nodeIds) {
@@ -90,7 +92,11 @@ const OrderDetail = () => {
   });
 
   let showOrderMenu = GetToken()?.environmentId == 10432;
-  if (GetScope()) showOrderMenu = false;
+  let hasScope = false;
+  if (GetScope()) {
+    showOrderMenu = false;
+    hasScope = true;
+  }
 
   useEffect(() => {
     if (data) {
@@ -306,22 +312,9 @@ const OrderDetail = () => {
           </div>
 
           <div className="col-md-7 col-xl-8">
-            <div className="card card-lg">
-              {/* <div className="card-header">
-                <ul className="nav nav-tabs card-header-tabs nav-fill" data-bs-toggle="tabs" role="tablist">
-                  <li className="nav-item" role="presentation">
-                    <a href="#tabs-home-7" className="nav-link active" data-bs-toggle="tab" aria-selected="false" role="tab" tabIndex="-1">Details</a>
-                  </li>
-                  <li className="nav-item" role="presentation">
-                    <a href="#tabs-profile-7" className="nav-link" data-bs-toggle="tab" aria-selected="true" role="tab">Commissions Paid</a>
-                  </li>
-                  <li className="nav-item" role="presentation">
-                    <a href="#tabs-ABC-7" className="nav-link" data-bs-toggle="tab" aria-selected="true" role="tab">History</a>
-                  </li>
-                </ul>
-              </div> */}
 
-              {/* <div className="tab-pane active" id="tabs-home-7" role="tabpanel"> */}
+            <Tabs showTabs={!hasScope} fill={true}>
+              <Tab title="Details">
                 <div className="card-body">
                   <div className="row">
                     <div className="col-6">
@@ -400,167 +393,11 @@ const OrderDetail = () => {
                     </tbody>
                   </table>
                 </div>
-              {/* </div> */}
-
-             {/*  <div className="tab-pane" id="tabs-profile-7" role="tabpanel">
-                <div className="">
-                  <div className="table-responsive">
-                    <table className="table card-table table-vcenter text-nowrap datatable table-ellipsis">
-                      <thead>
-                        <tr>
-
-                          <th>Paid to Customer</th>
-                          <th>Customer Id</th>
-                          <th>Bonus Name</th>
-                          <th>Level</th>
-                          <th>Amount</th>
-                          <th>Percent</th>
-                          <th>Volume</th>
-                          <th>Released</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr className="bg-light">
-                          <td className="" colSpan="10">
-                            <b>January 1 2025 Month</b>
-                          </td>
-                        </tr>
-                        <tr>
-                          <td>
-                            <a className="text-reset" href="/Customers/9188AB5CF7/commissions?periodId=45842">
-                              Hunter Cory M Shelstad
-                            </a>
-                          </td>
-                          <td>
-                            <a className="text-reset" href="/Customers/9188AB5CF7/commissions?periodId=45842">
-                              ABCDEFG
-                            </a>
-                          </td>
-                          <td>
-                            <a className="text-reset" href="/customers/9188AB5CF7/commissions/RB Level 1?periodId=45842">
-                              Retail Bonus
-                            </a>
-                          </td>
-                          <td>1</td>
-                          <td>$10.00</td>
-                          <td>100</td>
-                          <td>10</td>
-                          <td>$10.00</td>
-                        </tr>
-                        <tr>
-                        
-                          <td>
-                            <a className="text-reset" href="/Customers/911889/commissions?periodId=45842">
-                              Tawnya Engle
-                            </a>
-                          </td>
-                          <td>
-                            <a className="text-reset" href="/Customers/911889/commissions?periodId=45842">
-                              ENGTSAD
-                            </a>
-                          </td>
-                          <td>
-                            <a className="text-reset" href="/customers/911889/commissions/RB Level 1?periodId=45842">
-                              Retail Bonus
-                            </a>
-                          </td>
-                          <td>1</td>
-                          <td>$10.00</td>
-                          <td>100</td>
-                          <td>10</td>
-                          <td>$10.00</td>
-                        </tr>
-                        <tr>
-
-                          <td>
-                            <a className="text-reset" href="/Customers/15F92/commissions?periodId=45842">
-                              Common Sense Wellness
-                            </a>
-                          </td>
-                          <td>
-                            <a className="text-reset" href="/Customers/15F92/commissions?periodId=45842">
-                              GUTGHSHSS
-                            </a>
-                          </td>
-                          <td>
-                            <a className="text-reset" href="/customers/15F92/commissions/RB Level 1?periodId=45842">
-                              Retail Bonus
-                            </a>
-                          </td>
-                          <td>1</td>
-                          <td>$30.00</td>
-                          <td>100</td>
-                          <td>30</td>
-                          <td>$0.00</td>
-                        </tr>
-                        <tr className="bg-light">
-                          <td className="" colSpan="10">
-                            <b>January 15 2025 Week</b>
-                          </td>
-                        </tr>
-                        <tr>
-
-                          <td>
-                            <a className="text-reset" href="/Customers/813309/commissions?periodId=45842">
-                              Deb Smith
-                            </a>
-                          </td>
-                          <td>
-                            <a className="text-reset" href="/Customers/813309/commissions?periodId=45842">
-                              THSLSYSNB
-                            </a>
-                          </td>
-                          <td>
-                            <a className="text-reset" href="/customers/813309/commissions/RB Level 1?periodId=45842">
-                              Retail Bonus
-                            </a>
-                          </td>
-                          <td>1</td>
-                          <td>$40.00</td>
-                          <td>100</td>
-                          <td>40</td>
-                          <td>$40.00</td>
-                        </tr>
-                        <tr>
-
-                          <td>
-                            <a className="text-reset" href="/Customers/817188/commissions?periodId=45842">
-                              Jay &amp; Norma Chaddick 
-                            </a>
-                          </td>
-                          <td>
-                            <a className="text-reset" href="/Customers/813309/commissions?periodId=45842">
-                              BHGYTTSS
-                            </a>
-                          </td>
-                          <td>
-                            <a className="text-reset" href="/customers/817188/commissions/RB Level 1?periodId=45842">
-                              Retail Bonus
-                            </a>
-                          </td>
-                          <td>1</td>
-                          <td>$30.00</td>
-                          <td>100</td>
-                          <td>30</td>
-                          <td>$30.00</td>
-                        </tr>
-                        <tr className="table-light">
-                          <td className="strong">Total</td>
-                          <td></td>
-                          <td></td>
-                          <td></td>
-                          <td className="strong">$120.00</td>
-                          <td></td>
-                          <td className="strong">120</td>
-                          <td className="strong">$90.00</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div> */}
-
-            </div>
+              </Tab>
+              {!hasScope && <Tab title="Commissions">
+                <OrderDetailBonuses orderId={params.orderId} />
+              </Tab>}
+            </Tabs>
           </div>
         </div>
       </div>

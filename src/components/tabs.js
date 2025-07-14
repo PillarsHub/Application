@@ -1,7 +1,7 @@
 import React, { useState, Children } from 'react';
 import PropTypes from 'prop-types';
 
-const Tabs = ({ children }) => {
+const Tabs = ({ showTabs = true, fill = false, children }) => {
   const [activeTab, setActiveTab] = useState(0);
 
   const handleTabClick = (index) => {
@@ -12,11 +12,11 @@ const Tabs = ({ children }) => {
 
   return <>
     <div className="card">
-      <div className="card-header">
-        <ul className="nav nav-tabs card-header-tabs">
+      <div className={`card-header ${showTabs ? '' : 'd-none'}`}>
+        <ul className={`nav nav-tabs card-header-tabs ${fill ? 'nav-fill' : ''}`}>
           {tabs.map((tab, index) => (
             <li key={index} className="nav-item">
-              <a href="#" className={`nav-link ${index === activeTab ? 'active' : ''}`} onClick={(e) => { handleTabClick(index); e.preventDefault(); return false;}}>
+              <a href="#" className={`nav-link ${index === activeTab ? 'active' : ''}`} onClick={(e) => { handleTabClick(index); e.preventDefault(); return false; }}>
                 {tab.props.title}
               </a>
             </li>
@@ -43,5 +43,7 @@ Tab.propTypes = {
 };
 
 Tabs.propTypes = {
+  showTabs: PropTypes.bool,
+  fill: PropTypes.bool,
   children: PropTypes.node.isRequired
 };

@@ -6,6 +6,7 @@ import PageHeader from "../../../components/pageHeader";
 import AccountNav from "./accountNav";
 import Switch from "../../../components/switch";
 import DataLoading from "../../../components/dataLoading";
+import DataError from "../../../components/dataError";
 
 var GET_DATA = gql`query ($nodeIds: [String]!) {
   customers (idList: $nodeIds) {
@@ -55,7 +56,7 @@ const CustomerTreeSettings = () => {
   }, [data])
 
   if (loading) return <DataLoading />
-  if (error) return `Error! ${error}`;
+  if (error) return <DataError error={error} />
 
   const handleChange = (treeId, name, value) => {
     setPreferences(prevPreferences => {
