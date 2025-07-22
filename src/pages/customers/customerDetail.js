@@ -290,7 +290,7 @@ const CustomerDetail = () => {
           </div>
           <div className="col-md-5 col-xl-4">
             <div className="card">
-              <RankAdvance currentRank={currentRank} ranks={period?.rankAdvance || null} options={options} period={{ begin: period.begin }} />
+              <RankAdvance currentRank={currentRank} ranks={period?.rankAdvance || null} options={options} period={{ begin: period?.begin }} />
             </div>
           </div>
           <div className="col-md-5 col-xl-4">

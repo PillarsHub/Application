@@ -2,6 +2,7 @@ import React from "react-dom/client";
 import PropTypes from 'prop-types';
 import Avatar from '../../../components/avatar';
 import Widget from "../../../features/widgets/components/widget";
+import EmptyContent from "../../../components/emptyContent";
 
 const TreeNode = ({ node, dashboard, trees, date }) => {
 
@@ -101,7 +102,9 @@ const TreeNode = ({ node, dashboard, trees, date }) => {
 function buildCard(card, widgets, customer, compensationPlans, trees, date) {
   if ((card?.widgetId || card?.children) && widgets !== undefined) {
     let widget = widgets.find((w) => w.id === card?.widgetId ?? '');
-    if (!widget && (!card.children || card.children.length == 0)) return <></>
+    if (!widget && (!card.children || card.children.length == 0)) return <div className="card">
+      <EmptyContent title="This node is hidden" text="" />
+    </div>
 
     return <div key={card?.id} className={`col-sm-12 col-lg-${card?.columns > 6 ? '12' : '6'} col-xl-${card?.columns}`}>
       {card?.widgetId && widget && <Widget key={card?.widgetId} widget={widget} customer={customer} compensationPlans={compensationPlans} trees={trees} date={date} setDate={() => { }} supressQuery={true} />}
