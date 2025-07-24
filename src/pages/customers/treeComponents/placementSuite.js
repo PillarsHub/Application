@@ -90,7 +90,7 @@ const PlacementSuite = ({ nodeId, treeId, shows, onHide, handlePlaceNode }) => {
     <div className="card-footer">
       <div className="alert alert-warning" role="alert">
         <h4 className="alert-title">Commissions Disclaimer</h4>
-        <div className="text-muted">Any Circle Sales commission paid on the Affiliate being placed for the open commission month, will be debited from your monthly commission and paid to the new sponsor.</div>
+        <div className="text-muted">Any Sponsor Tree-based commission paid on the Brand Partner being placed for the open commission month will be removed from your monthly commission and paid to the new Sponsor.</div>
       </div>
     </div>
   </OffCanvas>
