@@ -91,7 +91,7 @@ const ChangePlacementModal = ({ tree, treeId, placement, refreshNode }) => {
         }
       </div>
       {placement?.disclamerId && <>
-        <Switch onChange={handleDisclamer} value={disclamer} title="I understand the commission disclaimer and that the move is final once completed" />
+        <Switch onChange={handleDisclamer} value={disclamer} title="I understand that all tree-based sponsor commissions I would have received during an open period for activities of this person will be removed from my commissions and paid to this person's new sponsor." />
       </>}
     </div>
     <div className="modal-footer">
