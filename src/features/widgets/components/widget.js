@@ -288,7 +288,7 @@ function Content(widget, customer, compensationPlans, trees, isPreview, widgetVa
     let period = compensationPlans?.flatMap(plan => plan.period || []).find(period => period.rankAdvance?.length > 0) || null;
     let currentRank = isPreview ? 10 : customer?.cards?.[0]?.values.find(v => v.valueId.toLowerCase() == 'rank')?.value ?? 0;
 
-    var valueMap = widget?.panes?.map(p => ({ valueId: p.title, text: p.text, description: p.description }));
+    var valueMap = widget?.panes?.map(p => ({ valueId: p.title, text: p.text, description: p.description, values: p.values }));
 
     var options = {
       chart: widget?.settings?.['chartType'] ?? 1,

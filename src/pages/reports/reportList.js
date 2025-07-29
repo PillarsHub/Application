@@ -20,6 +20,7 @@ const ReportList = ({ categoryId, customerId }) => {
             <th>Name</th>
             <th className="d-none d-sm-table-cell text-start">description</th>
             {!hasScope && <>
+              <th className="w-1">Index</th>
               <th className="d-none d-sm-table-cell text-start">Visibility</th>
               <th className="d-none d-sm-table-cell text-start w-1"></th>
             </>}
@@ -40,6 +41,9 @@ const ReportList = ({ categoryId, customerId }) => {
                 {report.description}
               </td>
               {!hasScope && <>
+                <td className="text-muted d-none d-sm-table-cell">
+                  {report.displayIndex}
+                </td>
                 <td className="text-muted d-none d-sm-table-cell">
                   {report.visibility}
                 </td>

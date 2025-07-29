@@ -163,15 +163,23 @@ const EditReport = () => {
           <div className="card">
             <div className="card-body">
               <div className="row">
-                <div className="col-8 mb-3">
+                <div className="col-5 mb-3">
                   <label className="form-label">Name</label>
                   <TextInput name="name" value={report.name} onChange={handleChange} />
                 </div>
-                <div className="col-4 mb-3">
+                <div className="col-2 mb-3">
+                  <label className="form-label">Category</label>
+                  <TextInput name="categoryId" value={report.categoryId} onChange={handleChange} />
+                </div>
+                <div className="col-2 mb-3">
+                  <label className="form-label">Index</label>
+                  <TextInput name="displayIndex" value={report.displayIndex} onChange={handleChange} />
+                </div>
+                <div className="col-3 mb-3">
                   <label className="form-label">Visibility</label>
                   <SelectInput name="visibility" value={report.visibility} onChange={handleChange} >
-                    <option>Corporate</option>
-                    <option>BackOffice</option>
+                    <option value="Corporate">Corporate</option>
+                    <option value="BackOffice">BackOffice</option>
                   </SelectInput>
                 </div>
                 <div className="col-12">
@@ -377,7 +385,7 @@ const EditReport = () => {
           <div className="col-4">
             <div className="mb-3">
               <label className="form-label">Index</label>
-              <NumericInput name="index" value={activeItem?.index ?? 0} onChange={(name, value) => handleActiveChange(name, value === 0 ? null : value)}  />
+              <NumericInput name="index" value={activeItem?.index ?? 0} onChange={(name, value) => handleActiveChange(name, value === 0 ? null : value)} />
             </div>
           </div>
           <div className="col-4">

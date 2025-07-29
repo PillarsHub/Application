@@ -37,30 +37,7 @@ var GET_CUSTOMERS = gql`query($offset: Int!, $first: Int!) {
         number
       }
     }
-  }  
-  customers(offset: 0, first: 10) {
-    id
-    companyName
-    fullName
-    enrollDate
-    profileImage
-    webAlias
-    scopeLevel
-    status{
-      id
-      name
-      statusClass
-    }
-    customerType {
-      id
-      name
-    }
-    emailAddress
-    phoneNumbers {
-      number
-    }
   }
-  totalCustomers
 }`;
 
 const Customers = () => {
@@ -71,9 +48,7 @@ const Customers = () => {
 
   useEffect(() => {
     if (data) {
-      setRecentList(data.recentCustomers.length > 0 ?
-        data.recentCustomers :
-        data.customers.map(c => ({ pinned: false, customer: c })))
+      setRecentList(data.recentCustomers.length > 0 ? data.recentCustomers : [])
     }
   }, [data])
 

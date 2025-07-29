@@ -372,38 +372,38 @@ const RankAdvance = ({ currentRank, ranks, valueMap, period, options, isPreview 
     </div>}
     {activeTab !== 3 && options.chart > 0 && options.title == 1 && <div className={`${options.chart == 2 ? 'm-auto' : ''}`}> <Chart key={options.chart} options={chart} series={chart.series} type={chart.chart.type} height={chart.chart.height} /></div >}
     {activeTab !== 3 && options.title == 2 && <div className={`row ${options.chart == 2 ? 'm-auto' : ''}`}>
-        <div className="col ms-3">
-          <button className="page-link tab-link text-muted" style={{ height: "100%", float: "left" }} onClick={handlePrevRank}>
-            <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><polyline points="15 6 9 12 15 18" /></svg>
-          </button>
-        </div>
-        <div className="col-auto overflow-hidden">
-          {options.chart > 0 && <Chart key={options.chart} options={chart} series={chart.series} type={chart.chart.type} height={chart.chart.height} />}
-          <h3 className="card-title text-center ms-auto" style={{ color: "var(--tblr-card-color)" }}>{activeRank.rankName}{options.showRankId ? ` (${activeRank.rankId})` : ''}</h3>
-        </div>
-        <div className="col me-3">
-          <button className="page-link tab-link ms-auto text-muted" style={{ height: "100%", float: "right" }} onClick={handleNextRank}>
-            <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><polyline points="9 6 15 12 9 18" /></svg>
-          </button>
-        </div>
+      <div className="col ms-3">
+        <button className="page-link tab-link text-muted" style={{ height: "100%", float: "left" }} onClick={handlePrevRank}>
+          <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><polyline points="15 6 9 12 15 18" /></svg>
+        </button>
       </div>
+      <div className="col-auto overflow-hidden">
+        {options.chart > 0 && <Chart key={options.chart} options={chart} series={chart.series} type={chart.chart.type} height={chart.chart.height} />}
+        <h3 className="card-title text-center ms-auto" style={{ color: "var(--tblr-card-color)" }}>{activeRank.rankName}{options.showRankId ? ` (${activeRank.rankId})` : ''}</h3>
+      </div>
+      <div className="col me-3">
+        <button className="page-link tab-link ms-auto text-muted" style={{ height: "100%", float: "right" }} onClick={handleNextRank}>
+          <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><polyline points="9 6 15 12 9 18" /></svg>
+        </button>
+      </div>
+    </div>
     }
     {activeTab !== 3 && options.title == 3 && <div className={`row ${options.chart == 2 ? 'm-auto' : ''}`}>
-        {options.chart > 0 && <Chart key={options.chart} options={chart} series={chart.series} type={chart.chart.type} height={chart.chart.height} />}
-        <div className="col">
-          <button className="page-link tab-link text-muted" style={{ height: "100%", float: "left" }} onClick={handlePrevRank}>
-            <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><polyline points="15 6 9 12 15 18" /></svg>
-          </button>
-        </div>
-        <div className="col-auto overflow-hidden">
-          <h3 className="card-title text-center ms-auto mt-2" style={{ color: "var(--tblr-card-color)" }}>{activeRank.rankName}{options.showRankId ? ` (${activeRank.rankId})` : ''}</h3>
-        </div>
-        <div className="col">
-          <button className="page-link tab-link ms-auto text-muted" style={{ height: "100%", float: "right" }} onClick={handleNextRank}>
-            <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><polyline points="9 6 15 12 9 18" /></svg>
-          </button>
-        </div>
+      {options.chart > 0 && <Chart key={options.chart} options={chart} series={chart.series} type={chart.chart.type} height={chart.chart.height} />}
+      <div className="col">
+        <button className="page-link tab-link text-muted" style={{ height: "100%", float: "left" }} onClick={handlePrevRank}>
+          <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><polyline points="15 6 9 12 15 18" /></svg>
+        </button>
       </div>
+      <div className="col-auto overflow-hidden">
+        <h3 className="card-title text-center ms-auto mt-2" style={{ color: "var(--tblr-card-color)" }}>{activeRank.rankName}{options.showRankId ? ` (${activeRank.rankId})` : ''}</h3>
+      </div>
+      <div className="col">
+        <button className="page-link tab-link ms-auto text-muted" style={{ height: "100%", float: "right" }} onClick={handleNextRank}>
+          <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><polyline points="9 6 15 12 9 18" /></svg>
+        </button>
+      </div>
+    </div>
     }
     {
       activeTab !== 3 && options.reqs == 1 && <table className="table card-table table-vcenter">
@@ -420,13 +420,14 @@ const RankAdvance = ({ currentRank, ranks, valueMap, period, options, isPreview 
             return requirement?.conditions && requirement.conditions.map((condition) => {
               let value = valueMap?.find(m => m.valueId == condition.valueId);
               var percent = getPercent(condition.value, condition.required);
+              var hasMap = value?.values?.length > 0;
 
               return <tr key={condition.valueId}>
                 <td>
                   {value?.text ?? condition.valueId}
                 </td>
-                <td>{truncateDecimals(condition.value, 0).toLocaleString()}</td>
-                <td>{getRankRequirements(condition, true)}</td>
+                <td>{truncateDecimals(condition.value, value?.values, 0)}</td>
+                <td>{!hasMap && <span>{getRankRequirements(condition, true)}</span>}</td>
                 {options.showItemPercent && <td className="w-25">
                   <div className="progress progress-xs">
                     <div className="progress-bar bg-primary" style={{ width: percent + '%' }} ></div>
@@ -447,6 +448,7 @@ const RankAdvance = ({ currentRank, ranks, valueMap, period, options, isPreview 
             var color = "bg-success";
             if (percent < 100) color = "bg-warning";
             if (percent < 50) color = "bg-danger";
+            var hasMap = value?.values?.length > 0;
 
             return <div key={condition.valueId} className="mb-2">
               <div className="row">
@@ -454,7 +456,7 @@ const RankAdvance = ({ currentRank, ranks, valueMap, period, options, isPreview 
                   <label className="form-label">{value?.text ?? condition.valueId} {getCapText(condition)}</label>
                 </div>
                 <div className="col-auto text-end">
-                  {truncateDecimals(condition.value, 0).toLocaleString()} / {getRankRequirements(condition, false)}
+                  {truncateDecimals(condition.value, value?.values, 0)} {!hasMap && <span>/ {getRankRequirements(condition, false)}</span>}
                 </div>
                 {options.showItemPercent && <div className="col-12">
                   <div className="progress progress-sm">
@@ -491,6 +493,7 @@ const RankAdvance = ({ currentRank, ranks, valueMap, period, options, isPreview 
                 var color = "bg-success";
                 if (percent < 100) color = "bg-warning";
                 if (percent < 50) color = "bg-danger";
+                var hasMap = value?.values?.length > 0;
 
                 return <div key={condition.valueId} className="mb-2">
                   <div className="row">
@@ -498,7 +501,7 @@ const RankAdvance = ({ currentRank, ranks, valueMap, period, options, isPreview 
                       <label className="form-label">{value?.text ?? condition.valueId} {getCapText(condition)}</label>
                     </div>
                     <div className="col-auto text-end">
-                      {truncateDecimals(condition.value, 0).toLocaleString()} / {getRankRequirements(condition, false)}
+                      {truncateDecimals(condition.value, value?.values, 0)} {!hasMap && <span>/ {getRankRequirements(condition, false)}</span>}
                     </div>
                     {options.showItemPercent && <div className="col-12">
                       <div className="progress">
@@ -528,13 +531,22 @@ const RankAdvance = ({ currentRank, ranks, valueMap, period, options, isPreview 
   </>
 }
 
-function truncateDecimals(number, digits) {
+function truncateDecimals(number, valueMap, digits) {
   var multiplier = Math.pow(10, digits);
   var adjustedNum = number * multiplier;
   var truncatedNum = Math[adjustedNum < 0 ? 'ceil' : 'floor'](adjustedNum);
+  var result = truncatedNum / multiplier;
 
-  return truncatedNum / multiplier;
+  if (valueMap && valueMap.length > 0) {
+    var mapped = valueMap.find(entry => entry.value === result.toString());
+    if (mapped) {
+      return mapped.text;
+    }
+  }
+
+  return result.toLocaleString();
 }
+
 
 function getPercentTotal(activeRank) {
   var percents = activeRank?.requirements?.map(requirement => {

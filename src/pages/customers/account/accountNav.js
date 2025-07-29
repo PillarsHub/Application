@@ -19,7 +19,7 @@ const AccountNav = ({ customerId, pageId, loading, children, treeData }) => {
     <div className="container-xl">
       <div className="card">
         <div className="row g-0">
-          <div className="col-3 d-none d-md-block border-end">
+          <div className="col-md-3 d-md-block border-end border-bottom">
             <div className="card-body">
               <h4 className="subheader">Account Settings</h4>
               <div className="list-group list-group-transparent">
@@ -36,7 +36,7 @@ const AccountNav = ({ customerId, pageId, loading, children, treeData }) => {
                 </div> */}
             </div>
           </div>
-          <div className="col d-flex flex-column">
+          <div className="col-md-9">
             {loading && <DataLoading />}
             {content}
           </div>
