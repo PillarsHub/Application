@@ -13,6 +13,7 @@ var GET_DATA = gql`query {
     id
     legNames
     name
+    isPrivate
     buildPattern
     enableCustomerLegPreference
     enableCustomerMovements
@@ -75,6 +76,11 @@ const PlacementRules = () => {
         op: "replace",
         path: "/holdingTankDurationInDays",
         value: activeItem.holdingTankDurationInDays
+      },
+      {
+        op: "replace",
+        path: "/isPrivate",
+        value: activeItem.isPrivate
       }
     ];
 
@@ -101,6 +107,7 @@ const PlacementRules = () => {
                 <th>Holding Tank</th>
                 <th>Allow Movements</th>
                 <th>Placeable Levels</th>
+                <th>Hide Customer Details</th>
                 <th className="w-1"></th>
               </tr>
             </thead>
@@ -112,6 +119,7 @@ const PlacementRules = () => {
                   <td>{tree.enableHoldingTank ? `${tree.holdingTankDurationInDays} days` : 'Disabled'}</td>
                   <td>{tree.enableCustomerMovements ? `${tree.movementDurationInDays} days` : 'Disabled'}</td>
                   <td>{tree.enableCustomerMovements && `${tree.maximumAllowedMovementLevels} levels`}</td>
+                  <td>{(tree.isPrivate ?? false) && <span>Yes</span>}</td>
                   <td>
                     <button className="btn btn-ghost-secondary btn-icon" onClick={() => handleShow(`${tree.id}`)} >
                       <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-edit" width="40" height="40" viewBox="0 0 24 24" strokeWidth="1" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1"></path><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z"></path><path d="M16 5l3 3"></path></svg>
@@ -128,36 +136,40 @@ const PlacementRules = () => {
 
     <Modal showModal={showModal} onHide={handleHide}>
       <div className="modal-header">
-        <h5 className="modal-title">Update Placement Rules</h5>
+        <h5 className="modal-title">Update placement rules</h5>
         <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div className="modal-body">
         <div className="mb-3">
-          <Switch title="Leg Preference" name="enableCustomerLegPreference" value={activeItem?.enableCustomerLegPreference} onChange={handleChange} />
+          <Switch title="Leg preference" name="enableCustomerLegPreference" value={activeItem?.enableCustomerLegPreference} onChange={handleChange} />
           <small className="form-hint">Allows customers to select the desired leg for the automatic placement of new enrollments.</small>
         </div>
         <div className="mb-3">
-          <Switch title="Holding Tank" name="enableHoldingTank" value={activeItem?.enableHoldingTank} onChange={handleChange} />
+          <Switch title="Holding tank" name="enableHoldingTank" value={activeItem?.enableHoldingTank} onChange={handleChange} />
           <small className="form-hint">Enables customers to delay automatic placement of new enrollments.</small>
         </div>
         {activeItem?.enableHoldingTank && <div className="mb-3 ms-3">
-          <label className="form-label">Days in Holding Tank</label>
+          <label className="form-label">Days in holding tank</label>
           <NumericInput name="holdingTankDurationInDays" value={activeItem?.holdingTankDurationInDays} onChange={handleChange} />
         </div>}
         <div className="mb-3">
-          <Switch title="Allow Movements" name="enableCustomerMovements" value={activeItem?.enableCustomerMovements} onChange={handleChange} />
+          <Switch title="Allow movements" name="enableCustomerMovements" value={activeItem?.enableCustomerMovements} onChange={handleChange} />
           <small className="form-hint">Allows customers change placements once a placement is made.</small>
         </div>
         {activeItem?.enableCustomerMovements && <>
           <div className="mb-3 ms-3">
-            <label className="form-label">Days to Allow Movements</label>
+            <label className="form-label">Days to allow movements</label>
             <NumericInput name="movementDurationInDays" value={activeItem?.movementDurationInDays} onChange={handleChange} />
           </div>
           <div className="mb-3 ms-3">
-            <label className="form-label">Placeable Levels</label>
+            <label className="form-label">Placeable levels</label>
             <NumericInput name="maximumAllowedMovementLevels" value={activeItem?.maximumAllowedMovementLevels} onChange={handleChange} />
           </div>
         </>}
+        <div className="mb-3">
+          <Switch title="Hide customer details" name="isPrivate" value={activeItem?.isPrivate} onChange={handleChange} />
+          <small className="form-hint">When enabled, personal information will not be displayed for customers in <i>this</i> tree only.</small>
+        </div>
       </div>
       <div className="modal-footer">
         <a href="#" className="btn btn-link link-secondary" data-bs-dismiss="modal">
