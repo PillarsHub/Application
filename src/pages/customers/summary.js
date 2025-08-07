@@ -51,8 +51,13 @@ const CustomerSummary = () => {
     setNoContent(true);
   }
 
-  const hasScope = GetScope() != undefined;
-  const token = GetToken();
+  const envId = GetToken()?.environmentId;
+  let showOrderMenu = envId == 10432 || envId == 54;
+  let hasScope = false;
+  if (GetScope()) {
+    showOrderMenu = false;
+    hasScope = true;
+  }
 
   const statuses = data?.customerStatuses;
   const customer = data?.customers[0] ?? {};
@@ -67,12 +72,12 @@ const CustomerSummary = () => {
               Create Order
             </a> */}
 
-            {token?.environmentId == '00' && customer && <>
-              <a href={`/Customers/${customer.id}/Edit`} className="btn btn-default">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon icon-tabler icons-tabler-outline icon-tabler-user-edit"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" /><path d="M6 21v-2a4 4 0 0 1 4 -4h3.5" /><path d="M18.42 15.61a2.1 2.1 0 0 1 2.97 2.97l-3.39 3.42h-3v-3l3.42 -3.39z" /></svg>
-                Edit Customer
-              </a>
+            <button className="btn btn-default" onClick={handleStatusShow}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon icon-tabler icons-tabler-outline icon-tabler-user-edit"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" /><path d="M6 21v-2a4 4 0 0 1 4 -4h3.5" /><path d="M18.42 15.61a2.1 2.1 0 0 1 2.97 2.97l-3.39 3.42h-3v-3l3.42 -3.39z" /></svg>
+              Update Status
+            </button>
 
+            {showOrderMenu && customer && <>
               <div className="dropdown">
                 <a href="#" className="btn btn-default btn-icon" data-bs-toggle="dropdown" aria-expanded="false">
                   <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="19" r="1"></circle><circle cx="12" cy="5" r="1"></circle></svg>
@@ -80,16 +85,9 @@ const CustomerSummary = () => {
                 <div className="dropdown-menu dropdown-menu-end">
                   <a href={`/Customers/${customer.id}/Edit`} className="dropdown-item">Edit Customer</a>
                   <button className="dropdown-item" onClick={handleStatusShow}>Update Status</button>
-                  <button className="dropdown-item text-danger" onClick={handleShow}>Delete</button>
+                  <button className="dropdown-item text-danger" onClick={handleShow}>Delete Customer</button>
                 </div>
               </div>
-            </>}
-
-            {token?.environmentId != '00' && <>
-              <button className="btn btn-default" onClick={handleStatusShow}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon icon-tabler icons-tabler-outline icon-tabler-user-edit"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" /><path d="M6 21v-2a4 4 0 0 1 4 -4h3.5" /><path d="M18.42 15.61a2.1 2.1 0 0 1 2.97 2.97l-3.39 3.42h-3v-3l3.42 -3.39z" /></svg>
-                Update Status
-              </button>
             </>}
 
           </div>

@@ -38,6 +38,7 @@ const TeamList = lazy(() => import("./pages/customers/teamList"));
 const NewCustomer = lazy(() => import("./pages/customers/newCustomer"));
 const EditCustomer = lazy(() => import("./pages/customers/editCustomer"));
 const CustomerOrders = lazy(() => import("./pages/customers/customerOrders"));
+const EditOrder = lazy(() => import("./pages/customers/editOrder"));
 const OrderDetail = lazy(() => import("./pages/customers/orderDetail"));
 const NewProduct = lazy(() => import("./pages/inventory/newProduct"));
 const CustomerProfile = lazy(() => import("./pages/customers/account/profile"));
@@ -117,6 +118,7 @@ function App() {
               <Route path="customers/:customerId/orders" element={<CustomerOrders />} />
               <Route path="customers/:customerId/autoships" element={<Autoships />} />
               <Route path="customers/:customerId/orders/:orderId" element={<OrderDetail />} />
+              <Route path="customers/:customerId/orders/:orderId/edit" element={<EditOrder />} />
               <Route path="customers/:customerId/shop" element={<Shop />} />
               <Route path="customers/:customerId/checkout" element={<Checkout />} />
               <Route path="customers/:customerId/training" element={<Training />} />

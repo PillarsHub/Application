@@ -6,6 +6,10 @@ import PageHeader from "../../components/pageHeader";
 import DataLoading from "../../components/dataLoading";
 import DataError from "../../components/dataError";
 import SelectInput from "../../components/selectInput";
+import Avatar from '../../components/avatar';
+import ChangeProfileImage from './account/changeProfileImage';
+import TextInput from '../../components/textInput';
+import DateInput from '../../components/dateInput';
 
 var GET_DATA = gql`query ($nodeId: ID!) {
   customer(id: $nodeId)
@@ -13,6 +17,10 @@ var GET_DATA = gql`query ($nodeId: ID!) {
     id
     firstName
     lastName
+    enrollDate
+    customerType {
+      id
+    }
     companyName
     language
     emailAddress
@@ -37,6 +45,10 @@ var GET_DATA = gql`query ($nodeId: ID!) {
         number
     }
   }
+  customerTypes{
+    id
+    name
+  }
   countries
   {
     iso2
@@ -50,23 +62,10 @@ var GET_DATA = gql`query ($nodeId: ID!) {
   }
 }`;
 
-function formatDate(date) {
-  var d = new Date(date),
-    month = '' + (d.getMonth() + 1),
-    day = '' + d.getDate(),
-    year = d.getFullYear();
-
-  if (month.length < 2)
-    month = '0' + month;
-  if (day.length < 2)
-    day = '0' + day;
-
-  return [year, month, day].join('-');
-}
-
 const EditCustomer = () => {
   let params = useParams()
   const [activeItem, setActiveItem] = useState({});
+  const [showCrop, setShowCrop] = useState();
   const { loading, error, data } = useQuery(GET_DATA, {
     variables: { nodeId: params.customerId },
   });
@@ -81,7 +80,7 @@ const EditCustomer = () => {
         firstName: data.customer.firstName,
         lastName: data.customer.lastName,
         companyName: data.customer.companyName,
-        customerType: data.customer.customerType,
+        customerType: data.customer.customerType.id,
         status: data.customer.status.id,
         emailAddress: data.customer.emailAddress,
         language: data.customer.language,
@@ -166,6 +165,13 @@ const EditCustomer = () => {
     });
   }
 
+  const handleHideModal = () => setShowCrop(false);
+  const handleShowModal = () => setShowCrop(true);
+  const handleUpdateModal = () => {
+    //refetch();
+    setShowCrop(false);
+  }
+
   return <PageHeader title="Edit Customer" breadcrumbs={[{ title: `${activeItem.firstName} ${activeItem.lastName}`, link: `/customers/${params.customerId}/summary` }, { title: "Edit Customer" }]}>
     <div className="container-xl">
       <form onSubmit={handleSubmit} autoComplete="off" noValidate>
@@ -176,23 +182,37 @@ const EditCustomer = () => {
                 <div className="card-header">
                   <h3 className="card-title">Profile</h3>
                 </div>
-                <div className="card-body">
-                  <div className="row">
-                    <div className="col-md-6">
-                      <div className="mb-3">
-                        <label className="form-label required">First Name</label>
-                        <input className="form-control" name="firstName" value={activeItem.firstName} onChange={(event) => handleChange(event.target.name, event.target.value)} />
-                        <span className="text-danger"></span>
-                      </div>
+                <div className="row">
+                  <div className="col-md-3 border-end card-body">
+
+                    <div className="d-flex justify-content-center align-items-center rounded" style={{ height: '140px', backgroundColor: 'rgb(233, 236, 239)' }}>
+                      <Avatar name={`${activeItem?.firstName} ${activeItem?.lastName}`} size="xl" url={activeItem?.profileImage} />
                     </div>
-                    <div className="col-md-6">
-                      <div className="mb-3">
-                        <label className="form-label required">Last Name</label>
-                        <input className="form-control" name="lastName" value={activeItem.lastName} onChange={(event) => handleChange(event.target.name, event.target.value)} />
-                        <span className="text-danger"></span>
-                      </div>
+
+                    <div className="mt-2">
+                      <button className="btn btn-default w-100" type="button" onClick={handleShowModal}>
+                        <i className="fa fa-fw fa-camera"></i>
+                        <span>Change Photo</span>
+                      </button>
                     </div>
-                    {/* <div className="col-md-6">
+                  </div>
+                  <div className="col-md-9 card-body border-0">
+                    <div className="row">
+                      <div className="col-md-6">
+                        <div className="mb-3">
+                          <label className="form-label required">First Name</label>
+                          <input className="form-control" name="firstName" value={activeItem.firstName} onChange={(event) => handleChange(event.target.name, event.target.value)} />
+                          <span className="text-danger"></span>
+                        </div>
+                      </div>
+                      <div className="col-md-6">
+                        <div className="mb-3">
+                          <label className="form-label required">Last Name</label>
+                          <input className="form-control" name="lastName" value={activeItem.lastName} onChange={(event) => handleChange(event.target.name, event.target.value)} />
+                          <span className="text-danger"></span>
+                        </div>
+                      </div>
+                      {/* <div className="col-md-6">
                       <div className="mb-3">
                         <label className="form-label">Display First Name</label>
                         <input className="form-control" name="displayFirst" value={activeItem.displayFirst} onChange={(event) => handleChange(event.target.name, event.target.value)} />
@@ -206,37 +226,49 @@ const EditCustomer = () => {
                         <span className="text-danger"></span>
                       </div>
                     </div> */}
-                    <div className="col-md-6">
-                      <div className="mb-3">
-                        <label className="form-label">Company Name</label>
-                        <input className="form-control" name="companyName" value={activeItem.companyName} onChange={(event) => handleChange(event.target.name, event.target.value)} />
-                        <span className="text-danger"></span>
+                      <div className="col-md-6">
+                        <div className="mb-3">
+                          <label className="form-label">Handle</label>
+                          <input className="form-control" name="webAlias" value={activeItem.webAlias} onChange={(event) => handleChange(event.target.name, event.target.value)} />
+                          <span className="text-danger"></span>
+                        </div>
                       </div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="mb-3">
-                        <label className="form-label">Birthdate</label>
-                        <input type="date" className="form-control" autoComplete="off" name="birthDate" value={formatDate(activeItem.birthDate)} onChange={(event) => handleChange(event.target.name, event.target.value)} />
-                        <span className="text-danger"></span>
+                      <div className="col-md-6">
+                        <div className="mb-3">
+                          <label className="form-label">Customer Type</label>
+                          <SelectInput name="customerType" value={activeItem.customerType} onChange={handleChange} >
+                            {data.customerTypes.map((cType) => {
+                              return <option key={cType.id} value={cType.id}>{cType.name}</option>
+                            })}
+                          </SelectInput>
+                        </div>
                       </div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="mb-3">
-                        <label className="form-label">Handle</label>
-                        <input className="form-control" name="webAlias" value={activeItem.webAlias} onChange={(event) => handleChange(event.target.name, event.target.value)} />
-                        <span className="text-danger"></span>
+                      <div className="col-md-6">
+                        <div className="mb-3">
+                          <label className="form-label">Company Name</label>
+                          <input className="form-control" name="companyName" value={activeItem.companyName} onChange={(event) => handleChange(event.target.name, event.target.value)} />
+                          <span className="text-danger"></span>
+                        </div>
                       </div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="mb-3">
-                        <label className="form-label">Profile Image Url</label>
-                        <input className="form-control" name="profileImage" value={activeItem.profileImage} onChange={(event) => handleChange(event.target.name, event.target.value)} />
-                        <span className="text-danger"></span>
+
+                      <div className="col-md-6">
+                        <div className="mb-3">
+                          <label className="form-label">Birthdate</label>
+                          <DateInput name="birthDate" value={activeItem.birthDate} onChange={handleChange} />
+                          <span className="text-danger"></span>
+                        </div>
                       </div>
+
+                      <div className="col-md-6">
+                        <div className="mb-3">
+                          <label className="form-label">Tax Exemption Code</label>
+                          <TextInput name="taxExemptionCode" value={activeItem.taxExemptionCode} onChange={handleChange} />
+                        </div>
+                      </div>
+
                     </div>
                   </div>
                 </div>
-
               </div>
             </div>
 
@@ -380,13 +412,13 @@ const EditCustomer = () => {
         </div>
 
         <div className="card">
-
           <div className="card-footer">
             <button type="submit" className="btn btn-primary">Save</button>
           </div>
         </div>
       </form>
     </div>
+    <ChangeProfileImage customerId={params.customerId} showModal={showCrop} onHide={handleHideModal} onUpdate={handleUpdateModal} />
   </PageHeader>
 }
 

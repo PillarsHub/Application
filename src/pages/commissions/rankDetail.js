@@ -9,6 +9,7 @@ import Avatar from '../../components/avatar';
 
 var GET_PERIOD_DETAILS = gql`query ($period: BigInt, $rankId: String) {
   compensationPlans {
+    id
     name
     period: periods(at: $period) {
       id
@@ -63,7 +64,7 @@ const RankDetail = () => {
   let ranks = compensationPlan.ranks;
   let rank = ranks.find(r => r.id == params.rankId) ?? { name: 'No Rank'};
 
-  return <PageHeader title="Rank Detail" postTitle={`${periodBeginText} - ${periodEndText}`} breadcrumbs={[{ title: 'Commission Periods', link: `/commissions/periods?p=${compensationPlan.name}` }, { title: breadcrumbText, link: `/commissions/periods/${params.periodId}/summary` }, { title: rank.name }]} >
+  return <PageHeader title="Rank Detail" postTitle={`${periodBeginText} - ${periodEndText}`} breadcrumbs={[{ title: 'Commission Periods', link: `/commissions/periods?p=${compensationPlan.id}` }, { title: breadcrumbText, link: `/commissions/periods/${params.periodId}/summary` }, { title: rank.name }]} >
     <div className="container-xl">
       <div className="row row-cards">
         <div className="col-12">

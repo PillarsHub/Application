@@ -5,7 +5,6 @@ import { useFetch } from "../../../hooks/useFetch";
 import DataLoading from '../../../components/dataLoading';
 import DataError from '../../../components/dataError';
 import Widget from './widget';
-import EmptyContent from '../../../components/emptyContent';
 
 var GET_CUSTOMER = gql`query ($nodeIds: [String]!, $customerId: String, $periodDate: Date!) {
   customers(idList: $nodeIds) {
@@ -222,13 +221,7 @@ const WidgetContainer = forwardRef(({ customerId, dashboardId, periodId, onLoad,
 function buildCard(card, widgets, customer, compensationPlans, trees, date, onDateChange, periodId) {
   if ((card?.widgetId || card?.children) && widgets !== undefined) {
     let widget = widgets.find((w) => w.id === card?.widgetId ?? '');
-    if (widget?.state == 1) return <>
-      <div key={card?.id} className={`col-sm-12 col-lg-${card?.columns > 6 ? '12' : '6'} col-xl-${card?.columns}`}>
-        <div className="card">
-          <EmptyContent />
-        </div>
-      </div>
-    </>
+    if (widget?.state == 1) return <></>
     if (!widget && (!card.children || card.children.length == 0)) return <></>
 
     return <div key={card?.id} className={`col-sm-12 col-lg-${card?.columns > 6 ? '12' : '6'} col-xl-${card?.columns}`}>

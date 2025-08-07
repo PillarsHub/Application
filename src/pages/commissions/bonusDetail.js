@@ -10,6 +10,7 @@ import Pagination from '../../components/pagination';
 
 var GET_PERIOD_DETAILS = gql`query ($period: BigInt, $bonudId: String!, $offset: Int!, $count: Int!) {
   compensationPlans {
+    id
     name
     period: periods(at: $period) {
       id
@@ -57,7 +58,7 @@ const BonusDetail = () => {
   let periodEndText = ToLocalDate(period.end, false);
   let ranks = compensationPlan.ranks;
 
-  return <PageHeader title="Bonus Detail" postTitle={`${periodBeginText} - ${periodEndText}`} breadcrumbs={[{ title: 'Commission Periods', link: `/commissions/periods?p=${compensationPlan.name}` }, { title: breadcrumbText, link: `/commissions/periods/${params.periodId}/summary` }, { title: params.bonusId }]} >
+  return <PageHeader title="Bonus Detail" postTitle={`${periodBeginText} - ${periodEndText}`} breadcrumbs={[{ title: 'Commission Periods', link: `/commissions/periods?p=${compensationPlan.id}` }, { title: breadcrumbText, link: `/commissions/periods/${params.periodId}/summary` }, { title: params.bonusId }]} >
     <div className="container-xl">
       <div className="row row-cards">
         <div className="col-12">

@@ -15,6 +15,7 @@ import DataLoading from "../../components/dataLoading";
 import DataError from "../../components/dataError";
 import AvailabilityInput from "../../components/availabilityInput";
 import AutoComplete from "../../components/autocomplete";
+import SaveButton from "../../components/saveButton";
 
 var GET_PREVIEW_DATA = gql`query ($nodeIds: [String]!, $periodDate: Date!) {
   customers(idList: $nodeIds) {
@@ -133,6 +134,7 @@ const EditWidget = () => {
   const [previewId, setPreviewId] = useState();
   const [previewData, setPreviewData] = useState();
 
+  const [saveSettings, setSaveSettings] = useState();
   const [previewSize] = useState(12);
   const [item, setItem] = useState();
   const [date] = useState(new Date().toISOString());
@@ -163,6 +165,7 @@ const EditWidget = () => {
   }
 
   const handleSave = () => {
+    setSaveSettings({ status: 1 });
     var action = "PUT";
     var url = `/api/v1/Widgets/${item.id}`;
 
@@ -172,9 +175,10 @@ const EditWidget = () => {
     }
 
     SendRequest(action, url, item, (r) => {
+      setSaveSettings({ status: 2 });
       setItem(r);
     }, (error) => {
-      alert(error);
+      setSaveSettings({ status: 0, error: error });
     })
   }
 
@@ -309,7 +313,7 @@ const EditWidget = () => {
             <div className="card-footer">
               <div className="row">
                 <div className="col">
-                  <button type="submit" className="btn btn-primary" onClick={handleSave}>Save</button>
+                  <SaveButton settings={saveSettings} onClick={handleSave} />
                 </div>
               </div>
             </div>

@@ -6,8 +6,6 @@ import { GetToken, GetScope } from "../../features/authentication/hooks/useToken
 import Tabs, { Tab } from "../../components/tabs";
 import PageHeader from "../../components/pageHeader";
 import DataLoading from "../../components/dataLoading";
-import NumericInput from "../../components/numericInput";
-import DateTimeInput from "../../components/dateTimeInput";
 import AutoComplete from "../../components/autocomplete";
 import LocalDate from "../../util/LocalDate";
 import DataError from "../../components/dataError";
@@ -27,6 +25,7 @@ var GET_DATA = gql`query ($orderids: [String]!, $nodeIds: [String]!) {
         invoiceDate
         orderType
         status
+        notes
         statusDetail {
           name
         }
@@ -79,11 +78,16 @@ var GET_DATA = gql`query ($orderids: [String]!, $nodeIds: [String]!) {
       sourceType
       dataType
     }
+    countries
+    {
+      iso2
+      name
+      active
+    }
   }`;
 
 const OrderDetail = () => {
   let params = useParams()
-  const [showEdit, setShowEdit] = useState(false);
   const [showMove, setShowMove] = useState(false);
   const [orderUpdate, setOrderUpdate] = useState();
   const [order, setOrder] = useState();
@@ -91,7 +95,8 @@ const OrderDetail = () => {
     variables: { orderids: [params.orderId], nodeIds: [params.customerId] },
   });
 
-  let showOrderMenu = GetToken()?.environmentId == 10432;
+  const envId = GetToken()?.environmentId;
+  let showOrderMenu = envId == 10432 || envId == 54;
   let hasScope = false;
   if (GetScope()) {
     showOrderMenu = false;
@@ -113,36 +118,9 @@ const OrderDetail = () => {
     setShowMove(true);
   }
 
-  const handleHideEdit = () => setShowEdit(false);
-  const handleShowEdit = () => {
-    setOrderUpdate(order);
-    setShowEdit(true);
-  }
-
   const handleEditChange = (name, value) => {
     setOrderUpdate(o => ({ ...o, [name]: value }));
   }
-
-  const handleLineItemChange = (index, volumeId, newValue) => {
-    setOrderUpdate(prevOrder => {
-      const updatedLineItems = [...prevOrder.lineItems];
-      const item = { ...updatedLineItems[index] };
-
-      const updatedVolume = [...(item.volume ?? [])];
-      const volumeIndex = updatedVolume.findIndex(v => v.volumeId?.toLowerCase() === volumeId.toLowerCase());
-
-      if (volumeIndex >= 0) {
-        updatedVolume[volumeIndex] = { ...updatedVolume[volumeIndex], volume: newValue };
-      } else {
-        updatedVolume.push({ volumeId, volume: newValue });
-      }
-
-      item.volume = updatedVolume;
-      updatedLineItems[index] = item;
-
-      return { ...prevOrder, lineItems: updatedLineItems };
-    });
-  };
 
   const handleUpdateOrder = () => {
     const cleanedOrder = stripTypename(orderUpdate);
@@ -153,7 +131,6 @@ const OrderDetail = () => {
 
     if (patch.length > 0) {
       SendRequest("PATCH", `/api/v1/Orders/${order.id}`, patch, () => {
-        setShowEdit(false);
         setShowMove(false);
         if (newCustomerId && newCustomerId !== order.customerId) {
           window.location = `/customers/${newCustomerId}/orders/${order.id}`;
@@ -164,7 +141,6 @@ const OrderDetail = () => {
         alert("Err:" + JSON.stringify(error));
       })
     } else {
-      setShowEdit(false);
       setShowMove(false);
     }
   }
@@ -188,8 +164,7 @@ const OrderDetail = () => {
     }
   });
 
-  const volumes = data.sourceGroups.filter((sg) => sg.id.toLowerCase() != 'mbonus' && sg.sourceType == 'SUM_VALUE' && sg.dataType == 'DECIMAL').map((sg) => sg.id);
-
+  const countryNames = data?.countries;
   let totalPaid = order?.payments?.reduce((a, payment) => a + payment?.amount ?? 0, 0) ?? 0;
 
   return <>
@@ -209,7 +184,7 @@ const OrderDetail = () => {
                             <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="19" r="1"></circle><circle cx="12" cy="5" r="1"></circle></svg>
                           </a>
                           <div className="dropdown-menu dropdown-menu-end" >
-                            <button className="dropdown-item" onClick={handleShowEdit}>Adjust Volume/Date</button>
+                            <a className="dropdown-item" href={`/customers/${params.customerId}/Orders/${params.orderId}/edit`} >Edit Order</a>
                             <button className="dropdown-item" onClick={handleShowMove} >Transfer Order</button>
                           </div>
                         </div>
@@ -220,34 +195,34 @@ const OrderDetail = () => {
                   <div className="card-body">
 
                     <dl className="row">
-                      <dd className="col-6">Order Date</dd>
-                      <dd className="col-6 text-end"><LocalDate dateString={order?.orderDate} /></dd>
-                      <dd className="col-6">Invoice Date</dd>
-                      <dd className="col-6 text-end"><LocalDate dateString={order?.invoiceDate} /></dd>
-                      <dd className="col-6">Order Type</dd>
-                      <dd className="col-6 text-end">{order?.orderType}</dd>
+                      <dd className="col-5">Order Date</dd>
+                      <dd className="col-7 text-end"><LocalDate dateString={order?.orderDate} /></dd>
+                      <dd className="col-5">Invoice Date</dd>
+                      <dd className="col-7 text-end"><LocalDate dateString={order?.invoiceDate} /></dd>
+                      <dd className="col-5">Order Type</dd>
+                      <dd className="col-7 text-end">{order?.orderType}</dd>
 
                       {groupedVolumes && Object.entries(groupedVolumes).map(([volumeId, volumeSum]) => {
                         var volumeRounded = Math.round(volumeSum * 1000) / 1000;
                         if (volumeRounded == 0) return <></>;
                         return <>
-                          <dd className="col-6">{volumeId}</dd>
-                          <dd className="col-6 text-end">{volumeRounded}</dd>
+                          <dd className="col-5">{volumeId}</dd>
+                          <dd className="col-7 text-end">{volumeRounded}</dd>
                         </>
                       })}
 
-                      <dd className="col-6">Status</dd>
-                      <dd className="col-6 text-end">{order?.statusDetail?.name ?? order?.status}</dd>
-                      <dd className="col-6">Tracking</dd>
-                      <dd className="col-6 text-end">
+                      <dd className="col-5">Status</dd>
+                      <dd className="col-7 text-end">{order?.statusDetail?.name ?? order?.status}</dd>
+                      <dd className="col-5">Tracking</dd>
+                      <dd className="col-7 text-end">
                         {!order?.trackingUrl && <>{order?.tracking}</>}
                         {order?.trackingUrl && <>
                           <a className="link" href={order.trackingUrl} target="_blank" rel="noreferrer">{order?.tracking}</a>
                         </>}
                       </dd>
 
-                      <dd className="col-6">Notes</dd>
-                      <dd className="col-6">{data?.notes}</dd>
+                      <dd className="col-5">Notes</dd>
+                      <dd className="col-7 text-end">{order?.notes}</dd>
                     </dl>
                   </div>
                 </div>
@@ -316,13 +291,13 @@ const OrderDetail = () => {
             <Tabs showTabs={!hasScope} fill={true}>
               <Tab title="Details">
                 <div className="card-body">
-                  <div className="row">
+                  <div className="row mb-3">
                     <div className="col-6">
-                      <p className="h3">Shipping Address</p>
+                      <p className="h3 mb-2">{data?.customers[0].fullName}</p>
                       <address>
                         {address?.line1}<br />
-                        {address?.city}, {address?.state} {address?.zip}<br />
-                        {address?.country}
+                        {address?.city}, {address?.stateCode} {address?.zip}<br />
+                        {countryNames.find(x => x.iso2.toLowerCase() == address?.countryCode.toLowerCase())?.name}
                       </address>
                     </div>
                     <div className="col-6 text-end">
@@ -402,59 +377,6 @@ const OrderDetail = () => {
         </div>
       </div>
 
-      <Modal showModal={showEdit} onHide={handleHideEdit}>
-        <div className="modal-header">
-          <h5 className="modal-title">Adjust Volume/Date</h5>
-          <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-
-        <div className="modal-body">
-          <div className="row">
-            <div className="col-md-12">
-              <div className="mb-3">
-                <label className="form-label">Invoice Date</label>
-                <DateTimeInput name="invoiceDate" value={orderUpdate?.invoiceDate} onChange={handleEditChange} />
-                <span className="text-danger"></span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="table-responsive">
-          <table className="table table-vcenter card-table">
-            <thead>
-              <tr>
-                <th>Product</th>
-                {volumes && volumes.map((volumeId) => {
-                  return <th key={volumeId} className="w-5" style={{ minWidth: "100px" }} >{volumeId}</th>
-                })}
-              </tr>
-            </thead>
-            <tbody>
-              {orderUpdate?.lineItems && orderUpdate?.lineItems.map((item, index) => {
-                return <tr key={item.productId}>
-                  <td>
-                    <p className="mb-1">{item.description}</p>
-                  </td>
-                  {volumes && volumes.map((volumeId) => {
-                    const volumeEntry = item.volume?.find(v => v.volumeId === volumeId);
-                    return <td key={volumeId}><NumericInput name={volumeId} value={volumeEntry?.volume} onChange={(name, value) => handleLineItemChange(index, name, value)} /></td>
-                  })}
-                </tr>
-              })}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="modal-footer">
-          <a href="#" className="btn btn-link link-secondary" data-bs-dismiss="modal">
-            Cancel
-          </a>
-          <button type="submit" className="btn btn-primary ms-auto" onClick={handleUpdateOrder}>
-            Update Order
-          </button>
-        </div>
-      </Modal>
-
       <Modal showModal={showMove} onHide={handleHideMove} >
         <div className="modal-header">
           <h5 className="modal-title">Transfer Order</h5>
@@ -476,7 +398,7 @@ const OrderDetail = () => {
             Cancel
           </a>
           <button className="btn btn-primary ms-auto" onClick={handleUpdateOrder}>
-            Place Node
+            Transfer
           </button>
         </div>
       </Modal>

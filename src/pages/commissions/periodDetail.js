@@ -11,6 +11,7 @@ import DataError from "../../components/dataError";
 
 var GET_PERIOD_DETAILS = gql`query ($period: BigInt) {
   compensationPlans {
+    id
     name
     period: periods(at: $period) {
       id
@@ -433,7 +434,7 @@ const PeriodDetail = () => {
   let periodBeginText = ToLocalDate(summaryPeriod.begin, false);
   let periodEndText = ToLocalDate(summaryPeriod.end, false);
 
-  return <PageHeader title="Commission Period Summary" postTitle={`${periodBeginText} - ${periodEndText}`} breadcrumbs={[{ title: 'Commission Periods', link: `/commissions/periods?p=${compensationPlan.name}` }, { title: breadcrumbText }]} >
+  return <PageHeader title="Commission Period Summary" postTitle={`${periodBeginText} - ${periodEndText}`} breadcrumbs={[{ title: 'Commission Periods', link: `/commissions/periods?p=${compensationPlan.id}` }, { title: breadcrumbText }]} >
     <div className="container-xl">
       <div className="row row-deck row-cards">
         <div className="col-sm-6 col-lg-3">
