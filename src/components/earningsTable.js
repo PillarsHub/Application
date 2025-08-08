@@ -48,7 +48,7 @@ const EarningsTable = ({ customerId, periodId, overrides }) => {
   if (loading) return <DataLoading />;
   if (error) return <DataError error={error} />
 
-  var plan = data?.compensationPlans.find(item =>
+  var plan = data?.compensationPlans?.find(item =>
     item.ranks.some(subItem => subItem.id)
   ) || null;
 
@@ -59,7 +59,7 @@ const EarningsTable = ({ customerId, periodId, overrides }) => {
     bonuses.sort((a, b) => (a.bonusId > b.bonusId) ? 1 : -1);
   }
 
-  const hasBonuses = true; //bonuses.length > 0;
+  const hasBonuses = bonuses?.length > 0 ?? false;
 
   return <>
     {!hasBonuses && <>
@@ -98,7 +98,7 @@ const EarningsTable = ({ customerId, periodId, overrides }) => {
                 </a>
               </td>
               <td>{bonus.released.toLocaleString("en-US", { style: 'currency', currency: bonus?.currency ?? 'USD' })}</td>
-              <td>{ranks.find(r => r.id == bonus.rank)?.name}</td>
+              <td>{ranks?.find(r => r.id == bonus.rank)?.name}</td>
             </tr>
           })}
           {(() => {
