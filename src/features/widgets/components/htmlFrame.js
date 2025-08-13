@@ -16,6 +16,17 @@ const HtmlFrame = ({ htmlContent, cssContent, data }) => {
   const [iframeHeight, setIframeHeight] = useState("150px"); // Default height
   const [contentVersion, setContentVersion] = useState(0);
 
+  // track latest data for the message handler without re-binding it
+  const latestDataRef = useRef(data);
+  useEffect(() => { latestDataRef.current = data; }, [data]);
+
+  const isValidData = (d) => {
+    if (!d) return false;
+    if (Array.isArray(d)) return d.length > 0;
+    if (typeof d === 'object') return Object.keys(d).length > 0;
+    return true; // numbers/strings/etc
+  };
+
   useEffect(() => {
     setContentVersion(prev => prev + 1);
   }, [htmlContent, cssContent]);
@@ -65,11 +76,9 @@ const HtmlFrame = ({ htmlContent, cssContent, data }) => {
 
           function checkHeight() {
               clearTimeout(debounceTimer);
-              
               debounceTimer = setTimeout(() => {
                   const finalHeight = document.body.scrollHeight;
                   if (finalHeight != lastHeight) {
-                      console.log('A-${frameId}' + lastHeight + ' - ' + finalHeight);
                       lastHeight = finalHeight;
                       window.parent.postMessage({ type: 'resizeIframe', height: lastHeight, frameId: '${frameId}' }, '*');
                       setInterval(checkHeight, 500);
@@ -90,7 +99,7 @@ const HtmlFrame = ({ htmlContent, cssContent, data }) => {
             if (event.data && event.data.type === 'initJavaObject' && event.data.incomingFrameId === '${frameId}') {
               window.myInjectedObject = event.data.payload;
 
-              if (typeof onDataReady === 'function') {
+              if (typeof onDataReady === 'function' && window.myInjectedObject != null) {
                 onDataReady(window.myInjectedObject);
               }
             }
@@ -100,43 +109,57 @@ const HtmlFrame = ({ htmlContent, cssContent, data }) => {
       <body>${htmlContent}</body>
     </html>`;
 
+  // Listener: handle iframe resize + respond when iframe requests data
   useEffect(() => {
     const handleMessage = (event) => {
-      const { type, frameId: incomingFrameId } = event.data || {};
+      // (optional) if you know the iframe origin, enforce it:
+      // if (event.origin !== 'https://your-origin.example') return;
 
-      // Iframe asks for the object
-      if (type === 'requestJavaObject' && incomingFrameId === frameId) {
+      const { type, frameId: incomingFrameId, height } = event.data || {};
+      if (incomingFrameId !== frameId) return;
+
+      if (type === 'resizeIframe') {
+        setIframeHeight(`${height}px`);
+        return;
+      }
+
+      if (type === 'requestJavaObject' && isValidData(latestDataRef.current)) {
         iframeRef.current?.contentWindow?.postMessage({
           type: 'initJavaObject',
           incomingFrameId: frameId,
-          payload: data
+          payload: latestDataRef.current
         }, '*');
-      }
-
-      // Iframe resizes
-      if (type === 'resizeIframe' && incomingFrameId === frameId) {
-        console.log("B-" + incomingFrameId + ' - ' + event.data.height);
-        setIframeHeight(`${event.data.height}px`);
       }
     };
 
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-  }, []);
+  }, [frameId]);
 
-  return <>
-    {htmlContent && <iframe
-      key={`frame_${frameId}_${contentVersion}`}
-      ref={iframeRef}
-      srcDoc={fullHtml}
-      sandbox="allow-popups allow-modals allow-scripts allow-popups-to-escape-sandbox"
-      style={{
-        width: "100%",
-        height: iframeHeight,
-        border: "none"
-      }}
-    />}
-  </>
+  // Proactively send data whenever it becomes valid or changes
+  useEffect(() => {
+    if (!isValidData(data)) return;
+
+    iframeRef.current?.contentWindow?.postMessage({
+      type: 'initJavaObject',
+      incomingFrameId: frameId,
+      payload: data
+    }, '*');
+  }, [data, frameId]);
+
+  return (
+    <>
+      {htmlContent && (
+        <iframe
+          key={`frame_${frameId}_${contentVersion}`}
+          ref={iframeRef}
+          srcDoc={fullHtml}
+          sandbox="allow-popups allow-modals allow-scripts allow-popups-to-escape-sandbox"
+          style={{ width: "100%", height: iframeHeight, border: "none" }}
+        />
+      )}
+    </>
+  );
 };
 
 export default HtmlFrame;
@@ -145,4 +168,4 @@ HtmlFrame.propTypes = {
   htmlContent: PropTypes.string.isRequired,
   cssContent: PropTypes.string.isRequired,
   data: PropTypes.any.isRequired
-}
+};

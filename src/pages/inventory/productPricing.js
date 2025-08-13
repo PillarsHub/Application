@@ -151,97 +151,6 @@ const ProductPricing = () => {
                 Add Price
               </button>
             </div>
-            <div className="table-responsive d-none">
-              <table className="table card-table table-vcenter text-nowrap datatable">
-                <thead>
-                  <tr>
-                    <th>Customer Types</th>
-                    <th>Regions</th>
-                    <th>Order Type</th>
-                    <th>Stores</th>
-                    <th>Price</th>
-                    <th>Display</th>
-                    <th>Begin</th>
-                    <th>End</th>
-                    <th className="w-1"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {product && product.prices.map((price) => {
-                    return <tr key={price.id}>
-                      <td>
-                        {price.customerTypeIds && (() => {
-                          const visible = price.customerTypeIds.slice(0, 1);
-                          const hiddenCount = price.customerTypeIds.length - visible.length;
-                          return (
-                            <>
-                              {visible.map((cType) => (
-                                <span className="badge badge-outline text-blue m-1" key={cType}>
-                                  {data.customerTypes.find(i => i.id == cType)?.name ?? cType}
-                                </span>
-                              ))}
-                              {hiddenCount > 0 && (
-                                <span className="badge badge-outline text-muted m-1" title={
-                                  price.customerTypeIds.slice(1).map(cType => data.customerTypes.find(i => i.id == cType)?.name ?? cType).join(', ')
-                                }>
-                                  +{hiddenCount} more
-                                </span>
-                              )}
-                            </>
-                          );
-                        })()}
-                      </td>
-                      <td>
-                        {price.regionIds && (() => {
-                          const visible = price.regionIds.slice(0, 1);
-                          const hiddenCount = price.regionIds.length - visible.length;
-                          return (
-                            <>
-                              {visible.map((pType) => (
-                                <span className="badge badge-outline text-blue m-1" key={pType}>
-                                  {data.regions.find(i => i.id == pType)?.name ?? pType}
-                                </span>
-                              ))}
-                              {hiddenCount > 0 && (
-                                <span className="badge badge-outline text-muted m-1" title={
-                                  price.regionIds.slice(1).map(pType => data.regions.find(i => i.id == pType)?.name ?? pType).join(', ')
-                                }>
-                                  +{hiddenCount} more
-                                </span>
-                              )}
-                            </>
-                          );
-                        })()}
-                      </td>
-                      <td>
-                        {price.orderTypeIds && price.orderTypeIds.map((orderTypeId) => {
-                          return <span className="badge badge-outline text-blue m-1" key={orderTypeId} >{data.orderTypes.find(i => i.id == orderTypeId)?.name ?? orderTypeId}</span>
-                        })}
-                      </td>
-                      <td>
-                        {price.storeIds && price.storeIds.map((storeId) => {
-                          return <span className="badge badge-outline text-blue m-1" key={storeId} >{data.stores.find(i => i.id == storeId)?.name ?? storeId}</span>
-                        })}
-                      </td>
-                      <td>{price.price.toLocaleString("en-US", { style: 'currency', currency: price?.priceCurrency ?? 'USD' })}</td>
-                      <td>Price</td>
-                      <td><LocalDate dateString={price.start} /></td>
-                      <td>{price.end ? <LocalDate dateString={price.end} /> : '[No End]'}</td>
-                      <td>
-                        <div className="btn-list flex-nowrap">
-                          <button className="btn-link text-muted" onClick={() => handleShow(price.id)}>
-                            <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-edit" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1"></path><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z"></path><path d="M16 5l3 3"></path></svg>
-                          </button>
-                          <button type="submit" className="btn-link text-muted" onClick={() => handleShowDelete(price.id)}>
-                            <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-trash" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M4 7l16 0"></path><path d="M10 11l0 6"></path><path d="M14 11l0 6"></path><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"></path><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"></path></svg>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  })}
-                </tbody>
-              </table>
-            </div>
           </div>
           <div className="row row-deck row-cards">
             {product && product.prices.map((price) => (
@@ -265,26 +174,26 @@ const ProductPricing = () => {
                   </div>
                   <div className="card-body">
                     <dl className="row">
-                      <dt className="col-5">Start:</dt>
+                      <dt className="col-5 mb-2">Start:</dt>
                       <dd className="col-7"><LocalDate dateString={price.start} /></dd>
 
-                      <dt className="col-5">End:</dt>
+                      <dt className="col-5 mb-2">End:</dt>
                       <dd className="col-7">{price.end ? <LocalDate dateString={price.end} /> : '[No End]'}</dd>
-                      <dt className="col-5">Customer Types:</dt>
+                      <dt className="col-5 mb-2">Customer Types:</dt>
                       <dd className="col-7">
                         {(price.customerTypeIds ?? [])
                           .map(id => data.customerTypes.find(i => i.id === id)?.name ?? id)
                           .join(', ')}
                       </dd>
 
-                      <dt className="col-5">Regions:</dt>
+                      <dt className="col-5 mb-2">Regions:</dt>
                       <dd className="col-7">
                         {(price.regionIds ?? [])
                           .map(id => data.regions.find(i => i.id === id)?.name ?? id)
                           .join(', ')}
                       </dd>
 
-                      <dt className="col-5">Order Types:</dt>
+                      <dt className="col-5 mb-2">Order Types:</dt>
                       <dd className="col-7">
                         {(price.orderTypeIds ?? [])
                           .map(id => data.orderTypes.find(i => i.id === id)?.name ?? id)

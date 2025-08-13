@@ -128,5 +128,5 @@ HtmlWidget.propTypes = {
   html: PropTypes.string.isRequired,
   customer: PropTypes.object.isRequired,
   widget: PropTypes.object.isRequired,
-  isPreview: PropTypes.object.isRequired
+  isPreview: PropTypes.bool.isRequired
 }
