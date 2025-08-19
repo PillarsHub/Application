@@ -52,7 +52,7 @@ const CustomerSummary = () => {
   }
 
   const envId = GetToken()?.environmentId;
-  let showOrderMenu = envId == 10432 || envId == 54;
+  let showOrderMenu = envId == 10432 || envId == 286 || envId == 54;
   let hasScope = false;
   if (GetScope()) {
     showOrderMenu = false;

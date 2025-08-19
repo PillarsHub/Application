@@ -96,7 +96,7 @@ const OrderDetail = () => {
   });
 
   const envId = GetToken()?.environmentId;
-  let showOrderMenu = envId == 10432 || envId == 54;
+  let showOrderMenu = envId == 10432 || envId == 286 || envId == 54;
   let hasScope = false;
   if (GetScope()) {
     showOrderMenu = false;
@@ -184,8 +184,19 @@ const OrderDetail = () => {
                             <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="19" r="1"></circle><circle cx="12" cy="5" r="1"></circle></svg>
                           </a>
                           <div className="dropdown-menu dropdown-menu-end" >
-                            <a className="dropdown-item" href={`/customers/${params.customerId}/Orders/${params.orderId}/edit`} >Edit Order</a>
-                            <button className="dropdown-item" onClick={handleShowMove} >Transfer Order</button>
+                            <a className="dropdown-item" href={`/customers/${params.customerId}/Orders/${params.orderId}/edit`} >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="icon dropdown-item-icon" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1"></path><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z"></path><path d="M16 5l3 3"></path></svg>
+                              Edit Order
+                            </a>
+                            <button className="dropdown-item" onClick={handleShowMove} >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="icon dropdown-item-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" /><path d="M9 15h6" /><path d="M12.5 17.5l2.5 -2.5l-2.5 -2.5" /></svg>
+                              Transfer Order
+                            </button>
+                            <div className="dropdown-divider"></div>
+                            <button className="dropdown-item" onClick={handleShowMove} >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="icon dropdown-item-icon" width="40" height="40" viewBox="0 0 24 24" strokeWidth="1" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M4 7l16 0"></path><path d="M10 11l0 6"></path><path d="M14 11l0 6"></path><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"></path><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"></path></svg>
+                              Delete Order
+                            </button>
                           </div>
                         </div>
                       </div>
