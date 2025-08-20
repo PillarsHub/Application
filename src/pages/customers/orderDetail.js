@@ -96,10 +96,10 @@ const OrderDetail = () => {
   });
 
   const envId = GetToken()?.environmentId;
-  let showOrderMenu = envId == 10432 || envId == 286 || envId == 54;
+  let showMenu = envId == 10432 || envId == 286 || envId == 10461 || envId == 54;
   let hasScope = false;
   if (GetScope()) {
-    showOrderMenu = false;
+    showMenu = false;
     hasScope = true;
   }
 
@@ -177,7 +177,7 @@ const OrderDetail = () => {
                 <div className="card">
                   <div className="card-header">
                     <h3 className="card-title">Order {order?.id} {order?.externalIds && <>({order?.externalIds})</>}</h3>
-                    {showOrderMenu && <>
+                    {showMenu && <>
                       <div className="card-actions btn-actions">
                         <div className="dropdown">
                           <a href="#" className="btn-action" data-bs-toggle="dropdown" aria-expanded="false">

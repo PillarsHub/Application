@@ -52,10 +52,10 @@ const CustomerSummary = () => {
   }
 
   const envId = GetToken()?.environmentId;
-  let showOrderMenu = envId == 10432 || envId == 286 || envId == 54;
+  let showMenu = envId == 10432 || envId == 286 || envId == 10461 || envId == 54;
   let hasScope = false;
   if (GetScope()) {
-    showOrderMenu = false;
+    showMenu = false;
     hasScope = true;
   }
 
@@ -77,7 +77,7 @@ const CustomerSummary = () => {
               Update Status
             </button>
 
-            {showOrderMenu && customer && <>
+            {showMenu && customer && <>
               <div className="dropdown">
                 <a href="#" className="btn btn-default btn-icon" data-bs-toggle="dropdown" aria-expanded="false">
                   <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="19" r="1"></circle><circle cx="12" cy="5" r="1"></circle></svg>
