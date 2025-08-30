@@ -130,7 +130,7 @@ const TreeSideCard = ({ customerId, periodDate, treeId, showModal, dashboard }) 
   const handleClose = () => setShow(false);
 
   const handleShowPlacemntModel = () => {
-    showModal({ nodeId: customer.tree.nodeId, uplineId: customer.tree.uplineId, uplineLeg: customer.tree.uplineLeg });
+    showModal({ nodeId: customer.tree.nodeId, uplineId: customer.tree.uplineId, uplineLeg: customer.tree.uplineLeg, fromNodeId: customer.tree.uplineId, fromLeg: customer.tree.uplineLeg });
   }
 
   useEffect(() => {
@@ -148,7 +148,7 @@ const TreeSideCard = ({ customerId, periodDate, treeId, showModal, dashboard }) 
     } else {
       setShow(false);
     }
-  }, [customerId]);
+  }, [customerId, periodDate]);
 
   let compensationPlans = data?.compensationPlans;
   let trees = data?.trees;

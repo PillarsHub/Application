@@ -4,112 +4,445 @@ import Modal from '../../../components/modal';
 import AutoComplete from '../../../components/autocomplete';
 import Switch from '../../../components/switch';
 import { SendRequest } from "../../../hooks/usePost";
+import { GetScope } from "../../../features/authentication/hooks/useToken";
+
+const PAGE_SIZE = 300; // API cap, adjust if desired
+
+// Wrap SendRequest so we can await it and keep the status code
+const sendRequestAsync = (method, url, body = null) =>
+  new Promise((resolve, reject) => {
+    try {
+      SendRequest(
+        method,
+        url,
+        body,
+        (data) => resolve(data),
+        (err, code) => reject({ error: err, status: code })
+      );
+    } catch (err) {
+      reject({ error: err, status: err?.status ?? err?.statusCode });
+    }
+  });
+
+const isConflictError = (e) => {
+  const status = e?.status ?? e?.code ?? e?.statusCode;
+  if (status === 409) return true;
+  const msg = e?.error?.message ?? e?.message ?? (typeof e?.error === 'string' ? e.error : '');
+  return typeof msg === 'string' && msg.includes('409');
+};
+
+// Copy with dynamic suffix (omit Holding Tank if disallowed)
+const choiceSuffix = (canUseHoldingTank) =>
+  canUseHoldingTank ? ' Choose a different leg or select Holding Tank.' : ' Choose a different leg.';
+
+const MESSAGES = {
+  requiredUpline: 'Choose a sponsor to place under.',
+  requiredLeg: 'Choose a leg to place on.',
+  checking: 'Validating the position…',
+  occupiedClient: (canUseHoldingTank) =>
+    'That leg is already in use under the selected sponsor.' + choiceSuffix(canUseHoldingTank),
+  conflict409: (canUseHoldingTank) =>
+    'That leg was taken moments ago.' + choiceSuffix(canUseHoldingTank),
+  cycleInvalid: 'You can’t place a node under someone in its own downline. Choose a different sponsor.',
+  verifyFailed: 'We couldn’t confirm the position. Try again.',
+  submitGeneric: (msg) => `Couldn’t place this node${msg ? `: ${msg}` : '.'}`,
+};
 
 const ChangePlacementModal = ({ tree, treeId, placement, refreshNode }) => {
-  const [showModal, setModalShow] = useState();
+  const [showModal, setModalShow] = useState(false);
   const [activeItem, setActiveItem] = useState();
-  const [disclamer, setDisclamer] = useState(false);
+  const [disclaimer, setDisclaimer] = useState(false);
+
+  // Availability (leg occupancy)
+  const [checkingAvailability, setCheckingAvailability] = useState(false);
+  const [positionAvailable, setPositionAvailable] = useState(true);
+
+  // Cycle prevention
+  const [checkingCycle, setCheckingCycle] = useState(false);
+  const [cycleInvalid, setCycleInvalid] = useState(false);
+
+  // Banner + submit
+  const [bannerMsg, setBannerMsg] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const scope = GetScope?.();
+  const canUseHoldingTank = !scope; // only when token has no scope
+  const hasLegs = !!(tree?.legNames && tree.legNames.length > 0);
 
   const handleClose = () => setModalShow(false);
-  const handleChange = (name, value) => {
-    setActiveItem(values => ({ ...values, [name]: value }))
-  }
 
+  const handleChange = (name, value) => {
+    setActiveItem(prev => ({ ...prev, [name]: value }));
+
+    // Smart banner clearing:
+    if (name === 'uplineId') {
+      // Changing sponsor CAN resolve a cycle—let effects re-check
+      setCycleInvalid(false);
+      setBannerMsg('');
+    } else if (name === 'uplineLeg') {
+      // Changing leg does NOT resolve a cycle; keep cycle banner if present
+      if (!cycleInvalid) setBannerMsg('');
+    } else {
+      setBannerMsg('');
+    }
+  };
+
+  // Initialize from placement
   useEffect(() => {
     if (placement) {
-      if (tree.legNames && !placement.uplineLeg) {
-        placement.uplineLeg = tree.legNames[0].toLowerCase()
-      }
-      setDisclamer(placement?.disclamerId === undefined);
-      setActiveItem(placement);
-      setModalShow(true);
-    } else {
-      setActiveItem();
-      setModalShow(false);
-    }
-  }, [placement]);
+      const init = { ...placement };
 
-  const handleSubmit = async e => {
-    e.preventDefault();
-    if (!activeItem.uplineId) {
-      alert("Place Under is required");
+      // Default leg (lowercased) if needed
+      if (tree?.legNames && !init.uplineLeg) {
+        init.uplineLeg = String(tree.legNames[0] ?? '').toLowerCase();
+      }
+
+      // If Holding Tank selected but disallowed, switch to first real leg
+      if (
+        tree?.legNames?.length &&
+        init.uplineLeg?.toLowerCase?.() === 'holding tank' &&
+        !canUseHoldingTank
+      ) {
+        init.uplineLeg = String(tree.legNames[0] ?? '').toLowerCase();
+      }
+
+      setDisclaimer(placement?.disclamerId === undefined);
+      setActiveItem(init);
+      setModalShow(true);
+      setSubmitting(false);
+
+      // reset validation state
+      setBannerMsg('');
+      setCycleInvalid(false);
+      setCheckingCycle(false);
+      setPositionAvailable(true);
+      setCheckingAvailability(false);
+    } else {
+      setActiveItem(undefined);
+      setModalShow(false);
+      setDisclaimer(false);
+      setPositionAvailable(true);
+      setCheckingAvailability(false);
+      setCycleInvalid(false);
+      setCheckingCycle(false);
+      setSubmitting(false);
+      setBannerMsg('');
+    }
+  }, [placement, tree?.legNames, canUseHoldingTank]);
+
+  // ----- Cycle check (candidate upline must NOT include moving node in its upline chain) -----
+  useEffect(() => {
+    const movingNodeId = activeItem?.nodeId;
+    const candidateUplineId = activeItem?.uplineId;
+
+    if (!movingNodeId || !candidateUplineId) {
+      setCycleInvalid(false);
+      setCheckingCycle(false);
       return;
     }
 
-    if (!activeItem.uplineLeg) {
-      if (tree.legNames) {
-        alert("Place On Leg is required");
+    // quick self-check
+    if (candidateUplineId === movingNodeId) {
+      setCycleInvalid(true);
+      setCheckingCycle(false);
+      setBannerMsg(MESSAGES.cycleInvalid);
+      return;
+    }
+
+    let cancelled = false;
+
+    const t = setTimeout(async () => {
+      try {
+        setCheckingCycle(true);
+
+        const url = `/api/v1/Trees/${encodeURIComponent(treeId)}/Nodes/${encodeURIComponent(candidateUplineId)}/upline`;
+        const chain = await sendRequestAsync('GET', url, null);
+        const list = Array.isArray(chain) ? chain : (chain?.items ?? []);
+
+        const includesMoving =
+          Array.isArray(list) && list.some(n => (n?.nodeId ?? '').toString() === movingNodeId);
+
+        if (!cancelled) {
+          setCycleInvalid(!!includesMoving);
+          if (includesMoving) {
+            setBannerMsg(MESSAGES.cycleInvalid);
+          } else {
+            setBannerMsg(prev => (prev === MESSAGES.cycleInvalid ? '' : prev));
+          }
+        }
+      } catch (_e) {
+        if (!cancelled) {
+          // conservative: block submit if we can't verify ancestry
+          setCycleInvalid(true);
+          setBannerMsg(MESSAGES.verifyFailed);
+        }
+      } finally {
+        if (!cancelled) setCheckingCycle(false);
+      }
+    }, 250);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [treeId, activeItem?.uplineId, activeItem?.nodeId]);
+
+  // ----- Leg occupancy availability (skip if cycle invalid) -----
+  // Single page via your API + SendRequest
+  const fetchChildrenPage = async (uplineId, offset, count) => {
+    const url = `/api/v1/Trees/${encodeURIComponent(treeId)}/Nodes/${encodeURIComponent(uplineId)}/downline?levels=1&offset=${offset}&count=${count}`;
+    const data = await sendRequestAsync('GET', url, null);
+    return Array.isArray(data) ? data : [];
+  };
+
+  const findLegOccupiedAcrossPages = async (uplineId, leg, movingNodeId, getCancelled) => {
+    let offset = 0;
+    let loop = true;
+    while (loop) {
+      if (getCancelled?.()) return false;
+      const page = await fetchChildrenPage(uplineId, offset, PAGE_SIZE);
+      if (getCancelled?.()) return false;
+
+      const occupied = page.some(c => {
+        const childLeg = (c?.uplineLeg ?? '').toLowerCase().trim();
+        const sameNode = movingNodeId && c?.nodeId === movingNodeId;
+        return !sameNode && childLeg === leg;
+      });
+      if (occupied) return true;
+
+      if (page.length < PAGE_SIZE) return false; // no more pages
+      offset += page.length;
+    }
+  };
+
+  useEffect(() => {
+    if (!hasLegs) {
+      setPositionAvailable(true);
+      setCheckingAvailability(false);
+      return;
+    }
+
+    // If cycle is invalid or being checked, don't run occupancy
+    if (cycleInvalid || checkingCycle) {
+      setCheckingAvailability(false);
+      return;
+    }
+
+    const uplineId = activeItem?.uplineId;
+    const leg = activeItem?.uplineLeg?.toLowerCase?.().trim?.();
+
+    if (!uplineId || !leg) {
+      setPositionAvailable(false);
+      setCheckingAvailability(false);
+      return;
+    }
+
+    // Holding Tank auto-valid only when allowed
+    if (leg === 'holding tank' && canUseHoldingTank) {
+      setPositionAvailable(true);
+      setCheckingAvailability(false);
+      return;
+    }
+
+    let cancelled = false;
+    const getCancelled = () => cancelled;
+
+    const t = setTimeout(async () => {
+      try {
+        setCheckingAvailability(true);
+
+        const movingNodeId = activeItem?.nodeId;
+        const occupied = await findLegOccupiedAcrossPages(uplineId, leg, movingNodeId, getCancelled);
+
+        if (!cancelled) {
+          setPositionAvailable(!occupied);
+          if (!cycleInvalid) {
+            setBannerMsg(occupied ? MESSAGES.occupiedClient(canUseHoldingTank) : '');
+          }
+        }
+      } catch (_err) {
+        if (!cancelled) {
+          setPositionAvailable(false);
+          if (!cycleInvalid) setBannerMsg(MESSAGES.verifyFailed);
+        }
+      } finally {
+        if (!cancelled) setCheckingAvailability(false);
+      }
+    }, 250);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [
+    hasLegs,
+    treeId,
+    activeItem?.uplineId,
+    activeItem?.uplineLeg,
+    activeItem?.nodeId,
+    canUseHoldingTank,
+    cycleInvalid,
+    checkingCycle
+  ]);
+
+  // ----- Submit -----
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!activeItem?.uplineId) {
+      setBannerMsg(MESSAGES.requiredUpline);
+      return;
+    }
+
+    let uplineLeg = activeItem?.uplineLeg;
+    if (!uplineLeg) {
+      if (hasLegs) {
+        setBannerMsg(MESSAGES.requiredLeg);
         return;
       } else {
-        activeItem.uplineLeg = activeItem.nodeId
+        uplineLeg = activeItem.nodeId; // single-leg trees: default uplineLeg to nodeId
       }
     }
 
-    setModalShow(false);
+    // Cycle guards
+    if (checkingCycle) {
+      setBannerMsg(MESSAGES.checking);
+      return;
+    }
+    if (cycleInvalid) {
+      setBannerMsg(MESSAGES.cycleInvalid);
+      return;
+    }
 
-    var url = `/api/v1/Trees/${treeId}/Nodes/${activeItem.nodeId}`;
-    SendRequest('PUT', url, activeItem, (n) => {
-      refreshNode(n);
-    }, (error) => {
-      alert('Error: ' + error);
-    });
-  }
+    // Availability guards (only when legs exist and HT not used/allowed)
+    if (hasLegs) {
+      const leg = uplineLeg.toLowerCase().trim();
+      if (leg === 'holding tank' && !canUseHoldingTank) {
+        setBannerMsg(MESSAGES.requiredLeg);
+        return;
+      }
+      if (leg !== 'holding tank' || !canUseHoldingTank) {
+        if (checkingAvailability) {
+          setBannerMsg(MESSAGES.checking);
+          return;
+        }
+        if (!positionAvailable) {
+          setBannerMsg(MESSAGES.occupiedClient(canUseHoldingTank));
+          return;
+        }
+      }
+    }
 
-  const handleDisclamer = (name, value) =>{
-    setDisclamer(value);
-  }
+    setSubmitting(true);
+    setBannerMsg('');
 
-  var UplineColWidth = tree.legNames ? 8 : 12;
+    const payload = { ...activeItem, uplineLeg };
+    const url = `/api/v1/Trees/${treeId}/Nodes/${activeItem.nodeId}`;
 
-  return <Modal showModal={showModal} onHide={handleClose} >
-    <div className="modal-header">
-      <h5 className="modal-title">Change Placement</h5>
-      <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-    </div>
-    <div className="modal-body">
-      <div className="row">
-        <div className={`col-md-${UplineColWidth}`}>
-          <div className="mb-3">
-            <label className="form-label">Place Under</label>
-            <AutoComplete name="uplineId" value={activeItem?.uplineId ?? ""} onChange={handleChange} />
-            <span className="text-danger"></span>
-          </div>
-        </div>
-        {tree.legNames &&
-          <div className="col-md-4">
+    try {
+      await sendRequestAsync('PUT', url, payload);
+      setModalShow(false);
+      refreshNode(payload);
+    } catch (e) {
+      setSubmitting(false);
+
+      if (isConflictError(e) && hasLegs && payload.uplineLeg?.toLowerCase() !== 'holding tank') {
+        setPositionAvailable(false);
+        setBannerMsg(MESSAGES.conflict409(canUseHoldingTank));
+        return;
+      }
+
+      setBannerMsg(MESSAGES.submitGeneric(e?.error?.message ?? e?.message ?? e?.error));
+    }
+  };
+
+  const uplineColWidth = hasLegs ? 8 : 12;
+  const canSubmit =
+    !submitting &&
+    disclaimer &&
+    !!activeItem?.uplineId &&
+    !checkingCycle &&
+    !cycleInvalid &&
+    (!hasLegs || !!activeItem?.uplineLeg) &&
+    (!hasLegs ||
+      (canUseHoldingTank && activeItem?.uplineLeg?.toLowerCase?.().trim?.() === 'holding tank') ||
+      (positionAvailable && !checkingAvailability));
+
+  return (
+    <Modal showModal={showModal} onHide={handleClose}>
+      <div className="modal-header">
+        <h5 className="modal-title">Change Placement</h5>
+        <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close" onClick={handleClose} disabled={submitting} />
+      </div>
+
+      <div className="modal-body">
+        <div className="row">
+          <div className={`col-md-${uplineColWidth}`}>
             <div className="mb-3">
-              <label className="form-label">Place on Leg</label>
-              <select className="form-select" name="uplineLeg" value={activeItem?.uplineLeg.toLowerCase() ?? ""} onChange={(e) => handleChange(e.target.name, e.target.value)} >
-                {tree.legNames.map((leg) => {
-                  return <option key={leg} value={leg.toLowerCase()}>{leg}</option>
-                })}
-                <option value="holding tank">Holding Tank</option>
-              </select>
-              <span className="text-danger"></span>
+              <label className="form-label">Place Under</label>
+              <AutoComplete name="uplineId" value={activeItem?.uplineId ?? ""} onChange={handleChange} disabled={submitting} />
             </div>
           </div>
-        }
-      </div>
-      {placement?.disclamerId && <>
-        <Switch onChange={handleDisclamer} value={disclamer} title="I understand that all tree-based sponsor commissions I would have received during an open period for activities of this person will be removed from my commissions and paid to this person's new sponsor." />
-      </>}
-    </div>
-    <div className="modal-footer">
-      <a href="#" className="btn btn-link link-secondary" data-bs-dismiss="modal">
-        Cancel
-      </a>
-      <button className="btn btn-primary ms-auto" disabled={!disclamer} onClick={handleSubmit}>
-        Place Node
-      </button>
-    </div>
-  </Modal>
-}
 
-export default ChangePlacementModal;
+          {hasLegs && (
+            <div className="col-md-4">
+              <div className="mb-3">
+                <label className="form-label">Place on Leg</label>
+                <select className="form-select" name="uplineLeg" value={activeItem?.uplineLeg?.toLowerCase() ?? ""} onChange={(e) => handleChange(e.target.name, e.target.value)} disabled={submitting} >
+                  {tree.legNames.map((leg) => (
+                    <option key={leg} value={leg.toLowerCase()}>
+                      {leg}
+                    </option>
+                  ))}
+                  {canUseHoldingTank && <option value="holding tank">Holding Tank</option>}
+                </select>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {(checkingAvailability || checkingCycle) && (
+          <div className="form-text d-none">{MESSAGES.checking}</div>
+        )}
+
+        {bannerMsg && (
+          <div className="alert alert-danger mb-3" role="alert">
+            {bannerMsg}
+          </div>
+        )}
+
+        {placement?.disclamerId && (
+          <Switch onChange={(_n, v) => setDisclaimer(v)} value={disclaimer} disabled={submitting}
+            title="I understand that all tree-based sponsor commissions I would have received during an open period for activities of this person will be removed from my commissions and paid to this person's new sponsor."
+          />
+        )}
+
+      </div>
+
+      <div className="modal-footer">
+        <button type="button" className="btn btn-link link-secondary" data-bs-dismiss="modal" onClick={handleClose} disabled={submitting}>
+          Cancel
+        </button>
+        <button className="btn btn-primary ms-auto" disabled={!canSubmit} onClick={handleSubmit}>
+          {submitting ? (
+            <>
+              <span className="spinner-border spinner-border-sm me-2" role="status" />
+              Placing…
+            </>
+          ) : (
+            'Place Node'
+          )}
+        </button>
+      </div>
+    </Modal>
+  );
+};
 
 ChangePlacementModal.propTypes = {
   tree: PropTypes.any,
   treeId: PropTypes.string.isRequired,
-  placement: PropTypes.string.isRequired,
+  placement: PropTypes.any,
   refreshNode: PropTypes.func.isRequired
-}
+};
+
+export default ChangePlacementModal;

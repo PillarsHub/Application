@@ -45,7 +45,7 @@ const OffCanvas = ({ id, showModal, children }) => {
 export default OffCanvas;
 
 OffCanvas.propTypes = {
-    id: PropTypes.string.isRequired,
+    id: PropTypes.string,
     showModal: PropTypes.bool.isRequired,
     children: PropTypes.any
 }

@@ -95,6 +95,7 @@ var GET_CUSTOMER = gql`query ($nodeIds: [String]!, $periodDate: Date!) {
       uplineId
       uplineLeg
       upline {
+        id
         fullName
         profileImage
       }
@@ -304,13 +305,13 @@ const CustomerDetail = () => {
                 {trees.map((tree) => {
                   return tree.nodes.map((node) => {
                     return <div key={tree.id} className="list-group-item">
-                      <a className="row align-items-center text-reset" href={`/Customers/${node.uplineId}/Summary`}>
+                      <a className="row align-items-center text-reset" href={`/Customers/${node.uplineId}/details`}>
                         <div className="col-auto">
                           <Avatar name={node.upline?.fullName} url={node.upline?.profileImage} size="sm" />
                         </div>
                         <div className="col text-truncate">
-                          <span className='text-reset' >{node.upline?.fullName}</span>
-                          <div className="d-block text-muted text-truncate mt-n1">{tree.name}</div>
+                          <span className='text-reset' >{node.upline?.fullName} ({node.upline?.id})</span>
+                          <div className="d-block text-muted text-truncate mt-n1">{tree.name} {node.uplineLeg}</div>
                         </div>
                       </a>
                     </div>

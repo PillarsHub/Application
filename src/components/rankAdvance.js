@@ -405,6 +405,19 @@ const RankAdvance = ({ currentRank, ranks, valueMap, period, options, isPreview 
       </div>
     </div>
     }
+
+    {
+      activeTab !== 3 && options.showRankProgress &&
+      <ul className="steps steps-green mb-3">
+        <li className={`step-item d-none ${currentRank == 0 ? 'active' : 'inactive'}`}></li>
+        {ranks && ranks.map((rank) => {
+          let activeClass = currentRank == rank.rankId ? 'active' : ''
+          let stepColor = activeRank.rankId == rank.rankId ? 'step-mark' : ''
+          return <li key={rank.rankId} className={`step-item ${activeClass} ${stepColor}`}></li>
+        })}
+      </ul>
+    }
+
     {
       activeTab !== 3 && options.reqs == 1 && <table className="table card-table table-vcenter">
         <thead>

@@ -129,6 +129,7 @@ const RankContent = ({ widget, definitions, updateWidget }) => {
         <div className="mb-3">
           <Switch name="showRankId" value={widget?.settings?.['showRankId']} title="Show Rank Index" onChange={handleWidgetSettingsChange} />
           <Switch name="itemPercent" value={widget?.settings?.['itemPercent']} title="Hide Item Percent" onChange={handleWidgetSettingsChange} />
+          <Switch name="showRankProgress" value={widget?.settings?.['showRankProgress']} title="Show Rank Progression" onChange={handleWidgetSettingsChange} />
         </div>
       </div>
       <div className="col-8">

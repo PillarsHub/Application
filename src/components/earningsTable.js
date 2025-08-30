@@ -72,9 +72,9 @@ const EarningsTable = ({ customerId, periodId, overrides }) => {
             <th>Date</th>
             <th>Bonus Name</th>
             <th>Level</th>
-            <th>Amount</th>
-            <th>Percent</th>
             <th>Volume</th>
+            <th>Percent</th>
+            <th>Amount</th>
             <th>Released</th>
             <th>Rank</th>
           </tr>
@@ -90,13 +90,13 @@ const EarningsTable = ({ customerId, periodId, overrides }) => {
                 <a className="text-reset" href={`/customers/${customerId}/commissions/${bonus.bonusId}?periodId=${periodId}`}>{override.display}</a>
               </td>
               <td>{bonus.level}</td>
-              <td>{bonus.amount.toLocaleString("en-US", { style: 'currency', currency: bonus?.currency ?? 'USD' })}</td>
-              <td>{bonus.percent}</td>
               <td>
                 <a className="text-reset" href={`/customers/${customerId}/commissions/${bonus.bonusId}?periodId=${periodId}`}>
                   {Math.round(bonus.volume * 1000) / 1000}
                 </a>
               </td>
+              <td>{bonus.percent}</td>
+              <td>{bonus.amount.toLocaleString("en-US", { style: 'currency', currency: bonus?.currency ?? 'USD' })}</td>
               <td>{bonus.released.toLocaleString("en-US", { style: 'currency', currency: bonus?.currency ?? 'USD' })}</td>
               <td>{ranks?.find(r => r.id == bonus.rank)?.name}</td>
             </tr>

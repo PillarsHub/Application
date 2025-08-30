@@ -68,6 +68,37 @@ const RegionDetail = () => {
     setShow(true);
   }
 
+  const handleRemoveState = (state) => {
+    if (!state?.countryCode || !state?.stateCode || !region) return;
+
+    const removeCountry = state.countryCode.toUpperCase();
+    const removeState = state.stateCode.toUpperCase();
+
+    // Keep every locale except the one matching country+state
+    const localsWithItemRemoved = (region.locales ?? [])
+      .filter(l => {
+        const cc = (l?.countryCode ?? '').toUpperCase();
+        const sc = (l?.stateCode ?? '').toUpperCase();
+        return !(cc === removeCountry && sc === removeState);
+      })
+      // keep payload shape consistent with your handleSubmit
+      .map(l => ({ countryCode: l.countryCode, stateCode: l.stateCode }));
+
+    const item = {
+      id: region.id,
+      name: region.name,
+      locales: localsWithItemRemoved
+    };
+
+    SendRequest('PUT', `/api/v1/regions/${item.id}`, item, () => {
+      refetch();
+    }, (error) => {
+      alert(error);
+    });
+  };
+
+
+
   const handleSubmit = async e => {
     e.preventDefault();
     setShow(false);
@@ -120,7 +151,7 @@ const RegionDetail = () => {
                         </td>
                         <td>{item.state?.name ?? item.stateCode}</td>
                         <td>
-                          <button className="btn btn-ghost-secondary btn-icon" >
+                          <button className="btn btn-ghost-secondary btn-icon" onClick={() => handleRemoveState(item)}>
                             <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-trash" width="40" height="40" viewBox="0 0 24 24" strokeWidth="1" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M4 7l16 0"></path><path d="M10 11l0 6"></path><path d="M14 11l0 6"></path><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12"></path><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3"></path></svg>
                           </button>
                         </td>
@@ -159,10 +190,15 @@ const RegionDetail = () => {
           <div className="col-md-12">
             <div className="mb-3">
               <label className="form-label">States</label>
-              <MultiSelect className="form-select" name="stateCodes" onChange={handleChange}>
-                {states && states.map((state) => {
-                  return <option key={state.iso2} value={state.iso2} >{state.name}</option>
-                })}
+              <MultiSelect className="form-select" name="stateCodes" value={activeItem.stateCodes} onChange={handleChange}>
+                {(states ?? [])
+                  .slice()
+                  .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? '', undefined, { sensitivity: 'base', numeric: true }))
+                  .map((state) => (
+                    <option key={state.iso2} value={state.iso2}>
+                      {state.name}
+                    </option>
+                  ))}
               </MultiSelect>
               <span className="text-danger"></span>
             </div>

@@ -296,7 +296,8 @@ function Content(widget, customer, compensationPlans, trees, isPreview, widgetVa
       reqs: widget?.settings?.['requirementType'] ?? 1,
       tabs: widget?.settings?.['tabType'] ?? 0,
       showRankId: widget?.settings?.['showRankId'] ?? false,
-      showItemPercent: (widget?.settings?.['itemPercent'] ?? false) ? false : true
+      showItemPercent: (widget?.settings?.['itemPercent'] ?? false) ? false : true,
+      showRankProgress: widget?.settings?.['showRankProgress'] ?? false
     };
 
     return <RankAdvance currentRank={currentRank} ranks={period?.rankAdvance || null} options={options} valueMap={valueMap} period={{ begin: period?.begin }} isPreview={isPreview} />

@@ -12,6 +12,7 @@ var GET_DATA = gql`query ($nodeIds: [String]!, $period: BigInt!, $bonusIds: [Str
   customers(idList: $nodeIds) {
     id
     fullName
+    profileImage
   }
   compensationPlans {
     periods(at: $period) {
@@ -81,9 +82,9 @@ const CommissionsBonusDetail = () => {
                   <tr>
                     <th className="text-center w-1"><i className="icon-people"></i></th>
                     <th>Customer</th>
-                    <th>Amount</th>
-                    <th>Percent</th>
                     <th>Volume</th>
+                    <th>Percent</th>
+                    <th>Amount</th>
                     <th>Released</th>
                     <th>Order Date</th>
                     <th>Order Number</th>
@@ -91,17 +92,28 @@ const CommissionsBonusDetail = () => {
                 </thead>
                 <tbody>
                   {bonuses[0].details && bonuses[0].details.map((bonus) => {
+                    let isMin = bonus.source?.date == "0001-01-01T00:00:00";
+
                     return <tr key={bonus.id}>
 
                       {bonus.source && <>
                         <td className="text-center">
-                          <Avatar name={bonus.source?.customer?.fullName} url={bonus.source?.customer?.profileImage} size="sm" />
+                          {isMin && <Avatar name={data?.customers[0].fullName} url={data?.customers[0].profileImage} size="sm" />}
+                          {!isMin && <Avatar name={bonus.source?.customer?.fullName} url={bonus.source?.customer?.profileImage} size="sm" />}
                         </td>
                         <td>
-                          <div><a className="text-reset" href={`/Customers/${bonus.source?.customer?.id}/Summary`}>{bonus.source?.customer?.fullName}</a></div>
-                          <div className="small text-muted">
-                            {bonus.source?.nodeId}
-                          </div>
+                          {isMin && <>
+                            <div><a className="text-reset" href={`/Customers/${data?.customers[0].id}/Summary`}>{data?.customers[0].fullName}</a></div>
+                            <div className="small text-muted">
+                              {bonus.source?.nodeId}
+                            </div>
+                          </>}
+                          {!isMin && <>
+                            <div><a className="text-reset" href={`/Customers/${bonus.source?.customer?.id}/Summary`}>{bonus.source?.customer?.fullName}</a></div>
+                            <div className="small text-muted">
+                              {bonus.source?.nodeId}
+                            </div>
+                          </>}
                         </td>
                       </>}
                       {!bonus.source && <>
@@ -109,12 +121,14 @@ const CommissionsBonusDetail = () => {
                         <td></td>
                       </>}
 
-                      <td>{bonus.amount.toLocaleString("en-US", { style: 'currency', currency: bonus?.currency ?? 'USD' })}</td>
-                      <td>{bonus.percent}</td>
                       <td>{bonus.volume} <span className="small text-muted">{bonus.source?.sourceGroupId}</span> </td>
+                      <td>{bonus.percent}</td>
+                      <td>{bonus.amount.toLocaleString("en-US", { style: 'currency', currency: bonus?.currency ?? 'USD' })}</td>
                       <td>{bonus.released.toLocaleString("en-US", { style: 'currency', currency: bonus?.currency ?? 'USD' })}</td>
 
-                      <td><LocalDate dateString={bonus.source?.date} /></td>
+                      <td>
+                        {!isMin && <LocalDate dateString={bonus.source?.date} />}
+                      </td>
                       <td>{bonus.source?.externalId}</td>
                     </tr>
                   })}
