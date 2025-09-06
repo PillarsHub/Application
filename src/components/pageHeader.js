@@ -5,7 +5,7 @@ import AccountMenu from '../pages/accountMenu';
 import AutoComplete from '../components/autocomplete'
 import CustomerNav from '../pages/customers/customerNav';
 
-const PageHeader = ({ preTitle, title, postTitle, children, breadcrumbs, onSearch, customerId, pageId }) => {
+const PageHeader = ({ preTitle, title, postTitle, children, breadcrumbs, onSearch, customerId, pageId, fluid = false }) => {
   const [searchText, setSearchText] = useState('');
 
   let header;
@@ -36,10 +36,12 @@ const PageHeader = ({ preTitle, title, postTitle, children, breadcrumbs, onSearc
     onSearch(searchText);
   }
 
+  const continerClass = fluid ? 'container-fluid' : 'container-xl';
+
   return <>
 
     <header className="navbar navbar-expand navbar-light d-print-none">
-      <div className="container-xl">
+      <div className={continerClass}>
         <div className="navbar-nav flex-row order-md-last d-none d-lg-flex">
           <div className="nav-item dropdown ">
             <AccountMenu />
@@ -61,7 +63,7 @@ const PageHeader = ({ preTitle, title, postTitle, children, breadcrumbs, onSearc
 
 
     <div className="page-wrapper">
-      {title && <div className="container-xl">
+      {title && <div className={continerClass}>
         <div className="page-header d-print-none">
           <div className="row g-3 align-items-center">
             <div className="col me-4">
@@ -117,5 +119,6 @@ PageHeader.propTypes = {
   onSearch: PropTypes.func,
   breadcrumbs: PropTypes.any,
   customerId: PropTypes.string,
-  pageId: PropTypes.string
+  pageId: PropTypes.string,
+  fluid: PropTypes.bool
 }

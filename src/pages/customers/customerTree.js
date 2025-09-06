@@ -158,6 +158,7 @@ const CustomerTree = () => {
   if (dbError) return <DataError error={dbError} />;
 
   const tree = data?.trees?.find(t => t.id == params.treeId);
+  const isToday = new Date(effectiveDate).toDateString() === new Date().toDateString();
 
   return (
     <>
@@ -180,6 +181,22 @@ const CustomerTree = () => {
         {!data?.customers?.[0] && (
           <EmptyContent title="Customer Not Found" text="The customer requested cannot be found." />
         )}
+
+        {!isToday && <>
+          <div className="container-xl">
+            <div className="alert alert-important alert-info alert-dismissible" role="alert">
+              <div className="d-flex">
+                <div>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="icon alert-icon" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><circle cx="12" cy="12" r="9" /><line x1="12" y1="8" x2="12.01" y2="8" /><polyline points="11 12 12 12 12 16 13 16" /></svg>
+                </div>
+                <div>
+                  The tree structure displayed is from historical data and may not represent the current structre of the tree.
+                </div>
+              </div>
+              <a className="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="close"></a>
+            </div>
+          </div>
+        </>}
 
         <div id="box" className="h-100" />
 

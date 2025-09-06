@@ -6,7 +6,7 @@ import Switch from '../../../components/switch';
 import { SendRequest } from "../../../hooks/usePost";
 import { GetScope } from "../../../features/authentication/hooks/useToken";
 
-const PAGE_SIZE = 300; // API cap, adjust if desired
+const PAGE_SIZE = 300; // API cap
 
 // Wrap SendRequest so we can await it and keep the status code
 const sendRequestAsync = (method, url, body = null) =>
@@ -35,6 +35,8 @@ const isConflictError = (e) => {
 const choiceSuffix = (canUseHoldingTank) =>
   canUseHoldingTank ? ' Choose a different leg or select Holding Tank.' : ' Choose a different leg.';
 
+const plural = (n, s) => `${n} ${s}${n === 1 ? '' : 's'}`;
+
 const MESSAGES = {
   requiredUpline: 'Choose a sponsor to place under.',
   requiredLeg: 'Choose a leg to place on.',
@@ -44,6 +46,7 @@ const MESSAGES = {
   conflict409: (canUseHoldingTank) =>
     'That leg was taken moments ago.' + choiceSuffix(canUseHoldingTank),
   cycleInvalid: 'You can’t place a node under someone in its own downline. Choose a different sponsor.',
+  rangeInvalid: (max) => `Selected sponsor is outside your allowed placement range (${plural(max, 'level')} under your scope). Choose a different sponsor.`,
   verifyFailed: 'We couldn’t confirm the position. Try again.',
   submitGeneric: (msg) => `Couldn’t place this node${msg ? `: ${msg}` : '.'}`,
 };
@@ -57,17 +60,20 @@ const ChangePlacementModal = ({ tree, treeId, placement, refreshNode }) => {
   const [checkingAvailability, setCheckingAvailability] = useState(false);
   const [positionAvailable, setPositionAvailable] = useState(true);
 
-  // Cycle prevention
+  // Cycle & scope-range checks (share the same upline fetch)
   const [checkingCycle, setCheckingCycle] = useState(false);
   const [cycleInvalid, setCycleInvalid] = useState(false);
+  const [rangeInvalid, setRangeInvalid] = useState(false);
 
   // Banner + submit
   const [bannerMsg, setBannerMsg] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  const scope = GetScope?.();
+  const scope = GetScope?.(); // nodeId of scope owner (truthy => scoped)
   const canUseHoldingTank = !scope; // only when token has no scope
   const hasLegs = !!(tree?.legNames && tree.legNames.length > 0);
+  const maxMoveLevels = Number(tree?.maximumAllowedMovementLevels ?? 0);
+  const enforceRange = !!scope && maxMoveLevels > 0;
 
   const handleClose = () => setModalShow(false);
 
@@ -76,12 +82,13 @@ const ChangePlacementModal = ({ tree, treeId, placement, refreshNode }) => {
 
     // Smart banner clearing:
     if (name === 'uplineId') {
-      // Changing sponsor CAN resolve a cycle—let effects re-check
+      // Changing sponsor CAN resolve cycle/range—let the effect re-check
       setCycleInvalid(false);
+      setRangeInvalid(false);
       setBannerMsg('');
     } else if (name === 'uplineLeg') {
-      // Changing leg does NOT resolve a cycle; keep cycle banner if present
-      if (!cycleInvalid) setBannerMsg('');
+      // Changing leg does NOT fix cycle/range; keep those banners if present
+      if (!cycleInvalid && !rangeInvalid) setBannerMsg('');
     } else {
       setBannerMsg('');
     }
@@ -114,6 +121,7 @@ const ChangePlacementModal = ({ tree, treeId, placement, refreshNode }) => {
       // reset validation state
       setBannerMsg('');
       setCycleInvalid(false);
+      setRangeInvalid(false);
       setCheckingCycle(false);
       setPositionAvailable(true);
       setCheckingAvailability(false);
@@ -124,26 +132,29 @@ const ChangePlacementModal = ({ tree, treeId, placement, refreshNode }) => {
       setPositionAvailable(true);
       setCheckingAvailability(false);
       setCycleInvalid(false);
+      setRangeInvalid(false);
       setCheckingCycle(false);
       setSubmitting(false);
       setBannerMsg('');
     }
-  }, [placement, tree?.legNames, canUseHoldingTank]);
+  }, [placement, tree?.legNames, canUseHoldingTank, maxMoveLevels, scope]);
 
-  // ----- Cycle check (candidate upline must NOT include moving node in its upline chain) -----
+  // ----- Cycle + scope-range check (one upline fetch does both) -----
   useEffect(() => {
     const movingNodeId = activeItem?.nodeId;
     const candidateUplineId = activeItem?.uplineId;
 
     if (!movingNodeId || !candidateUplineId) {
       setCycleInvalid(false);
+      setRangeInvalid(false);
       setCheckingCycle(false);
       return;
     }
 
-    // quick self-check
+    // quick self-check (placing under itself)
     if (candidateUplineId === movingNodeId) {
       setCycleInvalid(true);
+      setRangeInvalid(false);
       setCheckingCycle(false);
       setBannerMsg(MESSAGES.cycleInvalid);
       return;
@@ -159,21 +170,48 @@ const ChangePlacementModal = ({ tree, treeId, placement, refreshNode }) => {
         const chain = await sendRequestAsync('GET', url, null);
         const list = Array.isArray(chain) ? chain : (chain?.items ?? []);
 
+        // --- Recursion (cycle) ---
         const includesMoving =
           Array.isArray(list) && list.some(n => (n?.nodeId ?? '').toString() === movingNodeId);
 
+        // --- Scope range (only if scoped & maxMoveLevels > 0) ---
+        let rangeBad = false;
+        if (enforceRange) {
+          const scopeId = String(scope);
+          const idx = Array.isArray(list)
+            ? list.findIndex(n => (n?.nodeId ?? '').toString() === scopeId)
+            : -1;
+
+          if (idx === -1) {
+            // new upline is NOT under scope at all
+            rangeBad = true;
+          } else {
+            // Distance from candidate to scope.
+            // If the upline list includes the candidate itself at index 0, distance = idx.
+            // Usually /upline returns ancestors (excluding self), so distance = idx + 1.
+            const includesSelf = list.some(n => (n?.nodeId ?? '').toString() === candidateUplineId);
+            const distance = includesSelf ? idx : idx + 1;
+            rangeBad = distance > maxMoveLevels;
+          }
+        }
+
         if (!cancelled) {
           setCycleInvalid(!!includesMoving);
+          setRangeInvalid(!!rangeBad);
+
           if (includesMoving) {
             setBannerMsg(MESSAGES.cycleInvalid);
+          } else if (rangeBad) {
+            setBannerMsg(MESSAGES.rangeInvalid(maxMoveLevels));
           } else {
-            setBannerMsg(prev => (prev === MESSAGES.cycleInvalid ? '' : prev));
+            setBannerMsg(prev => (prev === MESSAGES.cycleInvalid || prev.startsWith('Selected sponsor is outside') ? '' : prev));
           }
         }
       } catch (_e) {
         if (!cancelled) {
-          // conservative: block submit if we can't verify ancestry
+          // conservative: if we can't verify ancestry, block submit
           setCycleInvalid(true);
+          setRangeInvalid(false);
           setBannerMsg(MESSAGES.verifyFailed);
         }
       } finally {
@@ -185,10 +223,9 @@ const ChangePlacementModal = ({ tree, treeId, placement, refreshNode }) => {
       cancelled = true;
       clearTimeout(t);
     };
-  }, [treeId, activeItem?.uplineId, activeItem?.nodeId]);
+  }, [treeId, activeItem?.uplineId, activeItem?.nodeId, enforceRange, maxMoveLevels, scope]);
 
-  // ----- Leg occupancy availability (skip if cycle invalid) -----
-  // Single page via your API + SendRequest
+  // ----- Leg occupancy availability (skip if cycle/range invalid) -----
   const fetchChildrenPage = async (uplineId, offset, count) => {
     const url = `/api/v1/Trees/${encodeURIComponent(treeId)}/Nodes/${encodeURIComponent(uplineId)}/downline?levels=1&offset=${offset}&count=${count}`;
     const data = await sendRequestAsync('GET', url, null);
@@ -222,8 +259,8 @@ const ChangePlacementModal = ({ tree, treeId, placement, refreshNode }) => {
       return;
     }
 
-    // If cycle is invalid or being checked, don't run occupancy
-    if (cycleInvalid || checkingCycle) {
+    // If cycle or range invalid (or being checked), don't run occupancy
+    if (cycleInvalid || rangeInvalid || checkingCycle) {
       setCheckingAvailability(false);
       return;
     }
@@ -256,14 +293,15 @@ const ChangePlacementModal = ({ tree, treeId, placement, refreshNode }) => {
 
         if (!cancelled) {
           setPositionAvailable(!occupied);
-          if (!cycleInvalid) {
+          // Only set banner if NOT blocked by cycle/range (priority)
+          if (!cycleInvalid && !rangeInvalid) {
             setBannerMsg(occupied ? MESSAGES.occupiedClient(canUseHoldingTank) : '');
           }
         }
       } catch (_err) {
         if (!cancelled) {
           setPositionAvailable(false);
-          if (!cycleInvalid) setBannerMsg(MESSAGES.verifyFailed);
+          if (!cycleInvalid && !rangeInvalid) setBannerMsg(MESSAGES.verifyFailed);
         }
       } finally {
         if (!cancelled) setCheckingAvailability(false);
@@ -282,6 +320,7 @@ const ChangePlacementModal = ({ tree, treeId, placement, refreshNode }) => {
     activeItem?.nodeId,
     canUseHoldingTank,
     cycleInvalid,
+    rangeInvalid,
     checkingCycle
   ]);
 
@@ -304,13 +343,17 @@ const ChangePlacementModal = ({ tree, treeId, placement, refreshNode }) => {
       }
     }
 
-    // Cycle guards
+    // Cycle/range guards (share checkingCycle)
     if (checkingCycle) {
       setBannerMsg(MESSAGES.checking);
       return;
     }
     if (cycleInvalid) {
       setBannerMsg(MESSAGES.cycleInvalid);
+      return;
+    }
+    if (rangeInvalid) {
+      setBannerMsg(MESSAGES.rangeInvalid(maxMoveLevels));
       return;
     }
 
@@ -363,6 +406,7 @@ const ChangePlacementModal = ({ tree, treeId, placement, refreshNode }) => {
     !!activeItem?.uplineId &&
     !checkingCycle &&
     !cycleInvalid &&
+    !rangeInvalid &&
     (!hasLegs || !!activeItem?.uplineLeg) &&
     (!hasLegs ||
       (canUseHoldingTank && activeItem?.uplineLeg?.toLowerCase?.().trim?.() === 'holding tank') ||
@@ -416,13 +460,10 @@ const ChangePlacementModal = ({ tree, treeId, placement, refreshNode }) => {
             title="I understand that all tree-based sponsor commissions I would have received during an open period for activities of this person will be removed from my commissions and paid to this person's new sponsor."
           />
         )}
-
       </div>
 
       <div className="modal-footer">
-        <button type="button" className="btn btn-link link-secondary" data-bs-dismiss="modal" onClick={handleClose} disabled={submitting}>
-          Cancel
-        </button>
+        <button type="button" className="btn btn-link link-secondary" data-bs-dismiss="modal" onClick={handleClose} disabled={submitting}>Cancel</button>
         <button className="btn btn-primary ms-auto" disabled={!canSubmit} onClick={handleSubmit}>
           {submitting ? (
             <>

@@ -6,7 +6,6 @@ import DataError from '../../components/dataError';
 import DataLoading from '../../components/dataLoading';
 import Avatar from "../../components/avatar";
 import LocalDate from '../../util/LocalDate';
-/* import ChangePlacementModal from './treeComponents/changePlacementModal' */
 
 var GET_CUSTOMERS = gql`query ($customerId: String!) {
   customers(idList: [$customerId]) {

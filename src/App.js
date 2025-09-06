@@ -85,6 +85,9 @@ const QueryBuilder = lazy(() => import("./pages/tools/queryBuilder"));
 const CustomerPage = lazy(() => import("./pages/customers/customerPage"));
 const CorporatePage = lazy(() => import("./pages/corporatePage"));
 
+const PlanList = lazy(() => import("./pages/commissions/planList"));
+const PlanOverview = lazy(() => import("./pages/commissions/planOverview"));
+
 function App() {
   const { token, setToken, clearToken } = useToken();
 
@@ -154,6 +157,8 @@ function App() {
               <Route path="commissions/payables" element={<Payables />} />
               <Route path="commissions/paid" element={<PaymentHistory />} />
               <Route path="commissions/paid/:batchId" element={<PaymentHistoryDetail />} />
+              <Route path="compensationPlans" element={<PlanList />} />
+              <Route path="compensationPlan/:planId" element={<PlanOverview />} />
               <Route path="media" element={<MediaList />} />
               <Route path="schedule" element={<Schedule />} />
               <Route path="training" element={<Training />} />
