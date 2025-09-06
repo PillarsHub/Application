@@ -12,8 +12,8 @@ const PlanOverview = () => {
     <div className="container-fluid">
       <div className="row row-cards">
         <div className="col-12">
-          {/* {JSON.stringify(data)}  */}
-          {data?.definitions && <DefinitionFlowchart definitions={data?.definitions} ranks={data?.ranks} setId={params.planId} />} 
+          {/* {JSON.stringify(data)}   */}
+          {data?.definitions && <DefinitionFlowchart definitions={data?.definitions} ranks={data?.ranks} bonusDefinitions={data?.bonusDefinitions} setId={params.planId} />} 
         </div>
       </div>
     </div>
