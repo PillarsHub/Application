@@ -46,7 +46,7 @@ const MESSAGES = {
   conflict409: (canUseHoldingTank) =>
     'That leg was taken moments ago.' + choiceSuffix(canUseHoldingTank),
   cycleInvalid: 'You can’t place a node under someone in its own downline. Choose a different sponsor.',
-  rangeInvalid: (max) => `Selected sponsor is outside your allowed placement range (${plural(max, 'level')} under your scope). Choose a different sponsor.`,
+  rangeInvalid: (max) => `Selected sponsor is outside your allowed placement range (${plural(max, 'level')} under you). Choose a different sponsor.`,
   verifyFailed: 'We couldn’t confirm the position. Try again.',
   submitGeneric: (msg) => `Couldn’t place this node${msg ? `: ${msg}` : '.'}`,
 };
