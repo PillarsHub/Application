@@ -122,9 +122,9 @@ const EarningsTable = ({ customerId, periodId, overrides }) => {
                 <td className="strong">Total</td>
                 <td></td>
                 <td></td>
-                <td className="strong">{totalAmount.toLocaleString("en-US", { style: 'currency', currency: bonuses[0]?.currency ?? 'USD' })}</td>
-                <td></td>
                 <td className="strong">{Math.round(totalVolume * 1000) / 1000}</td>
+                <td></td>
+                <td className="strong">{totalAmount.toLocaleString("en-US", { style: 'currency', currency: bonuses[0]?.currency ?? 'USD' })}</td>
                 <td className="strong">{totalReleased.toLocaleString("en-US", { style: 'currency', currency: bonuses[0]?.currency ?? 'USD' })}</td>
                 <td></td>
               </tr>
