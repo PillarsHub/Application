@@ -37,13 +37,17 @@ const PaymentHistory = () => {
     setCustomerId(value && value != '' ? value : null);
   }
 
+  const handleRefetch = () => {
+    //Do nothing
+  }
+
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
 
   return <>
     <PageHeader title="Commission Payables">
       <CardHeader>
-        <AddPayableModal setCurrentBatch={setCurrentBatch} />
+        <AddPayableModal setCurrentBatch={setCurrentBatch} refetch={handleRefetch} />
       </CardHeader>
       <div className="container-xl">
 

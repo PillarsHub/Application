@@ -27,8 +27,19 @@ const FilterInput = ({ filter, values, onChange, col = 'col' }) => {
       return <div className={col}><TextInput name={filter.id} placeholder={filter.id} value={values[filter.id] ?? ''} onChange={onChange} /></div>
     case "Number":
       return <div className={col}><NumericInput name={filter.id} placeholder={filter.id} value={values[filter.id] ?? ''} onChange={onChange} /></div>
-    case "Period":
-      return <> <div className="col"></div><div className="col-auto ms-auto"><PeriodPicker periodId={values?.periodId ?? ''} setPeriodId={(value) => onChange('periodId', Number(value))} /></div></>;
+    case "Period": {
+      let options = {
+        hideTime: true,
+        hideEnd: true,
+        tabbedUI: true
+      }
+      return <>
+        < div className="col" ></div>
+        <div className="col-auto ms-auto">
+          <PeriodPicker periodId={Number(values?.periodId ?? '0')} setPeriodId={(value) => onChange('periodId', Number(value))} options={options} />
+        </div>
+      </>;
+    }
     case "Rank":
       return <div className={col}><RankSelect name="rankId" value={values?.rankId ?? ''} onChange={onChange} ><option value="">All Ranks</option></RankSelect></div>
     case "CustomerId":

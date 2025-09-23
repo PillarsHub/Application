@@ -43,6 +43,7 @@ export default function Login({ setToken }) {
 
     Get(url, (response) => {
       setToken(response);
+      location = "/";
     }, (text, error) => {
       if (error === 401) {
         setLoginError('Incorrect username or password');

@@ -5,17 +5,26 @@ import PageHeader from "../../components/pageHeader";
 import Modal from "../../components/modal";
 import TextInput from "../../components/textInput";
 import SelectInput from "../../components/selectInput";
+import Switch from "../../components/switch";
 import { SendRequest } from "../../hooks/usePost";
 import SettingsNav from "./settingsNav";
 
 
-var GET_STATUSES = gql`query{
-  customerStatuses
-  {
+var GET_STATUSES = gql`query {
+  customerStatuses {
     id
     name
     statusClass
     earningsClass
+    treeSettings{
+      treeId
+      compress
+    }
+  }
+  trees {
+    id
+    name
+    legNames
   }
 }`
 
@@ -31,6 +40,29 @@ const Statuses = () => {
   const handleChange = (name, value) => {
     setActiveItem(values => ({ ...values, [name]: value }))
   }
+
+  const handleTreeSettingsChange = (treeId, value) => {
+    setActiveItem(values => {
+      const current = values.treeSettings ?? [];
+      const numericTreeId = Number(treeId);
+
+      const exists = current.some(s => s.treeId === numericTreeId);
+
+      return {
+        ...values,
+        treeSettings: exists
+          ? current.map(setting =>
+            setting.treeId === numericTreeId
+              ? { ...setting, compress: value }
+              : setting
+          )
+          : [
+            ...current,
+            { __typename: "TreeSettings", treeId: numericTreeId, compress: value }
+          ]
+      };
+    });
+  };
 
   const handleClose = () => setShow(false);
   const handleShow = (id) => {
@@ -150,6 +182,15 @@ const Statuses = () => {
               <span className="text-danger"></span>
             </div>
           </div>
+          {data?.trees && <div className="col-md-12">
+            <div className="mb-3">
+              {data.trees.map((tree) => {
+                let value = activeItem.treeSettings?.find(s => s.treeId == tree.id)?.compress;
+                let title = tree.legNames ? `Remove from ${tree.name} (compress when possible)` : `Remove node from ${tree.name} and compress tree`;
+                return <Switch key={tree.id} title={title} name={tree.id} value={value} onChange={handleTreeSettingsChange} />
+              })}
+            </div>
+          </div>}
         </div>
       </div>
       <div className="modal-footer">

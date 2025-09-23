@@ -1,11 +1,11 @@
 import React, { Suspense, lazy } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import useToken from './features/authentication/hooks/useToken';
-import { TokenProvider } from './features/authentication/hooks/useToken';
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import useToken, { TokenProvider } from "./features/authentication/hooks/useToken";
+import PropTypes from "prop-types";
 
 const Layout = lazy(() => import("./pages/layout"));
-const Login = lazy(() => import('./pages/account/login'));
-const EnvironmentList = lazy(() => import('./pages/account/environmentList'));
+const Login = lazy(() => import("./pages/account/login"));
+const EnvironmentList = lazy(() => import("./pages/account/environmentList"));
 const Home = lazy(() => import("./pages/home/home"));
 const Profile = lazy(() => import("./pages/account/profile"));
 const Customers = lazy(() => import("./pages/customers/customers"));
@@ -84,33 +84,46 @@ const PlacementSuite = lazy(() => import("./pages/customers/placementSuite"));
 const QueryBuilder = lazy(() => import("./pages/tools/queryBuilder"));
 const CustomerPage = lazy(() => import("./pages/customers/customerPage"));
 const CorporatePage = lazy(() => import("./pages/corporatePage"));
-
 const PlanList = lazy(() => import("./pages/commissions/planList"));
 const PlanOverview = lazy(() => import("./pages/commissions/planOverview"));
 
+// Small guard that redirects based on auth/env state
+function Guard({ token, children }) {
+  if (!token) return <Navigate to="/account/login" replace />;
+  if (!token.environmentId) return <Navigate to="/account/environments" replace />;
+  return children;
+}
+
 function App() {
   const { token, setToken, clearToken } = useToken();
-
-  if (window.location.pathname.toLowerCase() == '/account/forgotpassword') { return <ForgotPassword /> }
-  if (window.location.pathname.toLowerCase() == '/account/resetpassword') { return <ResetPassword /> }
-  if (window.location.pathname.toLowerCase() == '/account/environments') { return <EnvironmentList setToken={setToken} clearToken={clearToken} /> }
-
-  if (!token) {
-    return <Login setToken={setToken} />
-  }
-
-  if (!token.environmentId) {
-    return <EnvironmentList setToken={setToken} clearToken={clearToken} />
-  }
 
   return (
     <BrowserRouter>
       <TokenProvider clearToken={clearToken}>
         <Suspense fallback={<div>Loading...</div>}>
+
           <Routes>
-            <Route path="/" element={<Layout clearToken={clearToken} />}>
+            {/* Public / auth routes */}
+            <Route path="/account/login" element={<Login setToken={setToken} />} />
+            <Route path="/account/forgotpassword" element={<ForgotPassword />} />
+            <Route path="/account/resetpassword" element={<ResetPassword />} />
+            <Route
+              path="/account/environments"
+              element={<EnvironmentList setToken={setToken} clearToken={clearToken} />}
+            />
+
+            {/* Protected app */}
+            <Route
+              path="/"
+              element={
+                <Guard token={token}>
+                  <Layout clearToken={clearToken} />
+                </Guard>
+              }
+            >
               <Route index element={<Home />} />
               <Route path="profile" element={<Profile />} />
+
               <Route path="customers" element={<Customers />} />
               <Route path="customers/new" element={<NewCustomer />} />
               <Route path="customers/:customerId/team" element={<TeamList />} />
@@ -139,6 +152,7 @@ function App() {
               <Route path="customers/:customerId/reports/:reportId" element={<Report />} />
               <Route path="customers/:customerId/media" element={<MediaList />} />
               <Route path="customers/:customerId/:pageId" element={<CustomerPage />} />
+
               <Route path="inventory/stores" element={<Stores />} />
               <Route path="inventory/categories" element={<Categories />} />
               <Route path="inventory/products" element={<Products />} />
@@ -149,6 +163,7 @@ function App() {
               <Route path="inventory/products/:productId/variants" element={<ProductVariants />} />
               <Route path="inventory/products/:productId/images" element={<ProductImages />} />
               <Route path="inventory/products/:productId/bom" element={<ProductBom />} />
+
               <Route path="commissions/periods" element={<Periods />} />
               <Route path="commissions/periods/:periodId/summary" element={<PeriodDetail />} />
               <Route path="commissions/periods/:periodId/volumesummary" element={<VolumeSummary />} />
@@ -159,17 +174,21 @@ function App() {
               <Route path="commissions/paid/:batchId" element={<PaymentHistoryDetail />} />
               <Route path="compensationPlans" element={<PlanList />} />
               <Route path="compensationPlan/:planId" element={<PlanOverview />} />
+
               <Route path="media" element={<MediaList />} />
               <Route path="schedule" element={<Schedule />} />
               <Route path="training" element={<Training />} />
               <Route path="training/:courseId" element={<EditCourse />} />
+
               <Route path="reports" element={<Reports />} />
               <Route path="reports/graphQL" element={<ReportQuery />} />
               <Route path="reports/new" element={<EditReport />} />
               <Route path="reports/:reportId" element={<Report />} />
               <Route path="reports/:reportId/edit" element={<EditReport />} />
+
               <Route path="query" element={<QueryBuilder />} />
               <Route path="tools/adjustments" element={<Adjustments />} />
+
               <Route path="settings/users" element={<Users />} />
               <Route path="settings/theme" element={<Theme />} />
               <Route path="settings/navigation" element={<Navigation />} />
@@ -177,7 +196,6 @@ function App() {
               <Route path="settings/pages" element={<Pages />} />
               <Route path="settings/pages/:pageId" element={<CustomerDetailSettings />} />
               <Route path="settings/pages/tree/:treeId" element={<TreeSettings />} />
-              <Route path="settings/widgets" element={<WidgetSettings />} />
               <Route path="settings/widgets" element={<WidgetSettings />} />
               <Route path="settings/widgets/:widgetId" element={<EditWidget />} />
               <Route path="settings/email/providers" element={<EmailSettings />} />
@@ -192,9 +210,12 @@ function App() {
               <Route path="settings/company" element={<Company />} />
               <Route path="settings/trees" element={<PlacementRules />} />
               <Route path="settings/orderstatuses" element={<OrderStatuses />} />
+
               <Route path="page/:pageId" element={<CorporatePage />} />
-              <Route path="*" element={<NoPage />} />
             </Route>
+
+            {/* Default 404 for anything unmatched */}
+            <Route path="*" element={<NoPage />} />
           </Routes>
         </Suspense>
       </TokenProvider>
@@ -203,3 +224,10 @@ function App() {
 }
 
 export default App;
+
+Guard.propTypes = {
+  token: PropTypes.shape({
+    environmentId: PropTypes.any, // adjust type if needed
+  }),
+  children: PropTypes.node,
+};
