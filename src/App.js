@@ -100,7 +100,7 @@ function App() {
   return (
     <BrowserRouter>
       <TokenProvider clearToken={clearToken}>
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense fallback={<></>}>
 
           <Routes>
             {/* Public / auth routes */}

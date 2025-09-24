@@ -4,14 +4,13 @@ import parse from 'html-react-parser';
 import { useLocation } from "react-router-dom";
 import { GetScope } from "../features/authentication/hooks/useToken"
 import { useFetch } from "../hooks/useFetch";
-import DataLoading from '../components/dataLoading';
 import DataError from '../components/dataError';
 
 const BackOfficeMenu = ({ itemClick }) => {
   const location = useLocation();
   const { data, loading, error } = useFetch('/api/v1/Menus');
 
-  if (loading) return <DataLoading />
+  if (loading) return <></>
   if (error) return <DataError error={error} />
 
   let customerId = GetScope();
