@@ -96,7 +96,7 @@ const OrderDetail = () => {
   });
 
   const envId = GetToken()?.environmentId;
-  let showMenu = envId == 10432 || envId == 286 || envId == 10461 || envId == 54;
+  let showMenu = envId == 10432 || envId == 286 || envId == 10461 || envId == 54 || envId == 10530 || envId == 10538;
   let hasScope = false;
   if (GetScope()) {
     showMenu = false;

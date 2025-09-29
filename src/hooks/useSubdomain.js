@@ -39,6 +39,7 @@ export default function useSubdomain() {
     const currentURL = window.location.hostname;
 
     if (currentURL === "backoffice.celesty.com") { return "celesty"; }
+    if (currentURL === "backoffice.dreamtrips.com") { return "dreamtrips"; }
     if (currentURL === "office.aregobrands.com") { return "arego"; }
 
     // Split the URL by dots to get an array of subdomains
