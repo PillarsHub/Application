@@ -106,7 +106,7 @@ function App() {
   return (
     <BrowserRouter>
       <TokenProvider clearToken={clearToken}>
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense fallback={<></>}>
           <Routes>
             <Route path="/" element={<Layout clearToken={clearToken} />}>
               <Route index element={<Home />} />
