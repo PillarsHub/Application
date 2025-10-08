@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 //import { useQuery, gql } from "@apollo/client";
 import PageHeader, { CardHeader } from "../../components/pageHeader";
-import { useFetch } from "../../hooks/useFetch"
+//import { useFetch } from "../../hooks/useFetch"
 import { SendRequest } from "../../hooks/usePost";
 import DataLoading from "../../components/dataLoading";
 import LocalDate from "../../util/LocalDate";
@@ -10,8 +10,10 @@ import AutoComplete from "../../components/autocomplete";
 import TextArea from "../../components/textArea";
 import SelectInput from "../../components/selectInput";
 import DateInput from "../../components/dateInput";
-import DateRangeInput from "../../components/dateRangeInput";
+import PeriodPicker from "../../components/periodPicker";
 import EmptyContent from "../../components/emptyContent";
+import DataError from "../../components/dataError";
+import AddPayableModal from "../commissions/payableComponents/addPayableModal";
 
 /* var GET_DATA = gql`query ( $date: Date!) {
   compensationPlans(first: 1) {
@@ -25,18 +27,13 @@ import EmptyContent from "../../components/emptyContent";
 }`; */
 
 const Adjustments = () => {
-  const currentDate = new Date();
-  const isoEndDate = currentDate.toISOString();
-
-  const pastDate = new Date();
-  pastDate.setDate(pastDate.getDate() - 30);
-  const isoStartDate = pastDate.toISOString();
-
   const queryParams = new URLSearchParams(window.location.search);
-  const periodId = queryParams.get("periodId") ?? "0";
-  const [dateRange, setDateRange] = useState({ startDate: isoStartDate, endDate: isoEndDate });
+  const [periodId, setPeriodId] = useState(Number(queryParams.get("periodId") ?? "0"));
   const [customerId, setCustomerId] = useState('');
-  const { data, loading, error, refetch } = useFetch(`/api/v1/CompensationPlans/0/Periods/${periodId}/HistoricalValues?offset=0&count=1000`);
+  const [data, setData] = useState();
+  const [loading] = useState();
+  const [error] = useState();
+  //const { data, loading, error, refetch } = useFetch(`/api/v1/CompensationPlans/0/Periods/${periodId}/HistoricalValues?offset=0&count=1000`);
 
 
   //const dateOnly = isoDate.split('T')[0];
@@ -44,6 +41,12 @@ const Adjustments = () => {
   /*  const { data: qData, loading: qLoading, error: qError } = useQuery(GET_DATA, {
      variables: { date: dateOnly },
    }); */
+
+  useEffect(() => {
+    if (periodId) {
+      setData();
+    }
+  }, [periodId])
 
   useEffect(() => {
     if (data) {
@@ -62,12 +65,8 @@ const Adjustments = () => {
   const [show, setShow] = useState(false);
   const [activeItem, setActiveItem] = useState({});
 
-  if (loading) return <DataLoading />;
-  if (error) return `Error! ${error}`;
-
-  const handlePeriodChange = (name, startDate, endDate) => {
-    setDateRange({ startDate: startDate, endDate: endDate });
-  }
+  if (loading) return <DataLoading />
+  if (error) return <DataError error={error} />
 
   const handleSearch = async (name, value) => {
     setCustomerId(value && value != '' ? value : null);
@@ -98,7 +97,7 @@ const Adjustments = () => {
     var method = "POST";
 
     SendRequest(method, url, item, () => {
-      refetch();
+      //refetch();
     }, (error, code) => {
       alert(`${code}: ${error}`);
     });
@@ -112,6 +111,14 @@ const Adjustments = () => {
     setShow(true);
   }
 
+  const handleSetPeriod = (value) => {
+    setPeriodId(Number(value))
+  }
+
+  const handleRefetch = () => {
+
+  }
+
   const showConst = true;
 
   if (showConst) {
@@ -120,12 +127,22 @@ const Adjustments = () => {
     </PageHeader>
   }
 
+  let options = {
+    hideTime: true,
+    hideEnd: true,
+    tabbedUI: true
+  }
+
   return <PageHeader title="Adjustments">
     <CardHeader>
-      <button className="btn btn-primary" onClick={() => handleShow('')}>
-        <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-playlist-add" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M19 8h-14" /><path d="M5 12h9" /><path d="M11 16h-6" /><path d="M15 16h6" /><path d="M18 13v6" /></svg>
-        Add Adjustment
-      </button>
+      <div className="d-flex align-items-center gap-2">
+
+        <button className="btn btn-default" onClick={() => handleShow('')}>
+          <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-playlist-add" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M19 8h-14" /><path d="M5 12h9" /><path d="M11 16h-6" /><path d="M15 16h6" /><path d="M18 13v6" /></svg>
+          Add Override
+        </button>
+        <AddPayableModal refetch={handleRefetch} />
+      </div>
     </CardHeader>
     <div className="container-xl">
       <div className="row row-cards">
@@ -134,7 +151,7 @@ const Adjustments = () => {
             <div className="card-body border-bottom py-3">
               <div className="row g-2 align-items-center">
                 <div className="col-sm-auto">
-                  <DateRangeInput name="currentDate" startDate={dateRange?.startDate} endDate={dateRange?.endDate} onChange={handlePeriodChange} />
+                  <PeriodPicker periodId={periodId} setPeriodId={handleSetPeriod} options={options} />
                 </div>
                 <div className="col-sm">
                   <div className="w-100">
@@ -148,14 +165,32 @@ const Adjustments = () => {
                 <table className="table card-table table-vcenter text-nowrap datatable">
                   <thead>
                     <tr>
+                      <th>Customer Name</th>
                       <th>Customer Id</th>
                       <th>Adjustment Type</th>
-                      <th>Adjustment Amount</th>
+                      <th>Term / Comment</th>
+                      <th>Amount</th>
                       <th>Period</th>
                       <th className="w-1"></th>
                     </tr>
                   </thead>
                   <tbody>
+                    <tr>
+                      <td>Amanda Jones</td>
+                      <td>12335</td>
+                      <td>Override</td>
+                      <td>RANK</td>
+                      <td>Team Elite</td>
+                      <td>October 1 2025</td>
+                    </tr>
+                    <tr>
+                      <td>Amanda Jones</td>
+                      <td>12335</td>
+                      <td>Payable</td>
+                      <td>Missing Bonus for Last month</td>
+                      <td>$245.33</td>
+                      <td>October 1 2025</td>
+                    </tr>
                     {rData && rData.map((adj) => {
                       return <tr key={adj.id}>
                         <td>{adj.nodeId}</td>
@@ -248,7 +283,7 @@ const Adjustments = () => {
         <a href="#" className="btn btn-link link-secondary" data-bs-dismiss="modal">
           Cancel
         </a>
-        <button type="submit" className="btn btn-primary ms-auto" onClick={handleSubmit}>
+        <button className="btn btn-primary ms-auto" onClick={handleSubmit}>
           Save Adjustment
         </button>
       </div>

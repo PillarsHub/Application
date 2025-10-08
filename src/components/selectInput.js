@@ -41,7 +41,7 @@ export default SelectInput;
 SelectInput.propTypes = {
   className: PropTypes.string,
   name: PropTypes.string.isRequired,
-  value: PropTypes.array.isRequired,
+  value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   onChange: PropTypes.func,
   disabled: PropTypes.bool,
   emptyOption: PropTypes.string,

@@ -9,6 +9,7 @@ import Avatar from '../../../components/avatar';
 import Calendar from '../../../components/calendar';
 import RankAdvance from '../../../components/rankAdvance';
 import PeriodDatePicker from "../../../components/periodDatePicker";
+import DateRangeInput from "../../../components/dateRangeInput";
 
 import EmptyContent from "../../../components/emptyContent";
 import SocialMediaLink from "../../../components/socialMediaLink";
@@ -22,6 +23,8 @@ import ProfileWidget from "./profileWidget";
 import DataLoading from "../../../components/dataLoading";
 import CardWidget from "./cardWidget";
 import CarouselWidget from "./carouselWidget";
+import PayoutsWidget from "./payoutsWidget";
+import PendingPayoutsWidget from "./pendingPayoutsWidget";
 
 var GET_CUSTOMER = gql`query ($nodeIds: [String]!, $periodDate: Date!) {
   customers(idList: $nodeIds) {
@@ -205,6 +208,11 @@ const Widget = ({ widget, customer, compensationPlans, trees, isPreview = false,
           <PeriodDatePicker name="date" value={wDate} onChange={handleDateChange} />
         </div>
       </>}
+      {widget.showDatePicker && !supressQuery && widget.type == WidgetTypes.Payouts && false && <>
+        <div className="card-actions">
+          <DateRangeInput name="date" value={wDate} onChange={handleDateChange} />
+        </div>
+      </>}
       {widget.showDatePicker && !supressQuery && widget.type == WidgetTypes.Earnings && <>
         <div className="card-actions">
           <PeriodPicker periodId={widgetValues?.periodId} setPeriodId={handlePeriodChange} options={widgetValues} />
@@ -213,11 +221,11 @@ const Widget = ({ widget, customer, compensationPlans, trees, isPreview = false,
 
     </div>}
     <style dangerouslySetInnerHTML={styleTag} />
-    {Content(widget, sCustomer, sCompPlan, trees, isPreview, widgetValues, loading)}
+    {Content(widget, wDate, sCustomer, sCompPlan, trees, isPreview, widgetValues, loading)}
   </div></div>
 }
 
-function Content(widget, customer, compensationPlans, trees, isPreview, widgetValues, loading) {
+function Content(widget, date, customer, compensationPlans, trees, isPreview, widgetValues, loading) {
   if (!compensationPlans) {
     const periodBegin = new Date().toISOString().split('.')[0] + 'Z';
     compensationPlans = [{
@@ -384,6 +392,16 @@ function Content(widget, customer, compensationPlans, trees, isPreview, widgetVa
     return <>
       <EarningsTable customerId={customer.id} periodId={widgetValues?.periodId ?? 0} overrides={overrides} />
     </>
+  }
+
+  if (widget.type == WidgetTypes.Payouts) {
+    var payoutOverrides = widget.panes?.map((p) => ({ title: p.title, display: p.text, show: p.imageUrl.toLowerCase() == 'true' }));
+    return <PayoutsWidget customerId={customer.id} date={date} overrides={payoutOverrides} />
+  }
+
+  if (widget.type == WidgetTypes.PendingPayouts) {
+    var pendingOverrides = widget.panes?.map((p) => ({ title: p.title, display: p.text, show: p.imageUrl.toLowerCase() == 'true' }));
+    return <PendingPayoutsWidget customerId={customer.id} date={date} overrides={pendingOverrides} />
   }
 
   if (widget.type == WidgetTypes.Orders) {

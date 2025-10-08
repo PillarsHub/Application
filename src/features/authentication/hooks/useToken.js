@@ -2,7 +2,7 @@ import React, {useState, useEffect } from 'react';
 import { Get } from '../../../hooks/useFetch'
 
 const MINUTE_MS = 60000;
-
+const SESSION_TZ_KEY = "preferredTimeZone";
 
 import { createContext, useContext } from 'react';
 
@@ -75,6 +75,8 @@ export default function useToken() {
   const saveToken = userToken => {
     SaveUser(userToken);
     setToken(userToken?.authToken);
+    
+    localStorage.setItem(SESSION_TZ_KEY, userToken.timeZone ?? '');
   };
 
   const clearToken = () => {

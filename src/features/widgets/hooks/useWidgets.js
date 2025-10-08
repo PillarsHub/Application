@@ -75,6 +75,8 @@ const WidgetTypes = {
   Banner: "banner",
   SocialLinks: "social",
   Recruiter: "recruiter",
+  Payouts: "payouts",
+  PendingPayouts: "pending",
   Earnings: "earnings",
   Orders: "orders",
   Html: "html"

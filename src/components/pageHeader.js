@@ -2,8 +2,8 @@ import React, { useState, Children } from 'react';
 import PropTypes from 'prop-types';
 import { GetScope } from "../features/authentication/hooks/useToken"
 import AccountMenu from '../pages/accountMenu';
-import AutoComplete from '../components/autocomplete'
 import CustomerNav from '../pages/customers/customerNav';
+import AutoCompleteOrdersCustomers from './autoCompleteOrdersCustomers';
 
 const PageHeader = ({ preTitle, title, postTitle, children, breadcrumbs, onSearch, customerId, pageId, fluid = false }) => {
   const [searchText, setSearchText] = useState('');
@@ -22,12 +22,9 @@ const PageHeader = ({ preTitle, title, postTitle, children, breadcrumbs, onSearc
 
   const handleChange = (name, value) => {
     setSearchText(value);
-    if (onSearch == undefined) {
-      location = `/customers/${value}/summary`;
-    } else {
-      onSearch(value);
-      setSearchText();
-    }
+
+    if (value?.type === 'customer') location = `/customers/${value.id}/summary`;
+    if (value?.type === 'order') location = `/customers/${value.customerId}/orders/${value.id}`;
   }
 
   const handleSubmit = async e => {
@@ -52,9 +49,9 @@ const PageHeader = ({ preTitle, title, postTitle, children, breadcrumbs, onSearc
             <CustomerNav customerId={customerId} pageId={pageId} />
           </>}
 
-          <div className={(GetScope() == undefined && customerId) ? 'ms-auto me-auto ms-lg-0 me-lg-0 pe-lg-3' : 'ms-auto me-auto'} style={{maxWidth: '600px'}}>
+          <div className={(GetScope() == undefined && customerId) ? 'ms-auto me-auto ms-lg-0 me-lg-0 pe-lg-3' : 'ms-auto me-auto'} style={{ maxWidth: '600px' }}>
             <form onSubmit={handleSubmit} autoComplete="off">
-              <AutoComplete name="search" placeholder="Search Team Members" value={searchText} showIcon={true} onChange={handleChange} />
+              <AutoCompleteOrdersCustomers name="search" placeholder="Search Team Members" value={searchText} showIcon={true} onChange={handleChange} />
             </form>
           </div>
         </div>
