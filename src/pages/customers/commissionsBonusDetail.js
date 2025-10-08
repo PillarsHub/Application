@@ -58,7 +58,7 @@ const CommissionsBonusDetail = () => {
   let period = data.compensationPlans.find(plan => plan.periods.length > 0)?.periods[0];
   let bonuses = period?.bonuses ?? [];
 
-  return <PageHeader title={data?.customers[0].fullName} pageId="commissions" customerId={params.customerId} breadcrumbs={[{ title: 'Earnings', link: `/customers/${params.customerId}/commissions?periodId=${periodId}` }, { title: "Bonus Detail" }]}>
+  return <PageHeader title={data?.customers?.[0]?.fullName} pageId="commissions" customerId={params.customerId} breadcrumbs={[{ title: 'Earnings', link: `/customers/${params.customerId}/commissions?periodId=${periodId}` }, { title: "Bonus Detail" }]}>
     {!bonuses || bonuses.length == 0 && <>
       <div className="container-xl">
         <EmptyContent title="Bonus detail not found" text={`We could not find any details for the ${params.bonusId} bonus`} />
