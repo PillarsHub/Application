@@ -9,6 +9,11 @@ import LocalDate from '../../util/LocalDate';
 import DataError from '../../components/dataError';
 
 var GET_DATA = gql`query ($nodeIds: [String]!, $period: BigInt!, $bonusIds: [String]!) {
+  customers(idList: $nodeIds) {
+    id
+    fullName
+    profileImage
+  }
   compensationPlans {
     periods(at: $period) {
       id
