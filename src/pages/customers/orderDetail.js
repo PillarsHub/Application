@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from "react-router-dom"
 import { useQuery, gql } from "@apollo/client";
 import { SendRequest } from "../../hooks/usePost";
-import { GetToken, GetScope } from "../../features/authentication/hooks/useToken";
+import { GetScope, GetSettings } from "../../features/authentication/hooks/useToken";
 import Tabs, { Tab } from "../../components/tabs";
 import PageHeader from "../../components/pageHeader";
 import DataLoading from "../../components/dataLoading";
@@ -95,8 +95,7 @@ const OrderDetail = () => {
     variables: { orderids: [params.orderId], nodeIds: [params.customerId] },
   });
 
-  const envId = GetToken()?.environmentId;
-  let showMenu = envId == 10432 || envId == 286 || envId == 10461 || envId == 54 || envId == 10530 || envId == 10538;
+  let showMenu = GetSettings().ecommerce.enableEdit;
   let hasScope = false;
   if (GetScope()) {
     showMenu = false;

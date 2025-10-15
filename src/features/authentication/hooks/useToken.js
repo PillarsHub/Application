@@ -1,4 +1,4 @@
-import React, {useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Get } from '../../../hooks/useFetch'
 
 const MINUTE_MS = 60000;
@@ -75,7 +75,7 @@ export default function useToken() {
   const saveToken = userToken => {
     SaveUser(userToken);
     setToken(userToken?.authToken);
-    
+
     localStorage.setItem(SESSION_TZ_KEY, userToken.timeZone ?? '');
   };
 
@@ -140,9 +140,14 @@ function GetToken() {
   return userToken?.authToken
 }
 
+function GetSettings() {
+  const userToken = GetUser();
+  return userToken?.environmentSettings
+}
+
 function GetScope() {
   const userToken = GetUser();
   return userToken?.scope;
 }
 
-export { GetToken, GetUser, GetScope };
+export { GetToken, GetUser, GetScope, GetSettings };

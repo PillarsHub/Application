@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useParams } from "react-router-dom";
-import { GetScope, GetToken } from "../../features/authentication/hooks/useToken"
+import { GetScope, GetSettings } from "../../features/authentication/hooks/useToken"
 import { SendRequest } from '../../hooks/usePost';
 import PageHeader, { CardHeader } from '../../components/pageHeader';
 import WidgetContainer from "../../features/widgets/components/widgetContainer";
@@ -51,8 +51,7 @@ const CustomerSummary = () => {
     setNoContent(true);
   }
 
-  const envId = GetToken()?.environmentId;
-  let showMenu = envId == 10432 || envId == 286 || envId == 10461 || envId == 54 || envId == 10530 || envId == 10538;
+  let showMenu = GetSettings().ecommerce.enableEdit;
   let hasScope = false;
   if (GetScope()) {
     showMenu = false;
