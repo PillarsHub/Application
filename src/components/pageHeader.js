@@ -33,6 +33,7 @@ const PageHeader = ({ preTitle, title, postTitle, children, breadcrumbs, onSearc
     onSearch(searchText);
   }
 
+  const searchPlaceholder = GetScope() == undefined ? "Search Team or Orders" : "Search Team";
   const continerClass = fluid ? 'container-fluid' : 'container-xl';
 
   return <>
@@ -51,7 +52,7 @@ const PageHeader = ({ preTitle, title, postTitle, children, breadcrumbs, onSearc
 
           <div className={(GetScope() == undefined && customerId) ? 'ms-auto me-auto ms-lg-0 me-lg-0 pe-lg-3' : 'ms-auto me-auto'} style={{ maxWidth: '600px' }}>
             <form onSubmit={handleSubmit} autoComplete="off">
-              <AutoCompleteOrdersCustomers name="search" placeholder="Search Team Members" value={searchText} showIcon={true} onChange={handleChange} />
+              <AutoCompleteOrdersCustomers name="search" placeholder={searchPlaceholder} value={searchText} showIcon={true} onChange={handleChange} />
             </form>
           </div>
         </div>

@@ -17,6 +17,53 @@ function treeBorad(id, rootId, treeId, periodDate, dataUrl, selectNode, getTempl
   let legsWithRealNodeAtRoot = []; // lowercased leg names that actually have a first-gen node
   let treeLegsOriginal = null;   // original-cased for templates
 
+  const PAGE_SIZE = 100;                      // you can tune this
+  const childPaging = new Map();              // parentId -> { offset, count, done }
+
+  // Helper to init/get paging state
+  function getPaging(parentId) {
+    const key = String(parentId);
+    let st = childPaging.get(key);
+    if (!st) {
+      st = { offset: 0, count: PAGE_SIZE, done: false };
+      childPaging.set(key, st);
+    }
+    return st;
+  }
+
+  function removeLoadMoreRow(parentUl) {
+    if (!parentUl) return;
+    const row = parentUl.querySelector('li[data-load-more="1"]');
+    if (row) parentUl.removeChild(row);
+  }
+
+  function insertLoadMoreRow(parentUl, onClick) {
+    if (!parentUl) return null;
+    removeLoadMoreRow(parentUl);
+
+    const li = document.createElement('li');
+    li.setAttribute('data-load-more', '1');
+    li.style.listStyle = 'none';
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-outline-secondary btn-sm';
+    btn.textContent = 'Load more';
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      onClick?.();
+    });
+
+    // small spacer for readability
+    const wrap = document.createElement('div');
+    wrap.className = 'node-host';
+    wrap.style.padding = '6px 8px';
+    wrap.appendChild(btn);
+
+    li.appendChild(wrap);
+    parentUl.appendChild(li);
+    return li;
+  }
 
   // Ready callback plumbing (fires AFTER root's first-gen is loaded)
   let rootLoaded = false;        // means: first-generation of root is loaded
@@ -202,6 +249,7 @@ function treeBorad(id, rootId, treeId, periodDate, dataUrl, selectNode, getTempl
       prevDiff = -1;
     }
   };
+
 
   add(canvasBox, 'mousedown', onMouseDown);
   add(canvasBox, 'mousemove', onMouseMove);
@@ -463,6 +511,10 @@ function treeBorad(id, rootId, treeId, periodDate, dataUrl, selectNode, getTempl
   }
 
   function addChild(ul, node) {
+    if (node?.nodeId && nodeIndex.has(String(node.nodeId))) {
+      return null;
+    }
+
     let result = null;
     if (node.uplineLeg?.toLowerCase() === "holding tank") return null;
     if (!node || (!node.customer && !node.legs)) return null;
@@ -623,88 +675,116 @@ function treeBorad(id, rootId, treeId, periodDate, dataUrl, selectNode, getTempl
     });
   }
 
-  function addNodes(parent, expanding) {
+  function addNodes(parent, expanding, opts = {}) {
+    const { reset = false } = opts;
+
     let startPos = 0;
     if (expanding) startPos = expanding.offsetLeft;
 
     const loading = BuildLoading(parent);
     const nodeId = parent.getAttribute('data-nodeId') ?? rootId;
 
+    // Init / read paging
+    const pg = getPaging(nodeId);
+    if (reset) {
+      pg.offset = 0;
+      pg.done = false;
+    }
+    if (pg.done) {
+      try { parent.removeChild(loading); } catch (_) {  /* empty */}
+      // Nothing more to load
+      removeLoadMoreRow(parent);
+      return;
+    }
+
+    // IMPORTANT: with paging, we never nuke existing children; we only append more.
+    // For leg trees, paging isn’t meaningful (legs are a fixed small set), we still fetch once.
+
     const data = {
-      query: `query ($nodeIds: [String]!, $treeIds: [String]!, $cardIds: [String]!, $periodDate: Date) {
-        trees(idList: $treeIds) {
-          id
-          name
-          legNames
-          nodes(nodeIds: $nodeIds, date: $periodDate) {
+      query: `query ($nodeIds: [String]!, $treeIds: [String]!, $cardIds: [String]!, $periodDate: Date, $offset: Int, $count: Int) {
+      trees(idList: $treeIds) {
+        id
+        name
+        legNames
+        nodes(nodeIds: $nodeIds, date: $periodDate) {
+          nodeId
+          nodes (levels: 1, offset: $offset, first: $count) {
             nodeId
-            nodes (levels: 1) {
-              nodeId
-              uplineLeg
-              totalChildNodes
-              customer {
+            uplineLeg
+            totalChildNodes
+            customer {
+              id
+              webAlias
+              fullName
+              enrollDate
+              profileImage
+              status { id, name, statusClass }
+              phoneNumbers { type number }
+              emailAddress
+              customerType { id name }
+              cards(idList: $cardIds, date: $periodDate) {
+                name
+                values { value valueName valueId }
+              }
+              widgets {
                 id
-                webAlias
-                fullName
-                enrollDate
-                profileImage
-                status { id, name, statusClass }
-                phoneNumbers { type number }
-                emailAddress
-                customerType { id name }
-                cards(idList: $cardIds, date: $periodDate) {
-                  name
-                  values { value valueName valueId }
-                }
-                widgets {
-                  id
-                  name
+                name
+                title
+                description
+                type
+                showDatePicker
+                headerColor
+                headerTextColor
+                headerAlignment
+                backgroundColor
+                textColor
+                borderColor
+                css
+                settings
+                panes {
+                  imageUrl
                   title
+                  text
                   description
-                  type
-                  showDatePicker
-                  headerColor
-                  headerTextColor
-                  headerAlignment
-                  backgroundColor
-                  textColor
-                  borderColor
-                  css
-                  settings
-                  panes {
-                    imageUrl
-                    title
-                    text
-                    description
-                    values { text value }
-                  }
+                  values { text value }
                 }
               }
             }
           }
         }
-      }`,
-      variables: { treeIds: [treeId], nodeIds: [nodeId], cardIds: [`Tree-${treeId}`], periodDate: currentPeriodDate }
+      }
+    }
+    `,
+      variables: {
+        treeIds: [treeId],
+        nodeIds: [nodeId],
+        cardIds: [`Tree-${treeId}`],
+        periodDate: currentPeriodDate,
+        offset: pg.offset,
+        count: pg.count
+      }
     };
 
     Post(dataUrl, data, (nodeData) => {
-      try { parent.removeChild(loading); } catch (_) {
-        //empty
-      }
+      try { parent.removeChild(loading); } catch (_) {  /* empty */ }
 
       const tree = nodeData?.data?.trees?.[0];
       if (!tree) return;
 
       const baseNode = tree?.nodes?.[0];
-      const children = baseNode?.nodes ?? [];
+      const fetched = baseNode?.nodes ?? [];
 
       const legNamesSrc = tree.legNames; // may be null/undefined/[]
       const hasLegs = Array.isArray(legNamesSrc) && legNamesSrc.length > 0;
 
+      // Remove any previous "Load more" before inserting new rows
+      removeLoadMoreRow(parent);
+
       if (hasLegs) {
+        // Legged trees: render by specific leg (paging not really applicable—usually small & fixed)
         const legsLower = legNamesSrc.map(x => String(x).toLowerCase());
         const byLeg = new Map();
-        for (const n of children) {
+        for (const n of fetched) {
           const key = n?.uplineLeg ? String(n.uplineLeg).toLowerCase() : null;
           if (key) byLeg.set(key, n);
         }
@@ -725,6 +805,7 @@ function treeBorad(id, rootId, treeId, periodDate, dataUrl, selectNode, getTempl
               childArr: []
             });
           } else {
+            // empty slot placeholder for this leg
             addChild(parent, {
               customer: undefined,
               uplineId: nodeId,
@@ -737,8 +818,11 @@ function treeBorad(id, rootId, treeId, periodDate, dataUrl, selectNode, getTempl
           }
         }
 
-        byLeg.forEach((n, legKeyLower) => {
-          if (!legsLower.includes(legKeyLower)) {
+        // Render any unexpected extra children (with unknown leg labels)
+        const known = new Set(legsLower);
+        for (const n of fetched) {
+          const legLower = String(n?.uplineLeg || '').toLowerCase();
+          if (!known.has(legLower)) {
             addChild(parent, {
               customer: n.customer,
               uplineId: nodeId,
@@ -749,10 +833,17 @@ function treeBorad(id, rootId, treeId, periodDate, dataUrl, selectNode, getTempl
               childArr: []
             });
           }
-        });
+        }
+
+        // Mark as "done" for leg trees (no true paging)
+        pg.done = true;
 
       } else {
-        for (const n of children) {
+        // Flat child list (typical big-fanout case) → paging applies
+        for (const n of fetched) {
+          // Skip duplicates if reloading
+          if (n?.nodeId && nodeIndex.has(String(n.nodeId))) continue;
+
           addChild(parent, {
             customer: n.customer,
             uplineId: nodeId,
@@ -762,13 +853,28 @@ function treeBorad(id, rootId, treeId, periodDate, dataUrl, selectNode, getTempl
             childArr: n.totalChildNodes > 0 ? [] : null
           });
         }
+
+        // Advance paging window
+        pg.offset += fetched.length;
+
+        // If fewer than requested were returned, we're done; otherwise offer "Load more"
+        if (fetched.length < pg.count) {
+          pg.done = true;
+        } else {
+          insertLoadMoreRow(parent, () => {
+            // remove the load-more row while loading next page, to prevent double clicks
+            removeLoadMoreRow(parent);
+            // after a tick, replace spinner by next page (spinner is removed by addNodes on success/fail)
+            setTimeout(() => addNodes(parent, null, { reset: false }), 0);
+          });
+        }
       }
 
-      // If this addNodes call was for the ROOT, compute present legs & fire onReady now
+      // Root first-generation ready callback handling (unchanged)
       if (!rootLoaded && String(nodeId) === String(rootId)) {
         const present = new Set(
-          children
-            .filter(n => n?.customer?.id)             // only legs with a real node
+          fetched
+            .filter(n => n?.customer?.id)
             .map(n => String(n.uplineLeg).toLowerCase())
         );
         legsWithRealNodeAtRoot = Array.from(present);
@@ -780,9 +886,7 @@ function treeBorad(id, rootId, treeId, periodDate, dataUrl, selectNode, getTempl
           rootId: String(rootId)
         };
         readyCallbacks.splice(0).forEach(cb => {
-          try { cb(payload); } catch (e) {
-            //empty
-          }
+          try { cb(payload); } catch (e) { /* empty */ }
         });
       }
 
@@ -792,8 +896,10 @@ function treeBorad(id, rootId, treeId, periodDate, dataUrl, selectNode, getTempl
         redraw();
       }
     }, (error) => {
-      try { parent.removeChild(loading); } catch (_) {
-        //empty
+      try { parent.removeChild(loading); } catch (_) {  /* empty */ }
+      // On error, let user try again by keeping (or restoring) the Load More row if paging
+      if (!getPaging(nodeId).done) {
+        insertLoadMoreRow(parent, () => addNodes(parent, null, { reset: false }));
       }
       alert(error);
     });
