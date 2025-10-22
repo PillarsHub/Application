@@ -34,6 +34,7 @@ var GET_DATA = gql`query ($orderids: [String]!, $nodeIds: [String]!) {
         tax
         total
         currencyCode
+        shipTo
         shipAddress {
           countryCode
           stateCode

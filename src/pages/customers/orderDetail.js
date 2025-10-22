@@ -36,6 +36,7 @@ var GET_DATA = gql`query ($orderids: [String]!, $nodeIds: [String]!) {
         tax
         total
         currencyCode
+        shipTo
         shipAddress {
           countryCode
           stateCode
@@ -303,7 +304,7 @@ const OrderDetail = () => {
                 <div className="card-body">
                   <div className="row mb-3">
                     <div className="col-6">
-                      <p className="h3 mb-2">{data?.customers[0].fullName}</p>
+                      <p className="h3 mb-2">{order?.shipTo ?? data?.customers[0].fullName}</p>
                       <address>
                         {address?.line1}<br />
                         {address?.city}, {address?.stateCode} {address?.zip}<br />
