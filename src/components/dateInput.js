@@ -89,7 +89,6 @@ const DateInput = ({ className = 'form-control', name, value, onChange, disabled
   useEffect(() => {
     if (!allowEmpty && !value) {
       const now = new Date();
-      alert(now);
       // Derive today's YMD in the chosen tz
       const parts = new Intl.DateTimeFormat('en-CA', {
         timeZone: tz,

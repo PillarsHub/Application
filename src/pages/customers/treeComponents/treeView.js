@@ -372,6 +372,22 @@ function treeBorad(id, rootId, treeId, periodDate, dataUrl, selectNode, getTempl
     return deepest;
   }
 
+  // Count only real children (exclude loading rows and empty leg placeholders)
+  function countRealChildren(ul) {
+    if (!ul) return 0;
+    let count = 0;
+    for (const childLi of ul.children) {
+      const host = childLi.querySelector('.node-host');
+      if (!host) continue;
+      if (host.hasAttribute('data-loading-slot')) continue;     // spinner rows
+      if (host.hasAttribute('data-empty-slot')) continue;       // leg placeholders
+      const id = host.getAttribute('data-nodeId');
+      if (!id || id === 'undefined' || id === 'null') continue; // not a real node
+      count++;
+    }
+    return count;
+  }
+
   // --- Fetch helpers (GraphQL via Post) ---
 
   async function fetchBottomForLeg({ dataUrl, treeId, fromNodeId, leg }) {
@@ -519,7 +535,11 @@ function treeBorad(id, rootId, treeId, periodDate, dataUrl, selectNode, getTempl
     if (node.uplineLeg?.toLowerCase() === "holding tank") return null;
     if (!node || (!node.customer && !node.legs)) return null;
 
-    const template = renderToStaticMarkup(getTemplate(node));
+    // If template returns null/undefined, skip rendering this child entirely.
+    const tpl = getTemplate(node);
+    if (tpl == null) return null;
+    const template = renderToStaticMarkup(tpl);
+
     const li = document.createElement('li');
     const nodeDiv = document.createElement('div');
     nodeDiv.classList.add("node-host");
@@ -683,6 +703,7 @@ function treeBorad(id, rootId, treeId, periodDate, dataUrl, selectNode, getTempl
 
     const loading = BuildLoading(parent);
     const nodeId = parent.getAttribute('data-nodeId') ?? rootId;
+    const beforeRealCount = countRealChildren(parent);
 
     // Init / read paging
     const pg = getPaging(nodeId);
@@ -691,7 +712,7 @@ function treeBorad(id, rootId, treeId, periodDate, dataUrl, selectNode, getTempl
       pg.done = false;
     }
     if (pg.done) {
-      try { parent.removeChild(loading); } catch (_) {  /* empty */}
+      try { parent.removeChild(loading); } catch (_) {  /* empty */ }
       // Nothing more to load
       removeLoadMoreRow(parent);
       return;
@@ -837,7 +858,6 @@ function treeBorad(id, rootId, treeId, periodDate, dataUrl, selectNode, getTempl
 
         // Mark as "done" for leg trees (no true paging)
         pg.done = true;
-
       } else {
         // Flat child list (typical big-fanout case) → paging applies
         for (const n of fetched) {
@@ -867,6 +887,12 @@ function treeBorad(id, rootId, treeId, periodDate, dataUrl, selectNode, getTempl
             // after a tick, replace spinner by next page (spinner is removed by addNodes on success/fail)
             setTimeout(() => addNodes(parent, null, { reset: false }), 0);
           });
+        }
+
+        // If this page produced no new real children and we're done, hide chevron.
+        const afterRealCount = countRealChildren(parent);
+        if (pg.done && afterRealCount === beforeRealCount) {
+          maybeHideExpandIfNoChildren(nodeId);
         }
       }
 
@@ -1244,8 +1270,8 @@ function treeBorad(id, rootId, treeId, periodDate, dataUrl, selectNode, getTempl
     const ul = ulIndex.get(pid);
     const rec = nodeIndex.get(pid);
     if (!ul || !rec?.li) return;
-    const hasChildren = ul.children.length > 0;
-    if (!hasChildren) {
+    const realCount = countRealChildren(ul);
+    if (realCount === 0) {
       const exp = rec.li.querySelector('.node-expand');
       if (exp) exp.remove();
     }

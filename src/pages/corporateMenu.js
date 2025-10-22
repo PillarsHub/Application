@@ -25,7 +25,7 @@ const CorporateMenu = () => {
       {menu?.items && menu.items.map((menu) => {
         let visible = menu.status == 'Enabled' || menu.status == 'Corporate';
         const customersExpanded = location.pathname.startsWith(menu.url);
-        let activeClass =  (customersExpanded || location.pathname == menu.url) ? 'active' : '';
+        let activeClass = (customersExpanded || location.pathname == menu.url) ? 'active' : '';
 
         if (visible) {
           if (menu.url) {

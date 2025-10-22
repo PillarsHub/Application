@@ -123,6 +123,11 @@ const CustomerTree = () => {
           }
         },
         function renderNode(node) {
+
+          let card = dashboard.children[0];
+          let widget = node.customer?.widgets?.find((w) => w.id === card?.widgetId ?? '');
+          if (node.customer && !widget && (!card.children || card.children.length == 0)) return null;
+
           return <TreeNode node={node} dashboard={dashboard} trees={data?.trees} date={effectiveDate} />;
         },
         function renderLoading(id) {

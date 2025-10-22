@@ -72,7 +72,7 @@ const Customers = () => {
   var token = GetToken();
 
   return (
-    <PageHeader title="Customers" >
+    <PageHeader title="Recent Customers" >
       <CardHeader>
         {GetScope() == undefined && token?.environmentId == '00' &&
           <div className="dropdown">

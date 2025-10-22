@@ -113,7 +113,7 @@ const Report = () => {
             <div className="p-3">
               <div className="row">
                 {meta.filters && meta.filters.map((filter) => {
-                  return <FilterInput key={filter.id} col="col-md-2 col-sm-12 mb-2" filter={filter} values={values} onChange={handleChange} />
+                  return <FilterInput key={filter.id} filter={filter} values={values} onChange={handleChange} />
                 })}
               </div>
             </div>
