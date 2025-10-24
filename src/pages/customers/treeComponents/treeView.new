@@ -1,0 +1,977 @@
+import { renderToStaticMarkup } from "react-dom/server";
+import { Post } from "../../../hooks/usePost";
+import "./treeView.css";
+
+/**
+ * TreeBoard (rewritten)
+ * - Single loader: loadNode(nodeId, levels)
+ * - Single inserter: insertSubtree(parentUl, nodeObj)
+ * - Expand Down uses loadNode(nodeId, 1) if needed
+ * - Expand Up uses loadNode(uplineId, 2) and rehomes current root
+ */
+function treeBorad(id, rootId, treeId, periodDate, dataUrl, selectNode, getTemplate, getLoading) {
+  const defaults = { canvasBox: "canvasBox", canvasBoradIdName: "tree" };
+  let currentPeriodDate = periodDate;
+
+  // Indexes
+  const nodeIndex = new Map(); // nodeId -> { li, nodeDiv, parentUl }
+  const ulIndex = new Map(); // parentNodeId -> child <ul>
+  let treeLegsLower = null;    // lowercase leg names for ordering (or null)
+  let treeLegsOrig = null;    // original casing (for template/labels)
+
+  // Host bootstrapping
+  const host = document.getElementById(id);
+  if (!host) return () => {/*empty*/ };
+
+  while (host.firstChild) host.removeChild(host.firstChild);
+
+  const canvasBox = document.createElement("div");
+  const canvas = document.createElement("div");
+  canvasBox.id = defaults.canvasBox;
+  canvas.id = defaults.canvasBoradIdName;
+
+  canvas.classList.add("genealogy-tree");
+  canvas.style.width = "999999px";
+  canvas.style.height = `${window.innerHeight}px`;
+  canvas.style.transformOrigin = "top left";
+
+  canvasBox.classList.add("genealogy-host");
+  canvasBox.style.touchAction = "none";
+  host.style.overflow = "hidden";
+  host.style.position = "fixed";
+
+  host.appendChild(canvasBox);
+  canvasBox.appendChild(canvas);
+
+  // Transform / zoom / pan (preserved from your code)
+  const ctx = {};
+  trackTransforms();
+  let lastX = (canvasBox.canvas || 0) / 2;
+  let lastY = (window.innerHeight || 0) / 2;
+  let dragStart = null;
+  let dragged = false;
+  let activeNode = null;
+
+  let rafId = null;
+  const scheduleRedraw = () => {
+    if (rafId != null) return;
+    rafId = requestAnimationFrame(() => {
+      rafId = null;
+      const tx = ctx.getTransform();
+      canvas.style.transform = `matrix3d(${tx.a}, ${tx.b}, 0, 0, ${tx.c}, ${tx.d}, 0, 0, 0, 0, 1, 0, ${tx.e}, ${tx.f}, 0, 1)`;
+    });
+  };
+  const redraw = scheduleRedraw;
+
+  const MIN_ZOOM = 0.2;
+  const MAX_ZOOM = 3;
+  const scaleFactor = 1.1;
+  let zoomLevel = 1;
+
+  const zoom = (clicks) => {
+    const pt = ctx.transformedPoint(lastX, lastY);
+    const factor = Math.pow(scaleFactor, clicks);
+    const next = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoomLevel * factor));
+    if (next === zoomLevel) return;
+    const adj = next / zoomLevel;
+    zoomLevel = next;
+    canvas.style.willChange = "transform";
+    ctx.translate(pt.x, pt.y);
+    ctx.scale(adj, adj);
+    ctx.translate(-pt.x, -pt.y);
+    redraw();
+    setTimeout(() => (canvas.style.willChange = ""), 120);
+  };
+
+  // Offsets + handlers
+  let canvasLeft = 0, canvasTop = 0;
+  const recalcOffsets = () => {
+    canvasLeft = canvas.offsetLeft;
+    canvasTop = canvas.offsetTop;
+  };
+  recalcOffsets();
+
+  const posFromMouse = (evt) => ({ x: evt.pageX - canvasLeft, y: evt.pageY - canvasTop });
+  const handlers = [];
+  const add = (el, ev, fn, opts) => {
+    el.addEventListener(ev, fn, opts);
+    handlers.push(() => el.removeEventListener(ev, fn, opts));
+  };
+
+  const onMouseDown = (evt) => {
+    document.body.style.userSelect = "none";
+    recalcOffsets();
+    const p = posFromMouse(evt);
+    lastX = p.x; lastY = p.y;
+    dragStart = ctx.transformedPoint(lastX, lastY);
+    dragged = false;
+  };
+  const onMouseMove = (evt) => {
+    const p = posFromMouse(evt);
+    if (Math.abs(p.x - lastX) > 5 || Math.abs(p.y - lastY) > 5) dragged = true;
+    lastX = p.x; lastY = p.y;
+    const flags = evt.buttons !== undefined ? evt.buttons : evt.which;
+    if (flags === 0) dragStart = null;
+    if (dragStart) {
+      const pt = ctx.transformedPoint(lastX, lastY);
+      ctx.translate(pt.x - dragStart.x, pt.y - dragStart.y);
+      redraw();
+    }
+  };
+  const onMouseUp = () => {
+    dragStart = null;
+    requestAnimationFrame(() => (dragged = false));
+  };
+  const onWheel = (evt) => {
+    const dy = "deltaY" in evt ? -evt.deltaY : evt.wheelDelta ? evt.wheelDelta : evt.detail ? -evt.detail : 0;
+    const clicks = dy / 120;
+    if (clicks) zoom(clicks);
+    if (evt.cancelable) evt.preventDefault();
+    return false;
+  };
+
+  // Touch
+  let prevDiff = -1;
+  const onTouchStart = (evt) => {
+    if (!evt.touches || evt.touches.length === 0) return;
+    lastX = evt.touches[0].pageX - canvas.offsetLeft;
+    lastY = evt.touches[0].pageY - canvas.offsetTop;
+    dragStart = ctx.transformedPoint(lastX, lastY);
+  };
+  const onTouchMove = (evt) => {
+    if (evt.cancelable) evt.preventDefault();
+    if (evt.touches && evt.touches.length > 1) {
+      const [t1, t2] = [evt.touches[0], evt.touches[1]];
+      const curDiff = Math.hypot(t2.pageX - t1.pageX, t2.pageY - t1.pageY);
+      if (prevDiff > 0) zoom(curDiff > prevDiff ? curDiff * 0.003 : curDiff * -0.003);
+      const midX = (t1.pageX + t2.pageX) / 2;
+      const midY = (t1.pageY + t2.pageY) / 2;
+      lastX = midX - canvas.offsetLeft; lastY = midY - canvas.offsetTop;
+      dragStart = ctx.transformedPoint(lastX, lastY);
+      prevDiff = curDiff;
+    } else if (evt.touches && evt.touches.length === 1) {
+      lastX = evt.touches[0].pageX - canvas.offsetLeft;
+      lastY = evt.touches[0].pageY - canvas.offsetTop;
+      if (dragStart) {
+        const pt = ctx.transformedPoint(lastX, lastY);
+        ctx.translate(pt.x - dragStart.x, pt.y - dragStart.y);
+        redraw();
+      }
+    }
+  };
+  const onTouchEnd = (evt) => {
+    if (evt.touches && evt.touches.length === 1) {
+      lastX = evt.touches[0].pageX - canvas.offsetLeft;
+      lastY = evt.touches[0].pageY - canvas.offsetTop;
+      dragStart = ctx.transformedPoint(lastX, lastY);
+    } else {
+      prevDiff = -1;
+    }
+  };
+
+  add(canvasBox, "mousedown", onMouseDown);
+  add(canvasBox, "mousemove", onMouseMove);
+  add(canvasBox, "mouseup", onMouseUp);
+  add(canvasBox, "wheel", onWheel, { passive: false });
+  add(canvasBox, "DOMMouseScroll", onWheel, { passive: false });
+  add(canvasBox, "mousewheel", onWheel, { passive: false });
+  add(canvasBox, "touchstart", onTouchStart, { passive: false });
+  add(canvasBox, "touchmove", onTouchMove, { passive: false });
+  add(canvasBox, "touchend", onTouchEnd, { passive: false });
+  add(window, "resize", () => recalcOffsets(), { passive: true });
+
+  redraw();
+
+  // ---------- Helpers (DOM) ----------
+
+  const toLower = (s) => (s == null ? "" : String(s).toLowerCase());
+  const isLegTree = () => Array.isArray(treeLegsOrig) && treeLegsOrig.length > 0;
+  const isHoldingTank = (leg) => toLower(leg) === "holding tank";
+
+  function hasRealChildren(ul) {
+    return countRealChildren(ul) > 0; // your existing counter skips placeholders/spinners
+  }
+
+  // --- Leg helpers -------------------------------------------------------------
+
+  /** Normalize leg names for case/space-insensitive comparisons */
+  function normalizeLeg(s) {
+    return String(s ?? "").trim().toLowerCase();
+  }
+
+  /** Remove a single placeholder (empty-slot) for the given leg */
+  function removePlaceholderForLeg(ul, leg) {
+    if (!ul) return;
+    const target = normalizeLeg(leg);
+    for (const li of [...ul.children]) {
+      const host = li.querySelector(".node-host");
+      if (!host?.hasAttribute("data-empty-slot")) continue;
+      const hostLeg = normalizeLeg(host.getAttribute("data-uplineLeg"));
+      if (hostLeg === target) {
+        ul.removeChild(li);
+        break;
+      }
+    }
+  }
+
+
+  /** Scan a UL and return which legs have real children vs placeholders */
+  function getLegsInUl(ul) {
+    const realLegs = new Set();       // legs that already have a real child
+    const placeholderLegs = new Set(); // legs that currently have a placeholder
+    if (!ul) return { realLegs, placeholderLegs };
+
+    for (const li of ul.children) {
+      const host = li.querySelector(".node-host");
+      if (!host) continue;
+      const leg = toLower(host.getAttribute("data-uplineLeg"));
+      if (!leg || isHoldingTank(leg)) continue;
+
+      const isEmpty = host.hasAttribute("data-empty-slot");
+      const nodeId = host.getAttribute("data-nodeId");
+      if (!isEmpty && nodeId && nodeId !== "undefined" && nodeId !== "null") {
+        realLegs.add(leg);
+      } else if (isEmpty) {
+        placeholderLegs.add(leg);
+      }
+    }
+    return { realLegs, placeholderLegs };
+  }
+
+  function removePlaceholdersForLegs(ul, legsLowerSet) {
+    if (!ul || !legsLowerSet?.size) return;
+    for (const li of [...ul.children]) {
+      const host = li.querySelector(".node-host");
+      if (!host?.hasAttribute("data-empty-slot")) continue;
+      const leg = toLower(host.getAttribute("data-uplineLeg"));
+      if (legsLowerSet.has(leg)) {
+        ul.removeChild(li);
+      }
+    }
+  }
+
+  /** Ensure placeholders for any leg without a real child (and not Holding Tank) */
+  function syncLegPlaceholders(ul, parentId) {
+    if (!ul || !isLegTree()) return;
+
+    const { realLegs, placeholderLegs } = getLegsInUl(ul);
+
+    for (const legName of treeLegsOrig) {
+      const legLower = toLower(legName);
+      if (isHoldingTank(legLower)) continue;
+      if (realLegs.has(legLower)) continue;         // already has a real child
+      if (placeholderLegs.has(legLower)) continue;  // already has a placeholder
+
+      // Build a placeholder node & allow your template to render it
+      const placeholderNode = {
+        nodeId: undefined,
+        uplineId: parentId ?? "",
+        uplineLeg: legName,
+        legs: treeLegsOrig,
+        customer: undefined,
+        card: undefined,
+        isEmptySlot: true,
+        childArr: null,
+      };
+
+      const li = document.createElement("li");
+      const nodeDiv = document.createElement("div");
+      nodeDiv.classList.add("node-host", "empty-leg-slot");
+      nodeDiv.setAttribute("data-empty-slot", "1");
+      nodeDiv.setAttribute("data-nodeId", "");
+      nodeDiv.setAttribute("data-uplineLeg", legName);
+      nodeDiv.setAttribute("data-uplineId", parentId ?? "");
+
+      const tpl = getTemplate(placeholderNode);
+      if (tpl != null) nodeDiv.innerHTML = renderToStaticMarkup(tpl);
+
+      li.appendChild(nodeDiv);
+      insertIntoUlRespectingLegs(ul, li, legName);
+    }
+  }
+
+  function openUl(ul) {
+    if (!ul) return;
+    ul.style.display = "block";
+    const exp = ul.parentElement?.querySelector?.(".node-expand");
+    if (exp) {
+      exp.classList.remove("collaped");
+      exp.classList.add("expanded");
+      exp.setAttribute?.("aria-expanded", "true");
+    }
+  }
+
+  function openIfHasRealChildren(ul) {
+    if (!ul) return;
+    // reuse your “real children” counter (skips spinners/empty placeholders)
+    if (countRealChildren(ul) > 0) openUl(ul);
+  }
+
+  function openDescendantsToDepth(nodeId, depth) {
+    if (!nodeId || depth <= 0) return;
+    const ul = ulIndex.get(nodeId) || ensureChildUl(nodeId);
+    openIfHasRealChildren(ul);               // open this node’s children, if any
+    if (!ul || depth === 1) return;
+
+    for (const li of ul.children) {
+      const host = li.querySelector(".node-host");
+      const childId = host?.getAttribute("data-nodeId");
+      if (childId) openDescendantsToDepth(childId, depth - 1);
+    }
+  }
+
+  // Shows a loading spinner *next to* (after) the UL, so the UL can be hidden.
+  function BuildLoading(ul) {
+    // remove any existing sibling spinner (belt & suspenders)
+    const maybeOld = ul.parentElement?.querySelector(':scope > .tree-loading');
+    if (maybeOld) maybeOld.remove();
+
+    const wrap = document.createElement('div');
+    wrap.className = 'tree-loading';
+    wrap.innerHTML = renderToStaticMarkup(getLoading());
+    ul.parentElement.insertBefore(wrap, ul.nextSibling);
+    return wrap; // return the DIV, not an <li> in the UL
+  }
+
+
+
+  const cssEscape = (s) => (window.CSS && CSS.escape) ? CSS.escape(String(s)) : String(s).replace(/([#.&:,[\]()>+~*^$|=! ])/g, '\\$1');
+
+  function ensureChildUl(parentId) {
+    if (!parentId) return null;
+    let ul = ulIndex.get(parentId);
+    if (ul) return ul;
+    const host = canvas.querySelector(`.node-host[data-nodeid="${cssEscape(parentId)}"]`);
+    if (!host) return null;
+    const container = host.parentElement;
+    ul = container.querySelector("ul");
+    if (!ul) {
+      ul = document.createElement("ul");
+      ul.style.display = "none";
+      container.appendChild(ul);
+    }
+    ul.setAttribute("data-nodeId", parentId);
+    ulIndex.set(parentId, ul);
+    return ul;
+  }
+
+  function insertIntoUlRespectingLegs(ul, li, uplineLeg) {
+    if (!ul) return;
+    if (!treeLegsLower || !uplineLeg) {
+      ul.appendChild(li);
+      return;
+    }
+    const desired = String(uplineLeg).toLowerCase();
+    const desiredIdx = treeLegsLower.indexOf(desired);
+    if (desiredIdx < 0) {
+      ul.appendChild(li);
+      return;
+    }
+    let placed = false;
+    for (const childLi of ul.children) {
+      const host = childLi.querySelector(".node-host");
+      if (!host) continue;
+      const leg = host.getAttribute("data-uplineLeg")?.toLowerCase();
+      const idx = leg ? treeLegsLower.indexOf(leg) : Number.MAX_SAFE_INTEGER;
+      if (idx >= desiredIdx) {
+        ul.insertBefore(li, childLi);
+        placed = true;
+        break;
+      }
+    }
+    if (!placed) ul.appendChild(li);
+  }
+
+  function centerOnNode(nodeDiv, { vBias = 0.70 } = {}) {
+    if (!nodeDiv) return;
+    recalcOffsets();
+    const tx = ctx.getTransform();
+    const rect = nodeDiv.getBoundingClientRect();
+    const screenX = rect.left + rect.width / 2 + window.scrollX;
+    const screenY = rect.top + rect.height * (vBias ?? 0.35) + window.scrollY;
+    const localX = screenX - canvas.offsetLeft;
+    const localY = screenY - canvas.offsetTop;
+    const worldPt = ctx.transformedPoint(localX, localY);
+    const viewportW = canvasBox.clientWidth;
+    const viewportH = canvasBox.clientHeight;
+    const targetX = viewportW / 2 - tx.a * worldPt.x;
+    const targetY = viewportH * (vBias ?? 0.35) - tx.d * worldPt.y;
+    ctx.setTransform(tx.a, tx.b, tx.c, tx.d, targetX, targetY);
+    redraw();
+  }
+
+  function countRealChildren(ul) {
+    if (!ul) return 0;
+    let count = 0;
+    for (const childLi of ul.children) {
+      const host = childLi.querySelector(".node-host");
+      if (!host) continue;
+      if (host.hasAttribute("data-loading-slot")) continue;
+      const id = host.getAttribute("data-nodeId");
+      if (!id || id === "undefined" || id === "null") continue;
+      count++;
+    }
+    return count;
+  }
+
+  function maybeHideExpandIfNoChildren(parentId) {
+    if (treeLegsOrig) return; // leg trees show placeholders/chevron anyway
+    const pid = String(parentId);
+    const ul = ulIndex.get(pid);
+    const rec = nodeIndex.get(pid);
+    if (!ul || !rec?.li) return;
+    if (countRealChildren(ul) === 0) {
+      const exp = rec.li.querySelector(".node-expand");
+      if (exp) exp.remove();
+    }
+  }
+
+  // ---------- Core DOM builders ----------
+
+  function buildNodeLI(node, { isRoot = false } = {}) {
+    if (!isRoot && isHoldingTank(node.uplineLeg)) return null;
+
+    // Respect your "skip if template null/undefined"
+    const tpl = getTemplate(node);
+    if (tpl == null) return null;
+
+    const li = document.createElement("li");
+    const nodeDiv = document.createElement("div");
+    nodeDiv.classList.add("node-host");
+    nodeDiv.style.left = 0;
+    nodeDiv.style.top = 0;
+    nodeDiv.setAttribute("data-nodeId", node.nodeId ?? "");
+    nodeDiv.setAttribute("data-uplineLeg", node.uplineLeg ?? "");
+    nodeDiv.setAttribute("data-uplineId", node.uplineId ?? "");
+
+    nodeDiv.innerHTML = renderToStaticMarkup(tpl);
+    li.appendChild(nodeDiv);
+
+    // Expand Up control on root-like nodes (only visual; click handler below)
+    if (isRoot) {
+      const expandUpDiv = document.createElement("div");
+      expandUpDiv.classList.add("node-expandUp", "collaped");
+      expandUpDiv.innerHTML = `
+        <div class="expandUp">
+          <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-chevron-down" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M6 9l6 6l6 -6"></path></svg>
+        </div>
+        <div class="expandDown">
+          <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-chevron-up" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M6 15l6 -6l6 6"></path></svg>
+        </div>
+      `;
+      nodeDiv.prepend(expandUpDiv);
+      const onExpandUpClick = async (e) => {
+        if (dragged) return;
+        e.stopPropagation();
+        const uplineId = node.uplineId;
+        if (!uplineId) return;
+        // Load 2 levels for context (parent + siblings)
+        await api.loadNode(uplineId, 2, { expandUpFromChildId: node.nodeId });
+      };
+      expandUpDiv.addEventListener("click", onExpandUpClick);
+      handlers.push(() => expandUpDiv.removeEventListener("click", onExpandUpClick));
+    }
+
+    // Select on click
+    const onNodeClick = (e) => {
+      if (dragged) return;
+      if (activeNode) {
+        activeNode.classList.remove("active");
+        activeNode = undefined;
+      }
+      e.currentTarget.classList.add("active");
+      activeNode = e.currentTarget;
+      selectNode({
+        id: e.currentTarget.getAttribute("data-nodeId") === "undefined" ? undefined : e.currentTarget.getAttribute("data-nodeId"),
+        uplineLeg: e.currentTarget.getAttribute("data-uplineLeg"),
+        uplineId: e.currentTarget.getAttribute("data-uplineId"),
+      });
+    };
+    nodeDiv.addEventListener("click", onNodeClick);
+    handlers.push(() => nodeDiv.removeEventListener("click", onNodeClick));
+
+    // Expand Down control (we always create the UL so we can toggle display)
+    let childUl = null;
+    if (node.childArr !== null) {
+      const exp = document.createElement("div");
+      exp.classList.add("node-expand", "collaped");
+      exp.innerHTML = `
+        <div class="expandDown">
+          <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-chevron-down" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M6 9l6 6l6 -6"></path></svg>
+        </div>
+        <div class="expandUp">
+          <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-chevron-up" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M6 15l6 -6l6 6"></path></svg>
+        </div>
+      `;
+      nodeDiv.appendChild(exp);
+
+      childUl = document.createElement("ul");
+      childUl.setAttribute("data-nodeId", node.nodeId ?? "");
+      childUl.style.display = "none";
+      li.appendChild(childUl);
+
+      const onExpandClick = async (e) => {
+        if (dragged) return;
+        e.stopPropagation();
+        // Toggle and lazy load one page of children if unopened
+        const wasHidden = childUl.style.display === "none";
+        childUl.style.display = wasHidden ? "block" : "none";
+        exp.classList.toggle("expanded", wasHidden);
+        exp.classList.toggle("collaped", !wasHidden);
+
+        if (wasHidden && !hasRealChildren(childUl)) {
+          // 👇 Hide placeholders via CSS by marking this UL as "loading"
+          childUl.style.display = "none";
+          childUl.setAttribute("data-loading", "1");
+
+          const loading = BuildLoading(childUl);
+          try {
+            const subtree = await fetchNodeWithLevels(node.nodeId, 1);
+            if (subtree) {
+              const legsComing = new Set(
+                Array.isArray(subtree.childArr)
+                  ? subtree.childArr
+                    .filter(ch => !isHoldingTank(ch.uplineLeg) && getTemplate(ch) != null)
+                    .map(ch => normalizeLeg(ch.uplineLeg))
+                  : []
+              );
+              if (isLegTree() && legsComing.size) {
+                removePlaceholdersForLegs(childUl, legsComing);
+              }
+
+              if (subtree.childArr?.length) {
+                for (const ch of subtree.childArr) {
+                  // skip if template returns null
+                  if (getTemplate(ch) == null) continue;
+                  if (isLegTree() && isHoldingTank(ch.uplineLeg)) continue;
+                  insertSubtree(childUl, ch);
+                }
+              }
+            }
+          } finally {
+            if (loading && loading.remove) loading.remove();
+            childUl.style.display = "block";
+            childUl.removeAttribute("data-loading");
+            maybeHideExpandIfNoChildren(node.nodeId);
+          }
+        }
+      };
+      exp.addEventListener("click", onExpandClick);
+      handlers.push(() => exp.removeEventListener("click", onExpandClick));
+
+      // If this node *already* has children from a multi-level load, show them
+      if (Array.isArray(node.childArr) && node.childArr.length > 0) {
+        childUl.style.display = "block";
+        const exp = li.querySelector(".node-expand");
+        if (exp) { exp.classList.remove("collaped"); exp.classList.add("expanded"); }
+      }
+    }
+
+    return { li, nodeDiv, childUl };
+  }
+
+  /**
+   * Insert (or merge) a subtree under a parent UL
+   */
+  function insertSubtree(parentUl, nodeObj) {
+    if (!parentUl || !nodeObj) return;
+    if (isLegTree() && isHoldingTank(nodeObj.uplineLeg)) return;
+
+    // 🔒 Ensure we’re inserting under the correct parent UL
+    const ownerId = parentUl.getAttribute('data-nodeId') || null;
+    if (!ownerId || String(ownerId) !== String(nodeObj.uplineId ?? '')) {
+      const correctUl = ensureChildUl(String(nodeObj.uplineId));
+      if (correctUl) parentUl = correctUl;
+    }
+
+    if (isLegTree() && nodeObj.uplineLeg) {
+      removePlaceholderForLeg(parentUl, nodeObj.uplineLeg);
+    }
+
+    let existing = nodeObj.nodeId ? nodeIndex.get(String(nodeObj.nodeId)) : null;
+
+    let built;
+    if (!existing) {
+      built = buildNodeLI(nodeObj, { isRoot: false });
+      if (!built) return; // template said skip
+      insertIntoUlRespectingLegs(parentUl, built.li, nodeObj.uplineLeg);
+      if (nodeObj.nodeId) nodeIndex.set(nodeObj.nodeId, { li: built.li, nodeDiv: built.nodeDiv, parentUl });
+      if (built.childUl && nodeObj.nodeId) ulIndex.set(nodeObj.nodeId, built.childUl);
+    } else {
+      // If reusing existing, still clear any leftover placeholder for this leg
+      if (isLegTree() && nodeObj.uplineLeg) {
+        removePlaceholderForLeg(parentUl, nodeObj.uplineLeg);
+      }
+      insertIntoUlRespectingLegs(parentUl, existing.li, nodeObj.uplineLeg);
+      existing.parentUl = parentUl;
+    }
+
+    const targetUl = ulIndex.get(nodeObj.nodeId) || ensureChildUl(nodeObj.nodeId);
+    if (targetUl && Array.isArray(nodeObj.childArr)) {
+      // Legs that will get real kids now
+      const legsComing = new Set(
+        nodeObj.childArr
+          .filter(ch => !isHoldingTank(ch.uplineLeg) && getTemplate(ch) != null)
+          .map(ch => normalizeLeg(ch.uplineLeg))
+      );
+      if (isLegTree() && legsComing.size) {
+        removePlaceholdersForLegs(targetUl, legsComing);
+      }
+
+      for (const ch of nodeObj.childArr) {
+        if (getTemplate(ch) == null) continue;
+        if (isLegTree() && isHoldingTank(ch.uplineLeg)) continue;
+        // Replace placeholder for this leg (if any) before inserting the real child
+        if (isLegTree() && ch.uplineLeg) removePlaceholdersForLegs(ch, new Set([toLower(ch.uplineLeg)]));
+        insertSubtree(targetUl, ch);
+      }
+
+      // After inserting real kids, (re)seed placeholders for the remaining legs
+      if (isLegTree()) syncLegPlaceholders(targetUl, nodeObj.nodeId);
+      openIfHasRealChildren(targetUl);
+    } else if (targetUl && nodeObj.childArr === null && isLegTree()) {
+      syncLegPlaceholders(targetUl, nodeObj.nodeId);
+    }
+  }
+
+
+  // ---------- GraphQL ----------
+
+  function gqlNodeFields() {
+    // keeps fields consistent; 'nodes(levels: $levels)' must appear once; sub-children are returned by server
+    return `
+      nodeId
+      uplineId
+      uplineLeg
+      totalChildNodes
+      customer {
+        id
+        webAlias
+        fullName
+        enrollDate
+        profileImage
+        status { id name statusClass }
+        phoneNumbers { type number }
+        emailAddress
+        customerType { id name }
+        cards(idList: $cardIds, date: $periodDate) {
+          name
+          values { value valueName valueId }
+        }
+        widgets {
+          id name title description type showDatePicker
+          headerColor headerTextColor headerAlignment
+          backgroundColor textColor borderColor css settings
+          panes { imageUrl title text description values { text value } }
+        }
+      }
+      nodes(levels: $levels) {
+        nodeId
+        uplineId
+        uplineLeg
+        totalChildNodes
+        customer {
+          id
+          webAlias
+          fullName
+          enrollDate
+          profileImage
+          status { id name statusClass }
+          phoneNumbers { type number }
+          emailAddress
+          customerType { id name }
+          cards(idList: $cardIds, date: $periodDate) {
+            name
+            values { value valueName valueId }
+          }
+          widgets {
+            id name title description type showDatePicker
+            headerColor headerTextColor headerAlignment
+            backgroundColor textColor borderColor css settings
+            panes { imageUrl title text description values { text value } }
+          }
+        }
+      }
+    `;
+  }
+
+  function shapeToTree(rootNode) {
+    if (!rootNode) return null;
+
+    const mapNode = (n, parentId) => {
+      const self = {
+        nodeId: n.nodeId,
+        uplineId: n.uplineId ?? parentId,            // ✅ fallback to parent
+        uplineLeg: n.uplineLeg,
+        legs: treeLegsOrig,
+        card: n.customer?.cards?.[0],
+        customer: n.customer,
+        childArr: undefined,
+      };
+
+      const kids = Array.isArray(n.nodes) ? n.nodes : [];
+      if (isLegTree()) {
+        // In leg trees we always create a UL (even with no real kids) so placeholders can render.
+        self.childArr = kids.length
+          ? kids.map(k => mapNode(k, n.nodeId))
+          : []; // empty array → UL + placeholders
+      } else {
+        // Non-leg trees: [] vs null based on totalChildNodes
+        self.childArr = kids.length
+          ? kids.map(k => mapNode(k, n.nodeId))
+          : (n.totalChildNodes > 0 ? [] : null);
+      }
+      return self;
+    };
+
+    return mapNode(rootNode, rootNode.uplineId ?? null);
+  }
+
+  async function fetchNodeWithLevels(nodeId, levels) {
+    const data = {
+      query: `
+        query LoadNode($treeIds: [String]!, $nodeIds: [String]!, $cardIds: [String]!, $periodDate: Date, $levels: Int!) {
+          trees(idList: $treeIds) {
+            id
+            name
+            legNames
+            nodes(nodeIds: $nodeIds, date: $periodDate) {
+              ${gqlNodeFields()}
+            }
+          }
+        }
+      `,
+      variables: {
+        treeIds: [String(treeId)],
+        nodeIds: [String(nodeId)],
+        cardIds: [`Tree-${String(treeId)}`],
+        periodDate: currentPeriodDate,
+        levels: Math.max(0, parseInt(levels ?? 0, 10)),
+      },
+    };
+
+    return new Promise((resolve, reject) => {
+      Post(dataUrl, data, (resp) => {
+        const t = resp?.data?.trees?.[0];
+        if (!t) { resolve(null); return; }
+        const legs = t.legNames;
+        const hasLegs = Array.isArray(legs) && legs.length > 0;
+        treeLegsOrig = hasLegs ? legs.slice() : null;
+        treeLegsLower = hasLegs ? legs.map((x) => String(x).toLowerCase()) : null;
+        const root = t?.nodes?.[0];
+        resolve(root ? shapeToTree(root) : null);
+      }, reject);
+    });
+  }
+
+  // ---------- High-level loader ----------
+
+  async function loadNode(nodeId, levels, options = { /*empty*/ }) {
+    // options.expandUpFromChildId: when expanding up, we want to graft existing child branch if present
+    const subtree = await fetchNodeWithLevels(nodeId, levels);
+    if (!subtree) return;
+
+    // If this is the very first load (no UL at all), create root UL
+    let topUl = canvas.querySelector("ul");
+    if (!topUl) {
+      topUl = document.createElement("ul");
+      canvas.appendChild(topUl);
+    }
+
+    // EXPAND-UP GRAFTING:
+    // If we’re inserting a parent above an already-rendered child, reuse the child’s LI.
+    if (options.expandUpFromChildId) {
+      const childId = String(options.expandUpFromChildId);
+      const existingChildRec = nodeIndex.get(childId);
+      if (existingChildRec && subtree.childArr) {
+        // Find matching child inside new subtree
+        const matchIdx = subtree.childArr.findIndex((c) => String(c.nodeId) === childId);
+        if (matchIdx >= 0) {
+          // Build upline LI + UL in a throwaway container
+          const tempUl = document.createElement("ul");
+          const built = buildNodeLI(subtree, { isRoot: true });
+          if (!built) return;
+          tempUl.appendChild(built.li);
+
+          // Find the newly-built child's placeholder LI (the one that matches existingChildRec)
+          let placeholderChildLi = null;
+          const newChildUl = built.li.querySelector("ul");
+          if (newChildUl) {
+            for (const li of newChildUl.children) {
+              const host = li.querySelector(".node-host");
+              if (host?.getAttribute("data-nodeId") === childId) {
+                placeholderChildLi = li;
+                break;
+              }
+            }
+          }
+
+          // Graft the existing child LI into the just-built parent structure
+          if (placeholderChildLi && existingChildRec.li) {
+            newChildUl.replaceChild(existingChildRec.li, placeholderChildLi);
+            // fix index parentUl
+            nodeIndex.set(childId, { ...existingChildRec, parentUl: newChildUl });
+          }
+
+          // Insert the newly-built parent subtree ABOVE the old root UL
+          canvas.prepend(tempUl.firstChild); // move the parent <li> into canvas (becomes new visual root)
+          // Register indexes
+          if (subtree.nodeId) {
+            nodeIndex.set(subtree.nodeId, { li: built.li, nodeDiv: built.nodeDiv, parentUl: topUl });
+            if (built.childUl) ulIndex.set(subtree.nodeId, built.childUl);
+          }
+          // Expand the parent so its children are visible after expand-up
+          if (built.childUl) {
+            built.childUl.style.display = "block";
+            const exp = built.li.querySelector(".node-expand");
+            if (exp) { exp.classList.remove("collaped"); exp.classList.add("expanded"); }
+          }
+
+          // Insert additional siblings from subtree (except the grafted one, which we reused)
+          const siblings = subtree.childArr.filter((c) => String(c.nodeId) !== childId);
+          for (const sib of siblings) {
+            if (getTemplate(sib) == null) continue;
+            if (isLegTree() && isHoldingTank(sib.uplineLeg)) continue;
+            insertSubtree(built.childUl, sib);
+          }
+
+          if (isLegTree()) syncLegPlaceholders(built.childUl, subtree.nodeId);
+          openIfHasRealChildren(built.childUl);
+
+          // Focus the existing child (now correctly placed under new parent)
+          if (existingChildRec.nodeDiv?.isConnected) {
+            if (activeNode) activeNode.classList.remove("active");
+            existingChildRec.nodeDiv.classList.add("active");
+            activeNode = existingChildRec.nodeDiv;
+            requestAnimationFrame(() => requestAnimationFrame(() => centerOnNode(existingChildRec.nodeDiv)));
+          }
+
+          return;
+        }
+      }
+    }
+
+    // Normal insert/merge:
+    // If the node already exists somewhere, insert its LI where it belongs (and merge children).
+    let existing = subtree.nodeId ? nodeIndex.get(String(subtree.nodeId)) : null;
+    if (!existing) {
+      const built = buildNodeLI(subtree, { isRoot: true });
+      if (!built) return;
+      topUl.appendChild(built.li);
+      if (subtree.nodeId) nodeIndex.set(subtree.nodeId, { li: built.li, nodeDiv: built.nodeDiv, parentUl: topUl });
+      if (built.childUl && subtree.nodeId) ulIndex.set(subtree.nodeId, built.childUl);
+
+      // Insert descendants (don’t force-open; leave collapsed unless you want otherwise)
+      const destUl = built.childUl || ensureChildUl(subtree.nodeId);
+      if (destUl && Array.isArray(subtree.childArr)) {
+        for (const ch of subtree.childArr) {
+          if (getTemplate(ch) == null) continue;
+          insertSubtree(destUl, ch);
+        }
+
+        // Auto-open root’s UL if it now has real children
+        openIfHasRealChildren(destUl);
+      }
+    } else {
+      // Reuse existing LI and just ensure/insert children
+      const destUl = ensureChildUl(subtree.nodeId);
+      if (destUl && Array.isArray(subtree.childArr)) {
+        for (const ch of subtree.childArr) {
+          if (getTemplate(ch) == null) continue;
+          insertSubtree(destUl, ch);
+        }
+        openIfHasRealChildren(destUl);
+      }
+    }
+  }
+
+  // ---------- Initial load ----------
+  (async () => {
+    // Show initial spinner
+    const rootUl = document.createElement("ul");
+    canvas.appendChild(rootUl);
+    const loading = BuildLoading(rootUl);
+    try {
+      await loadNode(rootId, 2); // start with 1 or 2 levels as you prefer
+      openDescendantsToDepth(rootId, 2);
+      redraw();
+    } finally {
+      if (loading && loading.remove) loading.remove();
+    }
+  })();
+
+  // ---------- External API ----------
+  const api = {
+    setPeriodDate(iso) {
+      if (iso) currentPeriodDate = iso;
+    },
+    async loadNode(nodeId, levels, options) {
+      return await loadNode(nodeId, levels, options);
+    },
+    updateNodeContent(nodeId, nodeData) {
+      const rec = nodeIndex.get(nodeId);
+      if (!rec || !nodeData) return;
+      const html = renderToStaticMarkup(getTemplate(nodeData));
+      rec.nodeDiv.innerHTML = html;
+    },
+    removeNode(nodeId) {
+      const rec = nodeIndex.get(nodeId);
+      if (!rec) return;
+      const { li, parentUl, nodeDiv } = rec;
+      const oldParentId = nodeDiv?.getAttribute?.("data-uplineId");
+      if (parentUl && li && parentUl.contains(li)) parentUl.removeChild(li);
+      nodeIndex.delete(nodeId);
+      if (oldParentId) maybeHideExpandIfNoChildren(oldParentId);
+      if (activeNode && nodeDiv && activeNode === nodeDiv) {
+        activeNode.classList.remove("active");
+        activeNode = null;
+      }
+    },
+    insertNode({ parentId, uplineLeg, nodeData }) {
+      if (!parentId || !nodeData) return;
+      const ul = ensureChildUl(parentId);
+      if (!ul) return;
+      const built = buildNodeLI({ ...nodeData, uplineId: parentId, uplineLeg, childArr: nodeData.childArr ?? [] }, { isRoot: false });
+      if (!built) return;
+      insertIntoUlRespectingLegs(ul, built.li, uplineLeg);
+      if (nodeData.nodeId) nodeIndex.set(nodeData.nodeId, { li: built.li, nodeDiv: built.nodeDiv, parentUl: ul });
+      if (built.childUl && nodeData.nodeId) ulIndex.set(nodeData.nodeId, built.childUl);
+    },
+  };
+
+  // ---------- Cleanup ----------
+  function cleanup() {
+    handlers.forEach((off) => {
+      try { off(); } catch {/*empty*/ }
+    });
+    while (canvasBox.firstChild) canvasBox.removeChild(canvasBox.firstChild);
+    if (host.contains(canvasBox)) host.removeChild(canvasBox);
+    document.body.style.userSelect = "";
+  }
+  cleanup.api = api;
+  return cleanup;
+
+  // ---------- Transform tracker ----------
+  function trackTransforms() {
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    let xform = svg.createSVGMatrix();
+    ctx.getTransform = function () { return xform; };
+    const saved = [];
+    ctx.save = function () { saved.push(xform.translate(0, 0)); };
+    ctx.restore = function () { xform = saved.pop(); };
+    ctx.scale = function (sx, sy) { xform = xform.scaleNonUniform(sx, sy); };
+    ctx.rotate = function (rad) { xform = xform.rotate((rad * 180) / Math.PI); };
+    ctx.translate = function (dx, dy) { xform = xform.translate(dx, dy); };
+    ctx.transform = function (a, b, c, d, e, f) {
+      const m2 = svg.createSVGMatrix(); m2.a = a; m2.b = b; m2.c = c; m2.d = d; m2.e = e; m2.f = f;
+      xform = xform.multiply(m2);
+    };
+    ctx.setTransform = function (a, b, c, d, e, f) {
+      xform.a = a; xform.b = b; xform.c = c; xform.d = d; xform.e = e; xform.f = f;
+    };
+    const pt = svg.createSVGPoint();
+    ctx.transformedPoint = function (x, y) { pt.x = x; pt.y = y; return pt.matrixTransform(xform.inverse()); };
+  }
+}
+
+export { treeBorad }; 

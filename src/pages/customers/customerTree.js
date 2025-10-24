@@ -23,11 +23,16 @@ const GET_DATA = gql`
       nodes (treeId: $treeId){
         totalChildNodes
       }
+      treePreferences{
+        treeId
+        holdingTank
+      }
     }
     trees(idList: $treeIds){
       id
       name
       legNames
+      enableHoldingTank
       enableCustomerMovements
       movementDurationInDays
       maximumAllowedMovementLevels
@@ -50,6 +55,7 @@ const CustomerTree = () => {
 
   const [htNode, setHTNode] = useState();
   const [showPlacementSuite, setShowPlacementSuite] = useState(false);
+  const [showHoldingTank, setShowHoldingTank] = useState(false);
   const [availableLegButtons, setAvailableLegButtons] = useState([]);
 
   const treeCleanupRef = useRef(null);
@@ -165,6 +171,8 @@ const CustomerTree = () => {
   const tree = data?.trees?.find(t => t.id == params.treeId);
   const isToday = new Date(effectiveDate).toDateString() === new Date().toDateString();
 
+  const treeSetting = data?.customers?.[0]?.treePreferences?.find(x => x.treeId == params.treeId) ?? {};
+
   return (
     <>
       <PageHeader preTitle={`${data?.trees?.[0]?.name} Tree`} title={data?.customers?.[0]?.fullName} pageId="tree" customerId={params.customerId} subPage={params.treeId} >
@@ -173,13 +181,17 @@ const CustomerTree = () => {
             <div>
               <PeriodDatePicker name="periodDate" value={pickerDate} onChange={handlePeriodChange} />
             </div>
+            {data?.trees?.[0]?.enableHoldingTank && treeSetting.holdingTank && data?.customers?.[0]?.nodes?.[0]?.totalChildNodes > 1 && (
+              <button className="btn btn-primary" onClick={() => setShowHoldingTank(true)}>
+                Holding Tank
+              </button>
+            )}
 
-            {data?.trees?.[0]?.enableCustomerMovements &&
-              data?.customers?.[0]?.nodes?.[0]?.totalChildNodes > 1 && (
-                <button className="btn btn-primary" onClick={() => setShowPlacementSuite(true)}>
-                  Placement Suite
-                </button>
-              )}
+            {data?.trees?.[0]?.enableCustomerMovements && data?.customers?.[0]?.nodes?.[0]?.totalChildNodes > 1 && (
+              <button className="btn btn-primary" onClick={() => setShowPlacementSuite(true)}>
+                Placement Suite
+              </button>
+            )}
           </div>
         </CardHeader>
 
@@ -255,11 +267,14 @@ const CustomerTree = () => {
           showModal={handleShow}
         />
         <HoldingTank
+          customer={data?.customers?.[0]}
           nodeId={params.customerId}
           periodDate={effectiveDate}
           treeId={params.treeId}
+          overrideShow={showHoldingTank}
           uplineId={htNode?.uplineId}
           uplineLeg={htNode?.uplineLeg}
+          onHide={() => setShowHoldingTank(false)}
           showModal={handleShow}
         />
         <PlacementSuite

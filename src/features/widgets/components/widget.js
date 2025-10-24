@@ -278,6 +278,7 @@ function Content(widget, date, customer, compensationPlans, trees, isPreview, wi
       { valueName: "Email", valueId: "Email", value: customer.emailAddress },
       { valueName: "Handle", valueId: "Handle", value: customer.webAlias ?? customer.id },
       { valueName: "Enroll Date", valueId: "EnrollDate", value: ToLocalDate(customer.enrollDate, true) },
+      { valueName: "Enroll Date + Time", valueId: "EnrollDateTime", value: ToLocalDate(customer.enrollDate, false) },
       { valueName: "Phone", valueId: "Phone", value: customer.phoneNumbers && customer.phoneNumbers.length > 0 ? customer.phoneNumbers[0].number : '' }
     ];
 

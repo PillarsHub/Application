@@ -11,6 +11,7 @@ const GET_HoldingTank_PAGED = `
   query ($nodeIds: [String]!, $treeId: ID!, $offset: Int!, $count: Int!) {
     tree(id: $treeId) {
       id
+      legNames
       nodes(nodeIds: $nodeIds) {
         nodeId
         uplineId
@@ -39,7 +40,21 @@ const GET_PLACETO = `
   }
 `;
 
-const HoldingTank = ({ nodeId, periodDate, treeId, uplineId, uplineLeg, showModal }) => {
+const GET_BOTTOM = `
+  query ($treeId: String!, $nodeIds: [String]!, $leg: String!) {
+    trees(idList: [$treeId]) {
+      nodes(nodeIds: $nodeIds) {
+        bottomPath(leg: $leg) {
+          uplineId
+          nodeId
+          uplineLeg
+        }
+      }
+    }
+  }
+`;
+
+const HoldingTank = ({ customer, nodeId, periodDate, treeId, overrideShow, uplineId, uplineLeg, showModal, onHide }) => {
   const [show, setShow] = useState(false);
   const [items, setItems] = useState([]);
   const [error, setError] = useState();
@@ -47,6 +62,7 @@ const HoldingTank = ({ nodeId, periodDate, treeId, uplineId, uplineLeg, showModa
   const [loadingFirstPage, setLoadingFirstPage] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
+  const [legNames, setLegNames] = useState();
 
   // pagination trackers (do NOT depend on filtered count)
   const offsetRef = useRef(0);
@@ -63,7 +79,32 @@ const HoldingTank = ({ nodeId, periodDate, treeId, uplineId, uplineLeg, showModa
     });
   };
 
-  const handleClose = () => setShow(false);
+  const handleShowPlaceBottomLeg = (node, leg) => {
+    Post('/graphql', { query: GET_BOTTOM, variables: { treeId: treeId, nodeIds: [nodeId], leg: leg } },
+      (r) => {
+        var bottomPath = r.data.trees[0].nodes[0].bottomPath;
+        var bottomNode = bottomPath[bottomPath.length-1];
+
+        showModal({
+          nodeId: node.nodeId,
+          uplineId: bottomNode.nodeId,
+          uplineLeg: bottomNode.uplineLeg,
+          fromNodeId: node.uplineId,
+          fromLeg: node.uplineLeg,
+        });
+      },
+      (err) => {
+        alert(JSON.stringify(err));
+      }
+    );
+
+
+  }
+
+  const handleClose = () => {
+    setShow(false);
+    onHide();
+  }
 
   // Promise wrapper for Post
   const postGraphQL = (query, variables) =>
@@ -81,9 +122,9 @@ const HoldingTank = ({ nodeId, periodDate, treeId, uplineId, uplineLeg, showModa
       );
       setShow(true);
     } else {
-      setShow(false);
+      setShow(overrideShow);
     }
-  }, [uplineId, uplineLeg]);
+  }, [uplineId, uplineLeg, overrideShow]);
 
   // Fetch a page by raw offset and append filtered results
   const fetchPage = async (offset) => {
@@ -94,6 +135,7 @@ const HoldingTank = ({ nodeId, periodDate, treeId, uplineId, uplineLeg, showModa
       count: PAGE_SIZE,
     });
 
+    setLegNames(resp?.data?.tree?.legNames)
     const nodeBlock = resp?.data?.tree?.nodes?.[0];
     const total = Number(nodeBlock?.totalChildNodes ?? 0);
     totalRef.current = total;
@@ -163,19 +205,19 @@ const HoldingTank = ({ nodeId, periodDate, treeId, uplineId, uplineLeg, showModa
   return (
     <OffCanvas id="HoldingTank" showModal={show}>
       <div className="card-header border-bottom-0 mb-0 pb-0">
-        <h2 className="card-title">Holding Tank</h2>
+        <h2 className="card-title">{customer.fullName} Holding Tank</h2>
         <div className="card-actions">
           <button type="button" className="btn-close text-reset" onClick={handleClose}></button>
         </div>
       </div>
 
       <div className="card-header mt-0 pt-0">
-        <p className="card-subtitle">
+        {uplineId && <p className="card-subtitle">
           Placing on {placeUnder?.fullName} {uplineLeg}
-        </p>
+        </p>}
       </div>
 
-      <div className="overflow-y-scroll">
+      <div className="overflow-y-scroll h-100">
         {error && <p>Error loading Holding Tank Data. {error}</p>}
 
         <div className="list-group list-group-flush">
@@ -207,11 +249,18 @@ const HoldingTank = ({ nodeId, periodDate, treeId, uplineId, uplineLeg, showModa
                   <div className="d-block text-muted text-truncate mt-n1"></div>
                 </div>
                 <div className="col-auto">
-                  <div className="btn-list flex-nowrap">
-                    <button className="btn" onClick={() => handleShowPlacemntModel(node)}>
-                      Place
-                    </button>
+                  <div className="btn-group">
+                    <button className="btn" onClick={() => handleShowPlacemntModel(node)}>Place</button>
+                    <button data-bs-toggle="dropdown" type="button" className="btn dropdown-toggle dropdown-toggle-split" aria-expanded="false"></button>
+                    <div className="dropdown-menu dropdown-menu-end">
+                      {legNames.map((legName) => {
+                        return <button key={legName} className="dropdown-item" onClick={() => handleShowPlaceBottomLeg(node, legName)}>
+                          Place Bottom {legName}
+                        </button>
+                      })}
+                    </div>
                   </div>
+
                 </div>
               </div>
             </div>
@@ -254,10 +303,13 @@ const HoldingTank = ({ nodeId, periodDate, treeId, uplineId, uplineLeg, showModa
 export default HoldingTank;
 
 HoldingTank.propTypes = {
+  customer: PropTypes.object.isRequired,
   nodeId: PropTypes.string.isRequired,
   periodDate: PropTypes.string.isRequired,
   treeId: PropTypes.string.isRequired,
+  overrideShow: PropTypes.bool.isRequired,
   uplineId: PropTypes.string,
   uplineLeg: PropTypes.string,
   showModal: PropTypes.func.isRequired,
+  onHide: PropTypes.func.isRequired
 };

@@ -144,9 +144,33 @@
 }
 
 
+.node-expandUp {
+  width: auto;
+  height: 20px;
+  margin-left: auto;
+  margin-right: auto;
+  cursor: pointer;
+  position: relative;
+  top: 0px;
+  color: #222;
+  text-align: center;
+}
 
+.node-expandUp.collaped>.expandUp {
+  display: none;
+}
 
+.node-expandUp.expanded>.expandDown {
+  display: none;
+}
 
+ul[data-loading="1"] .node-host[data-empty-slot="1"] {
+  display: none;
+}
+/* If a UL is marked as loading, keep it hidden */
+ul[data-loading="1"] {
+  display: none !important;
+}
 
 
 

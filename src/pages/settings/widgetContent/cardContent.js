@@ -201,6 +201,7 @@ const CardContent = ({ widget, definitions, updateWidget }) => {
                 <option value="Email">Email</option>
                 <option value="Handle">Handle</option>
                 <option value="EnrollDate">Enroll Date</option>
+                <option value="EnrollDateTime">Enroll Date + Time</option>
                 <option value="Phone">Phone</option>
                 <option value="customData">Custom Field...</option>
               </optgroup>
