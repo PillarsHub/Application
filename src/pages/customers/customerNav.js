@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 import parse from 'html-react-parser';
 import { GetScope } from "../../features/authentication/hooks/useToken"
 import { Link } from "react-router-dom";
-import DataLoading from '../../components/dataLoading';
 import DataError from '../../components/dataError';
 import useMenu from '../../hooks/useMenu';
 
@@ -12,7 +11,7 @@ const CustomerNav = ({ customerId }) => {
   const periodId = queryParams.get("periodId");
   const { data, loading, error } = useMenu(customerId);
 
-  if (loading) return <DataLoading />
+  if (loading) return <></>
   if (error) return <DataError error={error} />
 
   if (GetScope() == customerId) {

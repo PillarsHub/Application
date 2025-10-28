@@ -9,6 +9,7 @@ import useSubdomain from '../hooks/useSubdomain';
 import { useTheme } from '../hooks/useTheme';
 import AccountMenu from './accountMenu';
 import AutoCompleteOrdersCustomers from '../components/autoCompleteOrdersCustomers';
+import CustomerNav from './customers/customerNav';
 
 const CustomerLayout = () => {
   const { customerId } = useParams();
@@ -61,7 +62,7 @@ const CustomerLayout = () => {
     if (value?.type === 'order') location = `/customers/${value.customerId}/orders/${value.id}`;
   }
 
-  const searchPlaceholder = GetScope() == undefined ? "Search Team or Orders -U- " : "Search Team -U- ";
+  const searchPlaceholder = GetScope() == undefined ? "Search Team or Orders" : "Search Team";
 
   return (<>
     <aside className="navbar navbar-vertical navbar-expand-lg" style={inlineStyle}>
@@ -86,6 +87,8 @@ const CustomerLayout = () => {
       </div>
     </aside>
 
+
+
     <header className="navbar navbar-expand navbar-light d-print-none">
       <div className="container-xl">
         <div className="navbar-nav flex-row order-md-last d-none d-lg-flex">
@@ -93,8 +96,12 @@ const CustomerLayout = () => {
             <AccountMenu />
           </div>
         </div>
-        <div className="flex-row justify-content-center w-100">
-          <div className="ms-auto me-auto" style={{ maxWidth: '600px' }}>
+        <div className={`${(GetScope() == undefined && customerId) ? 'flex-row d-lg-flex align-items-center justify-content-center w-100' : 'flex-row justify-content-center w-100'}`} id="navbar-menu">
+          {GetScope() == undefined && customerId && <>
+            <CustomerNav customerId={customerId} />
+          </>}
+
+          <div className={(GetScope() == undefined && customerId) ? 'ms-auto me-auto ms-lg-0 me-lg-0 pe-lg-3' : 'ms-auto me-auto'} style={{ maxWidth: '600px' }}>
             <AutoCompleteOrdersCustomers name="search" placeholder={searchPlaceholder} value={searchText} showIcon={true} onChange={handleChange} />
           </div>
         </div>

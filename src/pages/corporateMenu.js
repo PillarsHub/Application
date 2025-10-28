@@ -34,20 +34,20 @@ const CorporateMenu = ({ itemClick, customerId }) => {
   return (<>
     <ul className="navbar-nav">
       {subMenu && <>
-        <li className="nav-item customer-menu-side">
+        <li className="nav-item customer-menu-side d-none">
 
-          <a href="#menu-layout" className="nav-link p-3" data-bs-toggle="collapse" aria-expanded="true">
+          <a href="#menu-layout" className="nav-link p-3" data-bs-toggle="collapse" aria-expanded="false">
             <div className="row">
               <div className="col-auto">
                 <Avatar name={customerMenu.customers?.[0].fullName} url={customerMenu.customers?.[0].profileImage} size="xs" />
               </div>
-              <div className="col pe-3">
+              <div className="col pe-3 ">
                 <div className="font-weight-medium text-truncate">{customerMenu.customers?.[0].fullName}</div>
               </div>
             </div>
             <span className="nav-link-toggle"></span>
           </a>
-          <ul className="collapse show pb-2 border-bottom" id="menu-layout">
+          <ul className="collapse pb-2 border-bottom customer-ul collapsed" id="menu-layout">
 
             {subMenu?.items && subMenu.items.map((sMenu) => {
               let visible = sMenu.status != 'Disabled';

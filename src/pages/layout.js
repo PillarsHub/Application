@@ -59,7 +59,7 @@ const Layout = () => {
     if (value?.type === 'order') location = `/customers/${value.customerId}/orders/${value.id}`;
   }
 
-  const searchPlaceholder = GetScope() == undefined ? "Search Team or Orders -A- " : "Search Team -A- ";
+  const searchPlaceholder = GetScope() == undefined ? "Search Team or Orders" : "Search Team";
 
   return (<>
     <aside className="navbar navbar-vertical navbar-expand-lg" style={inlineStyle}>
