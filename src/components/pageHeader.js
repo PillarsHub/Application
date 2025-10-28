@@ -1,13 +1,7 @@
-import React, { useState, Children } from 'react';
+import React, { Children } from 'react';
 import PropTypes from 'prop-types';
-import { GetScope } from "../features/authentication/hooks/useToken"
-import AccountMenu from '../pages/accountMenu';
-import CustomerNav from '../pages/customers/customerNav';
-import AutoCompleteOrdersCustomers from './autoCompleteOrdersCustomers';
 
-const PageHeader = ({ preTitle, title, postTitle, children, breadcrumbs, onSearch, customerId, pageId, fluid = false }) => {
-  const [searchText, setSearchText] = useState('');
-
+const PageHeader = ({ preTitle, title, postTitle, children, breadcrumbs, fluid = false }) => {
   let header;
   let content = [];
 
@@ -20,46 +14,9 @@ const PageHeader = ({ preTitle, title, postTitle, children, breadcrumbs, onSearc
     }
   });
 
-  const handleChange = (name, value) => {
-    setSearchText(value);
-
-    if (value?.type === 'customer') location = `/customers/${value.id}/summary`;
-    if (value?.type === 'order') location = `/customers/${value.customerId}/orders/${value.id}`;
-  }
-
-  const handleSubmit = async e => {
-    e.preventDefault();
-    alert(searchText);
-    onSearch(searchText);
-  }
-
-  const searchPlaceholder = GetScope() == undefined ? "Search Team or Orders" : "Search Team";
   const continerClass = fluid ? 'container-fluid' : 'container-xl';
 
   return <>
-
-    <header className="navbar navbar-expand navbar-light d-print-none">
-      <div className={continerClass}>
-        <div className="navbar-nav flex-row order-md-last d-none d-lg-flex">
-          <div className="nav-item dropdown ">
-            <AccountMenu />
-          </div>
-        </div>
-        <div className={`${(GetScope() == undefined && customerId) ? 'flex-row d-lg-flex align-items-center justify-content-center w-100' : 'flex-row justify-content-center w-100'}`} id="navbar-menu">
-          {GetScope() == undefined && customerId && <>
-            <CustomerNav customerId={customerId} pageId={pageId} />
-          </>}
-
-          <div className={(GetScope() == undefined && customerId) ? 'ms-auto me-auto ms-lg-0 me-lg-0 pe-lg-3' : 'ms-auto me-auto'} style={{ maxWidth: '600px' }}>
-            <form onSubmit={handleSubmit} autoComplete="off">
-              <AutoCompleteOrdersCustomers name="search" placeholder={searchPlaceholder} value={searchText} showIcon={true} onChange={handleChange} />
-            </form>
-          </div>
-        </div>
-      </div>
-    </header>
-
-
     <div className="page-wrapper">
       {title && <div className={continerClass}>
         <div className="page-header d-print-none">
@@ -114,9 +71,6 @@ PageHeader.propTypes = {
   title: PropTypes.string,
   postTitle: PropTypes.string,
   children: PropTypes.any.isRequired,
-  onSearch: PropTypes.func,
   breadcrumbs: PropTypes.any,
-  customerId: PropTypes.string,
-  pageId: PropTypes.string,
   fluid: PropTypes.bool
 }

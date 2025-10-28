@@ -41,7 +41,7 @@ const CustomerNav = ({ customerId }) => {
     return result;
   };
 
-  const menu = data?.find(items => items.id == "BO");
+  const menu = data?.menus?.find(items => items.id == "BO");
 
   return <>
     <ul className="navbar-nav justify-content-evenly me-auto">

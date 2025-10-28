@@ -1,8 +1,31 @@
 import { useState, useEffect } from 'react';
 import { useQuery, gql } from "@apollo/client";
 import { GetToken } from "../features/authentication/hooks/useToken";
+import { Post } from '../hooks/usePost';
 
 var GET_CUSTOMER_MENU = gql`query ($customerId: String!) {
+  customers(customerId: {eq: $customerId}) {
+    fullName
+    profileImage
+  }
+  menus (customerId: $customerId){
+    id
+    name
+    type
+    items{
+      icon
+      status
+      title
+      url
+    }
+  }
+}`;
+
+var GET_CUSTOMER_MENU_PLAIN = `query ($customerId: String!) {
+  customers(customerId: {eq: $customerId}) {
+    fullName
+    profileImage
+  }
   menus (customerId: $customerId){
     id
     name
@@ -42,15 +65,15 @@ export default function useMenu(customerId) {
     if (customerId && menu == undefined) {
       refetch({ customerId: customerId })
         .then((result) => {
-          let menus = result.data.menus;
+          let menuData = result.data;
           setLoading(false);
-          SetMenuInLocalStorage(menus, GetToken()?.environmentId);
-          setMenu(menus);
+          SetMenuInLocalStorage(menuData, GetToken()?.environmentId);
+          setMenu(menuData);
         })
         .catch((error) => {
           setLoading(false);
           setError(error);
-          setMenu([]);
+          setMenu();
         });
     }
   }, [menu, customerId]);
@@ -59,6 +82,25 @@ export default function useMenu(customerId) {
 }
 
 const memoryStorage = new Map();
+
+function GetMenu(customerId, onLoad) {
+  const envId = GetToken()?.environmentId
+  const storedMenu = GetMenuFromLocalStorage(envId);
+  if (storedMenu) {
+    onLoad(storedMenu);
+  } else {
+    Post('/graphql', { query: GET_CUSTOMER_MENU_PLAIN, variables: { customerId: customerId } },
+      (r) => {
+        let menuData = r.data;
+        SetMenuInLocalStorage(menuData, envId);
+        onLoad(menuData);
+      },
+      () => {
+        onLoad();
+      }
+    );
+  }
+}
 
 function ClearMenu() {
   memoryStorage.clear();
@@ -77,4 +119,4 @@ function SetMenuInLocalStorage(mnu, key) {
   memoryStorage.set('menu_' + key, menuString);
 }
 
-export { useMenu, ClearMenu };
+export { useMenu, GetMenu, ClearMenu };

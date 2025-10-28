@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Outlet } from "react-router-dom";
 import { GetScope } from "../features/authentication/hooks/useToken"
+import { useParams } from "react-router-dom"
 import BackOfficeMenu from './backOfficeMenu';
 import CorporateMenu from './corporateMenu';
 import DataLoading from '../components/dataLoading';
@@ -9,7 +10,8 @@ import { useTheme } from '../hooks/useTheme';
 import AccountMenu from './accountMenu';
 import AutoCompleteOrdersCustomers from '../components/autoCompleteOrdersCustomers';
 
-const Layout = () => {
+const CustomerLayout = () => {
+  const { customerId } = useParams();
   const [searchText, setSearchText] = useState();
   const { subdomain } = useSubdomain();
   const { theme, loading, error } = useTheme({ subdomain: subdomain });
@@ -59,7 +61,7 @@ const Layout = () => {
     if (value?.type === 'order') location = `/customers/${value.customerId}/orders/${value.id}`;
   }
 
-  const searchPlaceholder = GetScope() == undefined ? "Search Team or Orders -A- " : "Search Team -A- ";
+  const searchPlaceholder = GetScope() == undefined ? "Search Team or Orders -U- " : "Search Team -U- ";
 
   return (<>
     <aside className="navbar navbar-vertical navbar-expand-lg" style={inlineStyle}>
@@ -78,8 +80,8 @@ const Layout = () => {
           </div>
         </div>
         <div className="collapse navbar-collapse" id="sidebar-menu">
-          {GetScope() == undefined && <CorporateMenu />}
-          {GetScope() != undefined && <BackOfficeMenu itemClick={handleNavItemClick} />}
+          {GetScope() == undefined && <CorporateMenu customerId={customerId ?? ''} itemClick={handleNavItemClick} />}
+          {GetScope() != undefined && <BackOfficeMenu customerId={customerId ?? ''} itemClick={handleNavItemClick} />}
         </div>
       </div>
     </aside>
@@ -104,4 +106,4 @@ const Layout = () => {
   )
 };
 
-export default Layout;
+export default CustomerLayout;

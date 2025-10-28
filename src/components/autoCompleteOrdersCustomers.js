@@ -392,7 +392,3 @@ AutoCompleteOrdersCustomers.propTypes = {
   scopeCustomerIds: PropTypes.arrayOf(PropTypes.string),
   showSectionHeaders: PropTypes.oneOf([true, false, "auto"])
 };
-
-AutoCompleteOrdersCustomers.defaultProps = {
-  showSectionHeaders: "auto",
-};
