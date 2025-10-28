@@ -62,6 +62,8 @@ const CustomerLayout = () => {
     if (value?.type === 'order') location = `/customers/${value.customerId}/orders/${value.id}`;
   }
 
+  const showTopMenu = theme?.legacyMenu ?? true;
+
   const searchPlaceholder = GetScope() == undefined ? "Search Team or Orders" : "Search Team";
 
   return (<>
@@ -81,7 +83,7 @@ const CustomerLayout = () => {
           </div>
         </div>
         <div className="collapse navbar-collapse" id="sidebar-menu">
-          {GetScope() == undefined && <CorporateMenu customerId={customerId ?? ''} itemClick={handleNavItemClick} />}
+          {GetScope() == undefined && <CorporateMenu customerId={customerId ?? ''} showCustomer={!showTopMenu} itemClick={handleNavItemClick} />}
           {GetScope() != undefined && <BackOfficeMenu customerId={customerId ?? ''} itemClick={handleNavItemClick} />}
         </div>
       </div>
@@ -96,12 +98,12 @@ const CustomerLayout = () => {
             <AccountMenu />
           </div>
         </div>
-        <div className={`${(GetScope() == undefined && customerId) ? 'flex-row d-lg-flex align-items-center justify-content-center w-100' : 'flex-row justify-content-center w-100'}`} id="navbar-menu">
-          {GetScope() == undefined && customerId && <>
-            <CustomerNav customerId={customerId} />
+        <div className={`${(GetScope() == undefined && customerId && showTopMenu) ? 'flex-row d-lg-flex align-items-center justify-content-center w-100' : 'flex-row justify-content-center w-100'}`} id="navbar-menu">
+          {GetScope() == undefined && customerId && showTopMenu && <>
+            <CustomerNav customerId={customerId} itemClick={handleNavItemClick} />
           </>}
 
-          <div className={(GetScope() == undefined && customerId) ? 'ms-auto me-auto ms-lg-0 me-lg-0 pe-lg-3' : 'ms-auto me-auto'} style={{ maxWidth: '600px' }}>
+          <div className={(GetScope() == undefined && customerId && showTopMenu) ? 'ms-auto me-auto ms-lg-0 me-lg-0 pe-lg-3' : 'ms-auto me-auto'} style={{ maxWidth: '600px' }}>
             <AutoCompleteOrdersCustomers name="search" placeholder={searchPlaceholder} value={searchText} showIcon={true} onChange={handleChange} />
           </div>
         </div>

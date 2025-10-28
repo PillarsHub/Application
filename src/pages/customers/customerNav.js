@@ -6,13 +6,34 @@ import { Link } from "react-router-dom";
 import DataError from '../../components/dataError';
 import useMenu from '../../hooks/useMenu';
 
-const CustomerNav = ({ customerId }) => {
+const CustomerNav = ({ itemClick, customerId }) => {
   const queryParams = new URLSearchParams(window.location.search);
   const periodId = queryParams.get("periodId");
   const { data, loading, error } = useMenu(customerId);
 
   if (loading) return <></>
   if (error) return <DataError error={error} />
+
+  const handleClick = (e) => {
+    // Find the closest dropdown parent
+    const dropdown = e.target.closest('.dropdown');
+
+    if (dropdown) {
+      const dropdownMenu = dropdown.querySelector('.dropdown-menu');
+      if (dropdownMenu && dropdownMenu.classList.contains('show')) {
+        // Use Bootstrap's Dropdown API to hide it
+        const dropdownInstance = window.bootstrap.Dropdown.getInstance(
+          dropdown.querySelector('[data-bs-toggle="dropdown"]')
+        ) || new window.bootstrap.Dropdown(
+          dropdown.querySelector('[data-bs-toggle="dropdown"]')
+        );
+        dropdownInstance.hide();
+      }
+    }
+
+    itemClick();
+  };
+
 
   if (GetScope() == customerId) {
     return <></>;
@@ -36,7 +57,7 @@ const CustomerNav = ({ customerId }) => {
         }
       }
     });
-    
+
     return result;
   };
 
@@ -52,7 +73,7 @@ const CustomerNav = ({ customerId }) => {
         if (visible) {
           if (url) {
             return <li key={menu.title} className={`nav-item text-center ${activeClass}`}>
-              <Link className="nav-link p-0 m-0 p-md-2 m-md-1" to={`${url}${periodId ? '?periodId=' + periodId : ''}`} >
+              <Link className="nav-link p-0 m-0 p-md-2 m-md-1" to={`${url}${periodId ? '?periodId=' + periodId : ''}`} onClick={itemClick} >
                 <span className="nav-link-icon d-md-none m-0">
                   {menu.icon && parse(menu.icon)}
                 </span>
@@ -69,10 +90,10 @@ const CustomerNav = ({ customerId }) => {
               <div className="dropdown-menu dropdown-menu-end">
                 {menu?.subItems && menu?.subItems.map((child) => {
                   var childUrl = child?.url?.replace('{customerId}', customerId);
-                  return <a key={child.title} className="dropdown-item" href={`${childUrl}${periodId ? '?periodId=' + periodId : ''}`} >
+                  return <Link key={child.title} className="dropdown-item" to={`${childUrl}${periodId ? '?periodId=' + periodId : ''}`} onClick={handleClick} >
                     <span className="dropdown-item-icon">{child.icon && parse(child.icon)}</span>
                     {child.title}
-                  </a>
+                  </Link>
                 })}
               </div>
             </li>
@@ -88,7 +109,6 @@ const CustomerNav = ({ customerId }) => {
 export default CustomerNav;
 
 CustomerNav.propTypes = {
-  customerId: PropTypes.string.isRequired,
-  pageId: PropTypes.string.isRequired,
-  onSearch: PropTypes.func
+  itemClick: PropTypes.func,
+  customerId: PropTypes.string.isRequired
 }

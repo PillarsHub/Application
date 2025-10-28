@@ -2,13 +2,15 @@ import React, { useState, useRef, useEffect } from "react";
 import { useFetch } from "../../hooks/useFetch";
 import { ClearTheme } from "../../hooks/useTheme";
 import { SendRawRequest, SendRequest } from "../../hooks/usePost";
-import PageHeader from "../../components/pageHeader";
+import PageHeader, { CardHeader } from "../../components/pageHeader";
 import SettingsNav from "./settingsNav";
 import ColorInput from "../../components/colorInput";
 import TextInput from "../../components/textInput";
+import SaveButton from "../../components/saveButton";
 
 const Theme = () => {
   const fileInputRef = useRef(null);
+  const [saveSettings, setSaveSettings] = useState();
   const [uploadTitle, setUploadTitle] = useState("");
   const [item, setItem] = useState({ headerColor: "#1d273b", loginColor: "#f1f5f9" });
   const { data: theme, loading, error } = useFetch('/api/v1/Theme');
@@ -61,15 +63,20 @@ const Theme = () => {
   };
 
   const handleSave = () => {
+    setSaveSettings({ status: 1 });
     SendRequest("PUT", '/api/v1/Theme', item, () => {
+      setSaveSettings({ status: 2 });
       ClearTheme();
     }, (error, code) => {
       const responseObject = JSON.parse(error);
       if (code == 400) {
+        setSaveSettings({ status: 0, error: {} });
         setItem(v => ({ ...v, errorText: 'Please enter a valid subdomain.' }));
       } else if (code == 409) {
+        setSaveSettings({ status: 0, error: {} });
         setItem(v => ({ ...v, errorText: `'${responseObject.subdomain}' is not available. Please select another subdomain.` }));
       } else {
+        setSaveSettings({ status: 0, error: error });
         alert(code + ": " + error);
       }
     });
@@ -90,6 +97,9 @@ const Theme = () => {
   };
 
   return <PageHeader title="Theme" preTitle="Settings">
+    <CardHeader>
+      <SaveButton settings={saveSettings} onClick={handleSave} />
+    </CardHeader>
     <SettingsNav loading={loading} pageId="theme">
       <div className="card-header">
         <span className="card-title">Theme</span>
@@ -218,9 +228,6 @@ const Theme = () => {
           </div>
         </div>
 
-      </div>
-      <div className="card-footer">
-        <button type="submit" className="btn btn-primary" onClick={handleSave}>Save</button>
       </div>
     </SettingsNav>
   </PageHeader>

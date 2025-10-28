@@ -7,7 +7,7 @@ import DataError from '../components/dataError';
 import { GetMenu } from '../hooks/useMenu';
 import Avatar from '../components/avatar';
 
-const CorporateMenu = ({ itemClick, customerId }) => {
+const CorporateMenu = ({ itemClick, customerId, showCustomer }) => {
   const location = useLocation();
   const prevIdRef = useRef(customerId);
   const [customerMenu, setCustomerMenu] = useState([]);
@@ -34,9 +34,9 @@ const CorporateMenu = ({ itemClick, customerId }) => {
   return (<>
     <ul className="navbar-nav">
       {subMenu && <>
-        <li className="nav-item customer-menu-side d-none">
+        <li className={`nav-item customer-menu-side ${showCustomer ? '' : 'd-none'}`}>
 
-          <a href="#menu-layout" className="nav-link p-3" data-bs-toggle="collapse" aria-expanded="false">
+          <a href="#menu-layout" className="nav-link p-3" data-bs-toggle="collapse" aria-expanded="true">
             <div className="row">
               <div className="col-auto">
                 <Avatar name={customerMenu.customers?.[0].fullName} url={customerMenu.customers?.[0].profileImage} size="xs" />
@@ -47,10 +47,10 @@ const CorporateMenu = ({ itemClick, customerId }) => {
             </div>
             <span className="nav-link-toggle"></span>
           </a>
-          <ul className="collapse pb-2 border-bottom customer-ul collapsed" id="menu-layout">
+          <ul className="collapse show pb-2 border-bottom customer-ul collapsed" id="menu-layout">
 
             {subMenu?.items && subMenu.items.map((sMenu) => {
-              let visible = sMenu.status != 'Disabled';
+              let visible = sMenu.status.toLowerCase() == 'enabled' || sMenu.status.toLowerCase() == 'corporate'
               var url = sMenu?.url?.replace('{customerId}', customerId);
               let activeClass = (location.pathname == url) ? 'active' : '';
 
@@ -103,6 +103,8 @@ const CorporateMenu = ({ itemClick, customerId }) => {
         }
       })}
 
+      <li className="sidebar-header">Settings</li>
+
       <li className={`nav-item text-truncate ${location.pathname == '/settings/company' ? 'active' : ''}`}>
         <NavLink className="nav-link" to="/settings/company" onClick={itemClick} >
           {icons && <span className="nav-link-icon d-md-none d-lg-inline-block">
@@ -123,5 +125,6 @@ export default CorporateMenu;
 
 CorporateMenu.propTypes = {
   itemClick: PropTypes.func,
-  customerId: PropTypes.string
+  customerId: PropTypes.string,
+  showCustomer: PropTypes.bool
 }
