@@ -312,7 +312,7 @@ const MediaList = () => {
 
                   <div className="card">
                     <div className="row row-0">
-                      <div className="col-3">
+                      <div className="col-5 col-md-3">
                         <a href={doc.url} target="blank">
                           <img src={doc.thumbnailUrl ?? '/images/noimage.jpg'} className="w-100 h-100 object-cover card-img-start" alt="" />
                         </a>

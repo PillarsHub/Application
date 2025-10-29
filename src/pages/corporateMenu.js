@@ -78,7 +78,7 @@ const CorporateMenu = ({ itemClick, customerId, showCustomer }) => {
       </>}
 
       {menu?.items && menu.items.map((mnu) => {
-        let visible = mnu.status == 'Enabled' || menu.status == 'Corporate';
+        let visible = mnu.status == 'Enabled' || mnu.status == 'Corporate';
         const customersExpanded = location.pathname.startsWith(mnu.url);
 
         const exactMenu = menu.items.find(m => location.pathname == m.url);
