@@ -65,6 +65,7 @@ const CustomerLayout = () => {
   const showTopMenu = theme?.legacyMenu ?? true;
 
   const searchPlaceholder = GetScope() == undefined ? "Search Team or Orders" : "Search Team";
+  const navCustomerId = GetScope() == undefined ? customerId : GetScope();
 
   return (<>
     <aside className="navbar navbar-vertical navbar-expand-lg" style={inlineStyle}>
@@ -83,8 +84,8 @@ const CustomerLayout = () => {
           </div>
         </div>
         <div className="collapse navbar-collapse" id="sidebar-menu">
-          {GetScope() == undefined && <CorporateMenu customerId={customerId ?? ''} showCustomer={!showTopMenu} itemClick={handleNavItemClick} />}
-          {GetScope() != undefined && <BackOfficeMenu customerId={customerId ?? ''} itemClick={handleNavItemClick} />}
+          {GetScope() == undefined && <CorporateMenu customerId={navCustomerId ?? ''} showCustomer={!showTopMenu} itemClick={handleNavItemClick} />}
+          {GetScope() != undefined && <BackOfficeMenu customerId={navCustomerId ?? ''} itemClick={handleNavItemClick} />}
         </div>
       </div>
     </aside>
