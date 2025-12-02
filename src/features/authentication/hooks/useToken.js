@@ -150,4 +150,35 @@ function GetScope() {
   return userToken?.scope;
 }
 
-export { GetToken, GetUser, GetScope, GetSettings };
+function CanRead(accessType) {
+  var av = GetToken().access[accessType]?.toLowerCase();
+  return av == 'fullaccess' || av == 'readonly';
+}
+
+function CanWrite(accessType) {
+  var av = GetToken().access[accessType]?.toLowerCase();
+  return av == 'fullaccess' || av == 'writeonly';
+}
+
+
+const AccessTypes = {
+  GraphQL: "graphQL",
+  Customers: "customers",
+  Batches: "batches",
+  Bonuses: "bonuses",
+  CompensationPlans: "compensationPlans",
+  Nodes: "nodes",
+  Periods: "periods",
+  Placements: "placements",
+  Snapshots: "snapshots",
+  SourceGroups: "sourceGroups",
+  Sources: "sources",
+  Trees: "trees",
+  Values: "values",
+  Autoships: "autoships",
+  Inventory: "inventory",
+  Orders: "orders",
+  Users: "users"
+}
+
+export { GetToken, GetUser, GetScope, GetSettings, CanRead, CanWrite, AccessTypes };

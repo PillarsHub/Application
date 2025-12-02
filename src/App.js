@@ -59,6 +59,7 @@ const router = createBrowserRouter([
 
       // Tools / Reports
       { path: "media", lazy: lazyRoute(() => import("./pages/tools/mediaList")) },
+      { path: "media/categories", lazy: lazyRoute(() => import("./pages/tools/mediaCategories")) },
       { path: "schedule", lazy: lazyRoute(() => import("./pages/tools/schedule")) },
       { path: "training", lazy: lazyRoute(() => import("./pages/tools/training")) },
       { path: "training/:courseId", lazy: lazyRoute(() => import("./pages/tools/editCourse")) },

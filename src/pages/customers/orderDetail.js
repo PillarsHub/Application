@@ -308,7 +308,7 @@ const OrderDetail = () => {
                       <address>
                         {address?.line1}<br />
                         {address?.city}, {address?.stateCode} {address?.zip}<br />
-                        {countryNames.find(x => x.iso2.toLowerCase() == address?.countryCode.toLowerCase())?.name}
+                        {countryNames.find(x => x.iso2?.toLowerCase() == address?.countryCode?.toLowerCase())?.name}
                       </address>
                     </div>
                     <div className="col-6 text-end">

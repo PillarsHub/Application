@@ -1,25 +1,54 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { useQuery, gql } from "@apollo/client";
 import PageHeader, { CardHeader } from "../../components/pageHeader";
-import { useFetch } from "../../hooks/useFetch";
 import { SendRawRequest, SendRequest } from "../../hooks/usePost";
 import DataLoading from "../../components/dataLoading";
+import DataError from "../../components/dataError";
 import LocalDate from "../../util/LocalDate";
 import Modal from "../../components/modal";
 import TextArea from "../../components/textArea";
-import CheckBox from "../../components/checkbox";
 import MultiSelect from "../../components/muliselect";
 import { GetScope } from "../../features/authentication/hooks/useToken"
 import NoItems from '../../components/noItems';
 import FileInput from '../../components/fileInput';
+import CategoryList from './categoryList';
 
 const MAX_DOCUMENT_SIZE = 25 * 1024 * 1024; // 25 MB (adjust the size as needed)
 const MAX_THUMBNAIL_SIZE = 1024 * 1024; // 1 MB (adjust the size as needed)
 
+const GET_DATA = gql`
+query ($customerId: String!, $categoryId: String!, $search: String!, $count: Int!) {
+  documents(customerId: {eq: $customerId}, categoryId: {eq: $categoryId}, search: $search, first: $count) {
+    id
+    createdOn
+    lastModified
+    name
+    title
+    description
+    language
+    published
+    url
+    thumbnailUrl
+    categories
+    tags
+  }
+  documentCategories(customerId: {eq: $customerId}) {
+    id
+    parentId
+    name
+    description
+    displayIndex
+  }
+  languages {
+    iso2
+    name
+  }
+}`
+
 const MediaList = () => {
   let params = useParams()
   const maxImages = 50;
-  const showPublished = GetScope() != undefined || params.customerId != undefined;
   const [showAdd, setShowAdd] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
@@ -27,32 +56,33 @@ const MediaList = () => {
   const [documentFile, setDocumentFile] = useState(null);
   const [thumbnailFile, setThumbnailFile] = useState(null);
   const [searchText, setSearchText] = useState('');
-  const [searchTags, setSearchTags] = useState([]);
+  const [searchTags] = useState([]);
+  const [categoryId, setCategoryId] = useState('');
   const [searchLanguage, setSearchLanguage] = useState("");
-  const [addTagValue, setAddTagValue] = useState('');
-  const [addTagList, setAddTagList] = useState('');
+  //const [addTagValue, setAddTagValue] = useState('');
+  //const [addTagList, setAddTagList] = useState('');
   const [isUploading, setIsUploading] = useState(false);
-  const { data, loading, error, refetch } = useFetch('/api/v1/documents/find', { search: searchText, tags: searchTags, publishedOnly: showPublished, offset: 0, count: maxImages });
-  const { data: tagData, loading: tagLoading, error: tagError, refetch: tagRefetch } = useFetch('/api/v1/documents/tags', { publishedOnly: showPublished });
-  const { data: langData, loading: langLoading, error: lagError } = useFetch('/api/v1/Languages', { offset: 0, count: 100 });
+  const [languages, setLanguages] = useState([]);
+  const [documents, setDocuments] = useState();
+  const [categories, setCategories] = useState();
+
+  const customerId = GetScope() != undefined ? GetScope() : params.customerId ?? '';
+  const { loading, error, data, refetch } = useQuery(GET_DATA, { variables: { search: '', categoryId: '', tags: searchTags, customerId: customerId, offset: 0, count: maxImages } });
 
   useEffect(() => {
-    if (searchTags) {
-      refetch({ search: searchText, tags: searchTags, publishedOnly: showPublished, offset: 0, count: maxImages });
-    }
-  }, [searchTags]);
+    refetch({ search: searchText, categoryId: categoryId, tags: searchTags, customerId: customerId, offset: 0, count: maxImages });
+  }, [categoryId, searchText]);
 
   useEffect(() => {
-    if (tagData) {
-      setAddTagList(tagData);
+    if (data) {
+      setLanguages(data.languages);
+      setDocuments(data.documents);
+      if (!categories) setCategories(buildCategoryTree(data.documentCategories));
     }
-  }, [tagData]); // Dependency array, useEffect will run when searchTags changes
+  }, [data]); // Dependency array, useEffect will run when searchTags changes
 
-
-  if (loading || tagLoading || langLoading) return <DataLoading />;
-  if (error) return `Error loading Documents ${error}`;
-  if (lagError) return `Error loading Languages ${lagError}`;
-  if (tagError) return `Error loading Tags ${tagError}`;
+  if (loading) return <DataLoading />
+  if (error) return <DataError error={error} />
 
   const handleShowAdd = () => setShowAdd(true);
   const handleCloseAdd = () => {
@@ -66,17 +96,13 @@ const MediaList = () => {
     setShowEdit(false)
   }
 
-  const handleTagChange = (name, value) => {
+  const handleCategoryChange = (e, name) => {
+    e.preventDefault();
+
     if (name === 'all') {
-      setSearchTags([]);
+      setCategoryId('');
     } else {
-      if (value) {
-        // Add the tag only if it's not already present
-        setSearchTags(tags => [...new Set([...tags, name])]);
-      } else {
-        // Remove the tag from the array
-        setSearchTags(tags => tags.filter(tag => tag !== name));
-      }
+      setCategoryId(name);
     }
   };
 
@@ -117,7 +143,7 @@ const MediaList = () => {
   };
 
   const handleEdit = (documentId) => {
-    var document = data.find((d) => d.id == documentId);
+    var document = { ...documents.find((d) => d.id == documentId) };
     if (document) {
       document.linkType = "LF"
       setActiveItem(document);
@@ -126,7 +152,7 @@ const MediaList = () => {
   }
 
   const handlePublish = (documentId) => {
-    var document = data.find((d) => d.id == documentId);
+    var document = { ...documents.find((d) => d.id == documentId) };
     if (document) {
       document.published = document.published ? false : true;
       document.linkType = "LF"
@@ -136,7 +162,7 @@ const MediaList = () => {
 
   const handleHideDelete = () => setShowDelete(false);
   const handleShowDelete = (documentId) => {
-    var document = data.find((d) => d.id == documentId);
+    var document = documents.find((d) => d.id == documentId);
     setActiveItem(document);
     setShowDelete(true);
   }
@@ -145,8 +171,7 @@ const MediaList = () => {
     if (activeItem) {
       setShowDelete(false);
       SendRequest("DELETE", `/api/v1/documents/${activeItem.id}`, null, () => {
-        tagRefetch({ publishedOnly: showPublished });
-        refetch({ search: searchText, tags: searchTags, publishedOnly: showPublished, offset: 0, count: maxImages });
+        refetch();
       }, (error, code) => {
         alert(`${code}: ${error}`);
       });
@@ -159,18 +184,18 @@ const MediaList = () => {
 
     document.getElementById("titleError").innerText = "";
     document.getElementById("titleInput").classList.remove("is-invalid");
-    document.getElementById("tagError").innerText = "";
-    document.getElementById("tagInput").classList.remove("is-invalid");
+    document.getElementById("catError").innerText = "";
+    document.getElementById("catInput").classList.remove("is-invalid");
 
     if ((activeItem.title ?? '') == '') {
-      document.getElementById("titleError").innerText = "Media tag is required";
+      document.getElementById("titleError").innerText = "Media title is required";
       document.getElementById("titleInput").classList.add("is-invalid");
       valid = false;
     }
 
-    if ((activeItem.tags?.length ?? 0) < 1) {
-      document.getElementById("tagError").innerText = "Media tag is required";
-      document.getElementById("tagInput").classList.add("is-invalid");
+    if ((activeItem.categories?.length ?? 0) < 1) {
+      document.getElementById("catError").innerText = "Media category is required";
+      document.getElementById("catInput").classList.add("is-invalid");
       valid = false;
     }
 
@@ -209,15 +234,15 @@ const MediaList = () => {
       formData.append("file", documentFile);
     }
     formData.append("thumbnail", thumbnailFile);
-    document.tags.forEach((tag) => formData.append("tags", tag));
+    //document.tags.forEach((tag) => formData.append("tags", tag));
+    if (document.categories) document.categories.forEach((cat) => formData.append("categories", cat));
     setIsUploading(true);
 
     SendRawRequest("PUT", '/api/v1/documents', null, formData, (data) => {
       setIsUploading(false);
       setThumbnailFile();
       setDocumentFile();
-      tagRefetch({ publishedOnly: showPublished });
-      refetch({ search: searchText, tags: searchTags, publishedOnly: showPublished, offset: 0, count: maxImages });
+      refetch();
       onComplete(data);
     }, (error, code) => {
       setIsUploading(false);
@@ -227,27 +252,63 @@ const MediaList = () => {
 
   const handleSearchSubmit = async e => {
     e.preventDefault();
-    refetch({ search: searchText, tags: searchTags, publishedOnly: showPublished, offset: 0, count: maxImages });
+    refetch();
   }
 
-  const handleAddTagInputKeyDown = (e) => {
+  /* const handleAddTagInputKeyDown = (e) => {
     if (e.key === 'Enter') {
       // Trigger handleAddTag when Enter key is pressed
       handleAddTag();
     }
-  };
+  }; */
 
-  const handleAddTagInputChange = (e) => {
+  /* const handleAddTagInputChange = (e) => {
     setAddTagValue(e.target.value);
-  };
+  }; */
 
-  const handleAddTag = () => {
+  /* const handleAddTag = () => {
     setAddTagList(v => [...v, addTagValue]);
     setAddTagValue("");
+  } */
+
+  function buildCategoryTree(categories) {
+    const map = {};
+    const roots = [];
+
+    // Initialize each category with an empty children array
+    categories.forEach(cat => {
+      map[cat.id] = { ...cat, children: [] };
+    });
+
+    // Link children to parents
+    categories.forEach(cat => {
+      if (cat.parentId && map[cat.parentId]) {
+        map[cat.parentId].children.push(map[cat.id]);
+      } else {
+        roots.push(map[cat.id]);
+      }
+    });
+
+    // Recursive sort helper by displayIndex
+    const sortByDisplayIndex = arr => {
+      arr.sort((a, b) => (a.displayIndex ?? 0) - (b.displayIndex ?? 0));
+      arr.forEach(cat => {
+        if (cat.children && cat.children.length > 0) {
+          sortByDisplayIndex(cat.children);
+        }
+      });
+    };
+
+    // Sort roots and all children
+    sortByDisplayIndex(roots);
+
+    return roots;
   }
 
-  let filteredData = data?.filter(item => (searchLanguage === "" || item.language === searchLanguage));
+  let filteredDocs = documents?.filter(item => (searchLanguage === "" || item.language === searchLanguage || (item.language ?? '') === ''));
   var hasScope = GetScope() != undefined || params.customerId != undefined;
+  let usedLanguages = [...new Set(documents?.map(item => item.language))];
+  usedLanguages = languages.filter(lang => usedLanguages.includes(lang.iso2) || lang.iso2 == searchLanguage);
 
   return <>
     <PageHeader title="Documents & Media" customerId={params.customerId}>
@@ -265,36 +326,42 @@ const MediaList = () => {
               </form>
             </div>
           </div>
-          {!hasScope &&
-            <button className="btn btn-primary" onClick={handleShowAdd}>
-              Add Document
-            </button>
-          }
+          {!hasScope && <>
+            <div className="btn-list">
+              <button className="btn btn-default" onClick={handleShowAdd}>
+                Add Document
+              </button>
+
+              <div className="dropdown">
+                <a href="#" className="btn btn-default btn-icon" data-bs-toggle="dropdown" aria-expanded="false">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="19" r="1"></circle><circle cx="12" cy="5" r="1"></circle></svg>
+                </a>
+                <div className="dropdown-menu dropdown-menu-end">
+                  <a href={`/media/categories`} className="dropdown-item">Categories</a>
+                </div>
+              </div>
+            </div>
+          </>}
         </div>
       </CardHeader>
       <div className="container-xl">
         <div className="row">
           <div className="col-lg-3 col-xl-2">
-            <div className="form-label">Media Tags</div>
-            <div className="mb-2 border-bottom">
-              <label className="form-check">
-                <CheckBox value={searchTags.length == 0} name="all" onChange={handleTagChange} />
-                <span className="form-check-label">All Tags</span>
-              </label>
-            </div>
-            <div className="mb-4">
-              {tagData && tagData.map((tag) => {
-                return <label key={tag} className="form-check">
-                  <CheckBox value={searchTags.includes(tag)} name={tag} onChange={handleTagChange} />
-                  <span className="form-check-label">{tag}</span>
-                </label>
-              })}
-            </div>
+            <ul className="nav nav-pills nav-vertical mb-3 border-bottom">
+              <li className="nav-item border-bottom">
+                <a className={`nav-link ${categoryId == '' ? 'active' : ''}`} href="#" onClick={(e) => handleCategoryChange(e, "all")}>
+                  All Items
+                </a>
+              </li>
+
+              <CategoryList categories={categories} categoryId={categoryId} handleCategoryChange={handleCategoryChange} />
+
+            </ul>
             <div className="form-label">Language</div>
             <div className="mb-4">
               <select className="form-select" name="languageFilter" value={searchLanguage} onChange={handleLanguageFilterChange}>
                 <option value="">Any Language</option>
-                {langData && langData.map((language) => {
+                {usedLanguages && usedLanguages.map((language) => {
                   return <option key={language.iso2} value={language.iso2} >{language.name}</option>
                 })}
               </select>
@@ -302,12 +369,12 @@ const MediaList = () => {
           </div>
 
           <div className="col-lg-9 col-xl-10 ">
-            {filteredData && filteredData.length == 0 &&
+            {filteredDocs && filteredDocs.length == 0 &&
               <NoItems />
             }
 
             <div className="row row-cards">
-              {filteredData && filteredData.map((doc) => {
+              {filteredDocs && filteredDocs.map((doc) => {
                 return <div key={doc.id} className="col-sm-12 col-lg-6">
 
                   <div className="card">
@@ -353,8 +420,8 @@ const MediaList = () => {
                             <div>
                               <div className="row">
                                 <span className="col">
-                                  {doc.tags && doc.tags.map((tag) => {
-                                    return <span key={tag} className="badge bg-blue-lt me-1">{tag}</span>
+                                  {doc.categories && doc.categories.map((catId) => {
+                                    return <span key={catId} className="badge bg-blue-lt me-1"></span>
                                   })}
                                 </span>
                                 {!hasScope && <>
@@ -408,7 +475,7 @@ const MediaList = () => {
               <label className="form-label">Language</label>
               <select className="form-select" name="language" onChange={(e) => handleChange(e.target.name, e.target.value)} >
                 <option value="">Unspecified</option>
-                {langData && langData.map((language) => {
+                {languages && languages.map((language) => {
                   return <option key={language.iso2} value={language.iso2} >{language.name}</option>
                 })}
               </select>
@@ -424,19 +491,32 @@ const MediaList = () => {
           </div>
           <div className="col-12">
             <div className="mb-3">
+              <label className="form-label">Category</label>
+              <MultiSelect id="catInput" name="categories" value={activeItem.categories || []} onChange={handleChange} >
+                {data.documentCategories && data.documentCategories.map((cat) => {
+                  return <option key={cat.id} value={cat.id}>{cat.name}</option>
+                })}
+              </MultiSelect>
+              <span id="catError" className="text-danger"></span>
+            </div>
+          </div>
+          {/* <div className="col-4">
+            <div className="mb-3">
               <label className="form-label">Media Tags</label>
               <MultiSelect id="tagInput" className="form-select mb-1" name="tags" value={activeItem.tags || []} onChange={handleChange}>
                 {addTagList && addTagList.map((tag) => {
                   return <option key={tag}>{tag}</option>
                 })}
               </MultiSelect>
-              <div className="input-group mb-2">
-                <input className="form-control" placeholder='Add new tag' value={addTagValue} onChange={handleAddTagInputChange} onKeyDown={handleAddTagInputKeyDown} />
-                <button className="btn" type="button" onClick={handleAddTag}>Add</button>
-              </div>
               <span id="tagError" className="text-danger"></span>
             </div>
           </div>
+          <div className="col-12">
+            <div className="input-group mb-2">
+              <input className="form-control" placeholder='Add new tag' value={addTagValue} onChange={handleAddTagInputChange} onKeyDown={handleAddTagInputKeyDown} />
+              <button className="btn" type="button" onClick={handleAddTag}>Add</button>
+            </div>
+          </div> */}
         </div>
       </div>
       <div className="modal-body">
@@ -513,7 +593,7 @@ const MediaList = () => {
               <label className="form-label">Language</label>
               <select className="form-select" name="language" value={activeItem.language || ''} onChange={(e) => handleChange(e.target.name, e.target.value)} >
                 <option value="">Unspecified</option>
-                {langData && langData.map((language) => {
+                {languages && languages.map((language) => {
                   return <option key={language.iso2} value={language.iso2} >{language.name}</option>
                 })}
               </select>
@@ -529,6 +609,17 @@ const MediaList = () => {
           </div>
           <div className="col-12">
             <div className="mb-3">
+              <label className="form-label">Category</label>
+              <MultiSelect id="catInput" name="categories" value={activeItem.categories || []} onChange={handleChange} >
+                {data.documentCategories && data.documentCategories.map((cat) => {
+                  return <option key={cat.id} value={cat.id}>{cat.name}</option>
+                })}
+              </MultiSelect>
+              <span id="catError" className="text-danger"></span>
+            </div>
+          </div>
+          {/* <div className="col-12">
+            <div className="mb-3">
               <label className="form-label">Media Tags</label>
               <MultiSelect className="form-select mb-1" name="tags" value={activeItem.tags || []} onChange={handleChange}>
                 {addTagList && addTagList.map((tag) => {
@@ -541,7 +632,7 @@ const MediaList = () => {
               </div>
               <span className="text-danger"></span>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
       <div className="modal-footer">
