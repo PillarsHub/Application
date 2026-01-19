@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { useQuery, gql } from "@apollo/client";
 import { SendRequest } from "../../hooks/usePost";
 import PageHeader, { CardHeader } from "../../components/pageHeader.jsx";
-import LocalDate from '../../util/localdate.jsx';
+import LocalDate from '../../util/LocalDate.jsx';
 import Modal from '../../components/modal.jsx';
 import Avatar from '../../components/avatar';
 
