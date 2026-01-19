@@ -1,0 +1,50 @@
+/* Hide the entire GraphiQL top bar (logo + tabs + toolbar) */
+.graphiql-session-header .graphiql-embed .graphiql-header {
+  display: none !important;
+}
+
+.graphiql-container .graphiql-session-header {
+  display: none !important;
+}
+
+/* Optional: remove the remaining top border/spacing in some themes */
+.graphiql-embed .graphiql-container {
+  padding-top: 0 !important;
+}
+
+.graphiql-container {
+  min-height: 500px;
+}
+
+/* Hide "new tab" / sessions UI affordances */
+.graphiql-tab-add {
+  display: none !important;
+}
+
+.graphiql-sessions,
+.graphiql-session,
+.graphiql-editors {
+  margin: 0 !important;
+  border-radius: 0 !important;
+}
+
+.graphiql-session-header {
+  display: none !important;
+}
+
+/* Optional: match your light background */
+.graphiql-response {
+  background-color: var(--tblr-light);
+}
+
+.graphiql-container .graphiql-editors.full-height {
+  margin: 0;
+}
+
+.graphiql-container .graphiql-sidebar {
+  display: none !important;
+}
+
+.graphiql-container #graphiql-session {
+  padding: 0 !important;
+}

@@ -10,6 +10,7 @@
 
 # production
 /build
+/dist
 
 # misc
 .DS_Store
@@ -19,7 +20,7 @@
 .env.production.local
 
 # tinymce
-/public/tinymce/
+/public/tinymce
 
 npm-debug.log*
 yarn-debug.log*

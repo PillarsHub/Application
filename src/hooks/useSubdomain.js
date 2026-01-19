@@ -1,64 +1,33 @@
-import { useEffect, useState } from 'react';
-//import { Get } from "../hooks/useFetch";
+import { useEffect, useState } from "react";
 
-export default function useSubdomain() {
-  const [subdomain, setSubdomain] = useState();
+const HOST_OVERRIDES = {
+  "backoffice.celesty.com": "celesty",
+  "backoffice.dreamtrips.com": "dreamtrips",
+  "office.aregobrands.com": "arego",
+};
 
-  useEffect(() => {
-    const fetchSubdomain = async () => {
-      const currentURL = window.location.hostname;
+function parseSubdomain(hostname) {
+  if (HOST_OVERRIDES[hostname]) return HOST_OVERRIDES[hostname];
 
-      // First, check if we have it in session storage
-      //const cachedSubdomain = sessionStorage.getItem(currentURL);
-      /*if (cachedSubdomain) {
-        setSubdomain(cachedSubdomain);
-        return;
-      }*/
+  const parts = hostname.split(".");
+  // e.g. portal.example.com => ["portal","example","com"] => "portal"
+  if (parts.length > 2) return parts[0];
 
-      //let path = '/api/v1/Theme?domain=' + encodeURIComponent(currentURL);
-
-     /*  Get(path, (data) => {
-        let d = ParseSubdomain();
-        if (data.subdomain) {
-          d = data.subDomain;
-        }
-        sessionStorage.setItem(currentURL, d); 
-        setSubdomain(d);*/
-     /*  }, () => { */
-        let d = ParseSubdomain();
-        sessionStorage.setItem(currentURL, d);
-        setSubdomain(d);
-     /* }) */
-    };
-
-    fetchSubdomain();
-  }, [])
-
-  const ParseSubdomain = () => {
-    // Get the current URL
-    const currentURL = window.location.hostname;
-
-    if (currentURL === "backoffice.celesty.com") { return "celesty"; }
-    if (currentURL === "backoffice.dreamtrips.com") { return "dreamtrips"; }
-    if (currentURL === "office.aregobrands.com") { return "arego"; }
-
-    // Split the URL by dots to get an array of subdomains
-    const subdomains = currentURL.split('.');
-
-    // Check if there is a subdomain (more than one part in the subdomains array)
-    if (subdomains.length > 2) {
-      // The first part of the subdomains array will be the subdomain
-      const subdomain = subdomains[0];
-      // Return the subdomain
-      return subdomain;
-    } else {
-      // No subdomain found, return null
-      return null;
-    }
-  };
-
-  return {
-    subdomain
-  }
+  return null;
 }
 
+export default function useSubdomain() {
+  const [subdomain, setSubdomain] = useState(null);
+
+  useEffect(() => {
+    const hostname = window.location.hostname;
+    const d = parseSubdomain(hostname);
+
+    // Cache per-host (your current approach)
+    sessionStorage.setItem(hostname, d ?? "");
+
+    setSubdomain(d);
+  }, []);
+
+  return { subdomain };
+}

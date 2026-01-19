@@ -43,7 +43,7 @@ Follow these steps to set up the project on your local machine:
 Once the installation is complete, you can start the development server with the following command:
 
 ```bash
-npm start
+npm run dev
 ```
 
 This will start the application, and you should be able to access it in your web browser at [http://localhost:3000](http://localhost:3000).

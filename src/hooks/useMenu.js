@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, gql } from "@apollo/client";
-import { GetToken } from "../features/authentication/hooks/useToken";
+import { GetToken } from "../features/authentication/hooks/useToken.jsx";
 import { Post } from '../hooks/usePost';
 
 var GET_CUSTOMER_MENU = gql`query ($customerId: String!) {

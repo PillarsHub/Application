@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import useWidgets from "./useWidgets";
+import useWidgets from "./useWidgets.jsx";
 
 export default function useWidget(widgetId) {
   const [widget, setWidget] = useState();

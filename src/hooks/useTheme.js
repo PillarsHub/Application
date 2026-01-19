@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { Get } from "../hooks/useFetch";
-import { GetToken } from "../features/authentication/hooks/useToken";
+import { GetToken } from "../features/authentication/hooks/useToken.jsx";
 
 //To set the environment to a con
 const _environmentId_override = null;

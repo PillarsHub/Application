@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { GetToken } from '../features/authentication/hooks/useToken';
+import { GetToken } from '../features/authentication/hooks/useToken.jsx';
 import BaseUrl from './baseUrl';
 
 function Post(url, object, onSuccess, onError) {
