@@ -43,12 +43,12 @@ const FilterInput = ({ filter, values, onChange }) => {
     case "Rank":
       return <div className="col-md-2 col-sm-12">
         {filter.title && <label className="form-label">{filter.title}</label>}
-        <RankSelect name="rankId" value={values?.rankId ?? ''} onChange={onChange} ><option value="">All Ranks</option></RankSelect>
+        <RankSelect name={filter.id} value={values?.rankId ?? ''} onChange={onChange} ><option value="">All Ranks</option></RankSelect>
       </div>
     case "CustomerId":
       return <div className="col-md-3 col-sm-12">
         {filter.title && <label className="form-label">{filter.title}</label>}
-        <AutoComplete placeholder="Select Customer" name="customerId" value={values?.customerId ?? ''} onChange={onChange} />
+        <AutoComplete placeholder="Select Customer" name={filter.id} value={values?.customerId ?? ''} onChange={onChange} />
       </div>
     case "Tree":
       return <div className="col-md-2 col-sm-12">

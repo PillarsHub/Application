@@ -34,6 +34,7 @@ var GET_DATA = gql`query ($orderids: [String]!, $nodeIds: [String]!) {
         subTotal
         shipping
         tax
+        discount
         total
         currencyCode
         shipTo
@@ -164,8 +165,16 @@ const OrderDetail = () => {
     }
   });
 
+const calcSubTotal = 0;
+    ///order?.lineItems?.reduce(
+      //(total, li) => total + (li.price * li.quantity),
+      //0
+    //) ?? 0;
+
   const countryNames = data?.countries;
-  let totalPaid = order?.payments?.reduce((a, payment) => a + payment?.amount ?? 0, 0) ?? 0;
+  const totalPaid = order?.payments?.reduce((a, payment) => a + payment?.amount ?? 0, 0) ?? 0;
+  const subTotal = calcSubTotal == 0 ? order?.subTotal ?? 0 : calcSubTotal;
+  const hasDiscount = order?.discount != 0;
 
   return <>
     <PageHeader title={data?.customers[0].fullName} customerId={params.customerId} breadcrumbs={[{ title: 'Order History', link: `/customers/${params.customerId}/orders` }, { title: "Order Detail" }]}>
@@ -354,8 +363,14 @@ const OrderDetail = () => {
 
                       <tr>
                         <td colSpan="3" className="strong text-end">Subtotal</td>
-                        <td className="text-end">{order?.subTotal.toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</td>
+                        <td className="text-end">{subTotal.toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</td>
                       </tr>
+                      {hasDiscount && (
+                        <tr>
+                          <td colSpan="3" className="strong text-end">Discount</td>
+                          <td className="text-end">{(order?.discount * -1).toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</td>
+                        </tr>
+                      )}
                       <tr>
                         <td colSpan="3" className="strong text-end">Shipping</td>
                         <td className="text-end">{order?.shipping.toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</td>

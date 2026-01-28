@@ -175,8 +175,9 @@ const RankAdvance = ({ currentRank, ranks, valueMap, period, options, isPreview 
     }) || []
   );
 
-  var chart1 = {
-    series: [percent],
+
+  const chart1Series = [percent];
+  const chart1Options = {
     chart: {
       type: 'radialBar',
       offsetY: -20,
@@ -232,8 +233,8 @@ const RankAdvance = ({ currentRank, ranks, valueMap, period, options, isPreview 
     labels: [activeRank.rankName],
   };
 
-  var chart2 = {
-    series: [percent],
+  const chart2Series = [percent];
+  const chart2Options = {
     chart: {
       type: 'radialBar',
       sparkline: {
@@ -276,8 +277,8 @@ const RankAdvance = ({ currentRank, ranks, valueMap, period, options, isPreview 
     labels: [activeRank.rankName],
   };
 
-  var chart3 = {
-    series: mappedConditions.map(c => c.percentage),
+  const chart3Series = mappedConditions.map(c => c.percentage);
+  const chart3Options = {
     chart: {
       type: 'radialBar',
       height: 390,
@@ -337,7 +338,9 @@ const RankAdvance = ({ currentRank, ranks, valueMap, period, options, isPreview 
     }
   };
 
-  const chart = options.chart == 1 ? chart1 : options.chart == 2 ? chart2 : chart3;
+  const chartKey = `c${options.chart}-${activeRank.rankId}-${activeTab}`;
+  const chartSeries = options.chart == 1 ? chart1Series : options.chart == 2 ? chart2Series : chart3Series;
+  const chartOptions = options.chart == 1 ? chart1Options : options.chart == 2 ? chart2Options : chart3Options;
 
   return <>
     {options.tabs > 0 && <div className="card-header">
@@ -370,7 +373,9 @@ const RankAdvance = ({ currentRank, ranks, valueMap, period, options, isPreview 
         </li>
       </ul>
     </div>}
-    {activeTab !== 3 && options.chart > 0 && options.title == 1 && <div className={`${options.chart == 2 ? 'm-auto' : ''}`}> <Chart key={options.chart} options={chart} series={chart.series} type={chart.chart.type} height={chart.chart.height} /></div >}
+    {activeTab !== 3 && chartOptions.chart > 0 && options.title == 1 && <div className={`${chartOptions.chart == 2 ? 'm-auto' : ''}`}>
+      <Chart key={chartKey} options={chartOptions} series={chartSeries} type={chartOptions.chart.type} height={chartOptions.chart.height} />
+    </div >}
     {activeTab !== 3 && options.title == 2 && <div className={`row ${options.chart == 2 ? 'm-auto' : ''}`}>
       <div className="col ms-3">
         <button className="page-link tab-link text-muted" style={{ height: "100%", float: "left" }} onClick={handlePrevRank}>
@@ -378,7 +383,7 @@ const RankAdvance = ({ currentRank, ranks, valueMap, period, options, isPreview 
         </button>
       </div>
       <div className="col-auto overflow-hidden">
-        {options.chart > 0 && <Chart key={options.chart} options={chart} series={chart.series} type={chart.chart.type} height={chart.chart.height} />}
+        {options.chart > 0 && <Chart key={chartKey} options={chartOptions} series={chartSeries} type={chartOptions.chart.type} height={chartOptions.chart.height} />}
         <h3 className="card-title text-center ms-auto" style={{ color: "var(--tblr-card-color)" }}>{activeRank.rankName}{options.showRankId ? ` (${activeRank.rankId})` : ''}</h3>
       </div>
       <div className="col me-3">
@@ -389,7 +394,7 @@ const RankAdvance = ({ currentRank, ranks, valueMap, period, options, isPreview 
     </div>
     }
     {activeTab !== 3 && options.title == 3 && <div className={`row ${options.chart == 2 ? 'm-auto' : ''}`}>
-      {options.chart > 0 && <Chart key={options.chart} options={chart} series={chart.series} type={chart.chart.type} height={chart.chart.height} />}
+      {options.chart > 0 && <Chart key={chartKey} options={chartOptions} series={chartSeries} type={chartOptions.chart.type} height={chartOptions.chart.height} />}
       <div className="col">
         <button className="page-link tab-link text-muted" style={{ height: "100%", float: "left" }} onClick={handlePrevRank}>
           <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><polyline points="15 6 9 12 15 18" /></svg>

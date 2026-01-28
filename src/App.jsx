@@ -51,6 +51,7 @@ const router = createBrowserRouter([
       { path: "commissions/periods/:periodId/bonusDetail/:bonusId", lazy: lazyRoute(() => import("./pages/commissions/bonusDetail.jsx")) },
       { path: "commissions/periods/:periodId/rankDetail/:rankId", lazy: lazyRoute(() => import("./pages/commissions/rankDetail.jsx")) },
       { path: "commissions/payables", lazy: lazyRoute(() => import("./pages/commissions/payables.jsx")) },
+      { path: "commissions/payables2", lazy: lazyRoute(() => import("./pages/commissions/payables2.jsx")) },
       { path: "commissions/paid", lazy: lazyRoute(() => import("./pages/commissions/paymentHistory.jsx")) },
       { path: "commissions/paid/:batchId", lazy: lazyRoute(() => import("./pages/commissions/paymentHistoryDetail.jsx")) },
       { path: "compensationPlans", lazy: lazyRoute(() => import("./pages/commissions/planList.jsx")) },
