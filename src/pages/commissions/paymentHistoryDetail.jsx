@@ -95,6 +95,9 @@ const PaymentHistoryDetail = () => {
   const [loadProgress, setLoadProgress] = useState({ loaded: 0, total: 0 });
   const [selectedPaymentIds, setSelectedPaymentIds] = useState(() => new Set());
 
+  // search
+  const [searchText, setSearchText] = useState('');
+
   // expanded rows keyed by composite rowKey
   const [expanded, setExpanded] = useState(() => new Set());
 
@@ -218,10 +221,34 @@ const PaymentHistoryDetail = () => {
     });
   }, [paymentsRaw]);
 
+  const normalizedSearch = useMemo(() => (searchText || '').trim().toLocaleLowerCase(), [searchText]);
+
+  const filteredPayments = useMemo(() => {
+    if (!normalizedSearch) return sortedPayments;
+
+    return sortedPayments.filter(p => {
+      const name = (p.customer?.fullName || '').toLocaleLowerCase();
+      const customerId = String(p.customer?.id ?? '').toLocaleLowerCase();
+      const paymentId = String(p.id ?? '').toLocaleLowerCase();
+
+      // optional: include nodeId as a fallback (handy when customer name missing)
+      const nodeId = String(p.nodeId ?? '').toLocaleLowerCase();
+
+      return (
+        name.includes(normalizedSearch) ||
+        customerId.includes(normalizedSearch) ||
+        paymentId.includes(normalizedSearch) ||
+        nodeId.includes(normalizedSearch)
+      );
+    });
+  }, [sortedPayments, normalizedSearch]);
+
+
+
   // Selection aggregate
   const isAllSelected = useMemo(() => (
-    sortedPayments.length > 0 && sortedPayments.every(p => selectedPaymentIds.has(p.id))
-  ), [sortedPayments, selectedPaymentIds]);
+    filteredPayments.length > 0 && filteredPayments.every(p => selectedPaymentIds.has(p.id))
+  ), [filteredPayments, selectedPaymentIds]);
 
   // ---------- Early returns AFTER hooks ----------
   if (paymentsError) return `Error! ${paymentsError}`;
@@ -238,11 +265,11 @@ const PaymentHistoryDetail = () => {
   const selectAllOnPage = (checked) => {
     if (checked) {
       const next = new Set(selectedPaymentIds);
-      sortedPayments.forEach(p => next.add(p.id));
+      filteredPayments.forEach(p => next.add(p.id));
       setSelectedPaymentIds(next);
     } else {
       const next = new Set(selectedPaymentIds);
-      sortedPayments.forEach(p => next.delete(p.id));
+      filteredPayments.forEach(p => next.delete(p.id));
       setSelectedPaymentIds(next);
     }
   };
@@ -452,6 +479,49 @@ const PaymentHistoryDetail = () => {
       <CardHeader>
         <div className="d-flex align-items-center gap-2">
 
+          <div className="me-2" style={{ minWidth: 280 }}>
+            <div className="input-icon">
+              <span className="input-icon-addon">
+                <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="24" height="24"
+                  viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"
+                  fill="none" strokeLinecap="round" strokeLinejoin="round">
+                  <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                  <path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" />
+                  <path d="M21 21l-6 -6" />
+                </svg>
+              </span>
+
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Search name, customer id, payment id…"
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                aria-label="Search payments"
+              />
+
+              {searchText && (
+                <span
+                  className="input-icon-addon pe-auto cursor-pointer"
+                  role="button"
+                  aria-label="Clear search"
+                  onClick={() => setSearchText('')}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="20" height="20"
+                    viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"
+                    fill="none" strokeLinecap="round" strokeLinejoin="round">
+                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                    <path d="M18 6l-12 12" />
+                    <path d="M6 6l12 12" />
+                  </svg>
+                </span>
+              )}
+            </div>
+          </div>
+
+
+
+
           {/* Bulk actions (parent-only selection) */}
           {selectedPaymentIds.size > 0 && <div className="dropdown">
             <button className="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" >
@@ -516,7 +586,19 @@ const PaymentHistoryDetail = () => {
         <div className="card">
           <div className="card-header">
             <h3 className="card-title"><span className="me-auto">Batch Detail</span></h3>
-            <span className="card-actions btn-actions">{batchCreated && <LocalDate dateString={batchCreated} />}</span>
+            <span className="card-actions btn-actions">
+              {batchCreated && (
+                <>
+                  <span className="small text-muted pe-3"><LocalDate dateString={batchCreated} /></span>
+                </>
+              )}
+              {searchText && (
+                <span className="small text-muted pe-3">
+                  Showing <strong>{filteredPayments.length}</strong> of{' '}
+                  <strong>{sortedPayments.length}</strong>
+                </span>
+              )}
+            </span>
           </div>
 
           {loadingPayments ? (
@@ -551,7 +633,7 @@ const PaymentHistoryDetail = () => {
                 </thead>
 
                 <tbody>
-                  {sortedPayments.map((p) => {
+                  {filteredPayments.map((p) => {
                     const rowKey = paymentRowKey(p);
                     const isOpen = expanded.has(rowKey);
                     const selected = selectedPaymentIds.has(p.id);
