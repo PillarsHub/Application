@@ -10,6 +10,7 @@ var GET_DATA = gql`query ($offset: Int!, $first: Int!) {
   batches (offset: $offset, first: $first) {
     created
     id
+    comment
     count
     amount
     status
@@ -46,6 +47,7 @@ const PaymentHistory = () => {
               <tr>
                 <th>Batch Id</th>
                 <th>Created</th>
+                <th>Comment</th>
                 <th>Status</th>
                 <th>Released Amount</th>
                 <th>Released Count</th>
@@ -59,6 +61,11 @@ const PaymentHistory = () => {
                     <a href={`/commissions/paid/${batch.id}`}>Batch {batch.id}</a>
                   </td>
                   <td><LocalDate dateString={batch.created} /></td>
+                  <td>
+                    <div className="text-truncate line-clamp-2 text-muted" style={{ maxWidth: 300 }}>
+                      {batch.comment}
+                    </div>
+                  </td>
                   <td>
                     {batch.status != "PROCESSED" && batch.status != "CREATED" && <>
                       <div className="spinner-border spinner-border-sm me-2" role="status"></div>

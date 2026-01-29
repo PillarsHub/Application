@@ -398,7 +398,7 @@ const ManualAdjustments = () => {
   };
 
 
-  const showConst = true;
+  const showConst = false;
 
   if (showConst) {
     return <PageHeader title="Adjustments">

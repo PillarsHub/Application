@@ -20,6 +20,7 @@ const GET_PAYMENTS_PAGED = gql`
       id
       created
       status
+      comment
       totalPayments
       payments (offset: $offset, first: $first) {
         id
@@ -141,6 +142,7 @@ const PaymentHistoryDetail = () => {
         const b0 = page0Res?.data?.batches?.[0];
         const created = b0?.created ?? null;
         const status = b0?.status ?? null;
+        const comment = b0?.comment ?? null;
         const total = b0?.totalPayments ?? (b0?.payments?.length || 0);
         const page0 = b0?.payments || [];
 
@@ -182,7 +184,7 @@ const PaymentHistoryDetail = () => {
         const all = Array.from(uniqueById.values());
 
         if (!cancelled) {
-          setBatchMeta({ created, status, totalPayments: total });
+          setBatchMeta({ created, status, comment, totalPayments: total });
           setPayments(all);
           setLoadingPayments(false);
         }
@@ -475,7 +477,7 @@ const PaymentHistoryDetail = () => {
 
   // ---------- Render ----------
   return (
-    <PageHeader title="Commissions Paid">
+    <PageHeader title="Batch Payment Detail" breadcrumbs={[{ title: 'Commissions Paid', link: `/commissions/paid` }, { title: `Batch ${params.batchId}` }]}>
       <CardHeader>
         <div className="d-flex align-items-center gap-2">
 
@@ -600,6 +602,11 @@ const PaymentHistoryDetail = () => {
               )}
             </span>
           </div>
+          {batchMeta.comment && (
+            <div className="card-header">
+              {batchMeta.comment}
+            </div>
+          )}
 
           {loadingPayments ? (
             <div className="py-5 text-center">
