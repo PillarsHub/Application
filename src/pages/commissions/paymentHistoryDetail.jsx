@@ -28,6 +28,7 @@ const GET_PAYMENTS_PAGED = gql`
         amount
         batchId
         status
+        statusReason
         totalDetails
         customer { id fullName profileImage }
       }
@@ -724,21 +725,29 @@ const PaymentHistoryDetail = () => {
                                       </thead>
                                       <tbody>
                                         {dstate.items.map((s) => (
-                                          <tr key={s.id}>
-                                            <td className="text-monospace">{s.id}</td>
-                                            <td>{renderStatusBadge(s.status)}</td>
-                                            <td>{s.bonus?.bonusTitle || '—'}</td>
-                                            <td className="text-end">{fmtNumber(s.bonus?.level)}</td>
-                                            <td className="text-end">{fmtNumber(s.bonus?.volume)}</td>
-                                            <td className="text-end">{s.bonus?.percent}</td>
-                                            <td className="text-end">{fmtMoney(s.amount)}</td>
-                                            <td className="text-end">
-                                              {s.bonus?.commissionDate
-                                                ? <LocalDate dateString={s.bonus.commissionDate} hideTime="true" />
-                                                : '—'}
-                                            </td>
-                                            <td className="text-end"><LocalDate dateString={s.period?.end} hideTime="true" /></td>
-                                          </tr>
+                                          <>
+                                            <tr key={s.id}>
+                                              <td className="text-monospace">{s.id}</td>
+                                              <td>{renderStatusBadge(s.status)}</td>
+                                              <td>{s.bonus?.bonusTitle || '—'}</td>
+                                              <td className="text-end">{fmtNumber(s.bonus?.level)}</td>
+                                              <td className="text-end">{fmtNumber(s.bonus?.volume)}</td>
+                                              <td className="text-end">{s.bonus?.percent}</td>
+                                              <td className="text-end">{fmtMoney(s.amount)}</td>
+                                              <td className="text-end">
+                                                {s.bonus?.commissionDate
+                                                  ? <LocalDate dateString={s.bonus.commissionDate} hideTime="true" />
+                                                  : '—'}
+                                              </td>
+                                              <td className="text-end"><LocalDate dateString={s.period?.end} hideTime="true" /></td>
+                                            </tr>
+                                            {p.statusReason && p.statusReason != '' && (
+                                              <tr>
+                                                <td></td>
+                                                <td colSpan={8} className="pb-3">{p.statusReason}</td>
+                                              </tr>
+                                            )}
+                                          </>
                                         ))}
 
                                         {/* Append spinner row when loading more */}
