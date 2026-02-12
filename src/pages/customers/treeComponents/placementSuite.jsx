@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useQuery, gql } from "@apollo/client";
+import {GetToken} from "../../../features/authentication/hooks/useToken.jsx"
 import OffCanvas from '../../../components/offCanvas.jsx';
 import Avatar from '../../../components/avatar.jsx';
 import DataLoading from '../../../components/dataLoading.jsx';
@@ -68,6 +69,33 @@ const PlacementSuite = ({ nodeId, periodDate, treeId, shows, onHide, handlePlace
     }
   }, [shows]);
 
+  const token = GetToken();
+
+  const disclaimerByClient = {
+    // Example keys — swap to whatever you actually have available (clientId, clientKey, etc.)
+    default: {
+      title: "Placement Suite Disclaimer",
+      body: (
+        <>
+          Before using the placement suite to move a personally enrolled off your first level, please consider the personally enrolled requirements for Rank advancements.
+          Please understand that all tree-based sponsor commissions during an open period for activities of this person will be removed from earned commissions and paid to this person's new sponsor
+        </>
+      ),
+    },
+    CL10461: {
+      title: "Placement Suite Disclaimer",
+      body: (
+        <>
+          Before using the placement suite to move a personally enrolled and sponsored Brand Partner off your first level, please consider the personally enrolled and sponsored Level 1 requirements for Rank advancements.
+          Please review the <a href="https://7ity.me/rewards-plan" target="_blank" rel="noreferrer" >Sevinity Rewards Plan</a> or contact your upline for further guidance.
+        </>
+      ),
+    }
+  };
+
+
+  const disclaimer = token.environmentId == 10461 ? disclaimerByClient.CL10461: disclaimerByClient.default;
+
   const movementDurationInDays = data?.tree?.movementDurationInDays;
 
   const validNodes = data?.tree?.nodes?.[0]?.nodes?.filter((node) =>
@@ -119,11 +147,8 @@ const PlacementSuite = ({ nodeId, periodDate, treeId, shows, onHide, handlePlace
     </div>
     <div className="card-footer">
       <div className="alert alert-warning" role="alert">
-        <h4 className="alert-title">Placement Suite Disclaimer</h4>
-        <div className="text-muted">
-          Before using the placement suite to move a personally enrolled and sponsored Brand Partner off your first level, please consider the personally enrolled and sponsored Level 1 requirements for Rank advancements.
-          Please review the <a href="https://7ity.me/rewards-plan" target="_blank" rel="noreferrer" >Sevinity Rewards Plan</a> or contact your upline for further guidance.
-        </div>
+        <h4 className="alert-title">{disclaimer.title}</h4>
+        <div className="text-muted">{disclaimer.body}</div>
       </div>
     </div>
   </OffCanvas>
