@@ -220,7 +220,7 @@ const WidgetContainer = forwardRef(({ customerId, dashboardId, periodId, onLoad,
 
 function buildCard(card, widgets, customer, compensationPlans, trees, date, onDateChange, periodId) {
   if ((card?.widgetId || card?.children) && widgets !== undefined) {
-    let widget = widgets.find((w) => w.id === card?.widgetId ?? '');
+    let widget = widgets.find((w) => w.id === (card?.widgetId ?? ''));
     if (widget?.state == 1) return <></>
     if (!widget && (!card.children || card.children.length == 0)) return <></>
 

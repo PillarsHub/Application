@@ -4,12 +4,32 @@ import Mustache from 'mustache';
 import parse from 'html-react-parser';
 import { SendRequest } from '../../../hooks/usePost.js';
 import HtmlFrame from "./htmlFrame.jsx";
+import Pagination from "../../../components/pagination.jsx";
+
+function getValueByPath(obj, path) {
+  if (!obj || !path) return undefined;
+
+  return path.split('/').reduce((current, key) => {
+    if (current == null) return undefined;
+
+    // If current is array, take first element
+    if (Array.isArray(current)) {
+      current = current[0];
+    }
+
+    return current[key];
+  }, obj);
+}
+
 
 const HtmlWidget = ({ html, customer, widget, isPreview }) => {
   var [data, setData] = useState({});
   var [query, setQuery] = useState({});
   var [output, setOutput] = useState('<div>Loading</div>');
   var [authCode, setAuthCode] = useState('');
+  var [pagingData, setPagingData] = useState({ enabled: false, offset: 0, first: 50 });
+  var [totalItems, setTotalItems] = useState(-1);
+  var [totalItemsPath, setTotalItemsPath] = useState();
 
   useEffect(() => {
     if (widget) {
@@ -18,6 +38,14 @@ const HtmlWidget = ({ html, customer, widget, isPreview }) => {
         if (pane.title != query.query) {
           setQuery({ method: pane.imageUrl?.toLowerCase(), query: pane.title });
         }
+      }
+
+      var usePagination = widget?.settings?.['usePagination'];
+      if (usePagination) {
+        setPagingData({ enabled: true, offset: 0, first: 10 });
+        setTotalItemsPath(widget?.settings?.['totalPath']); //"customers/nodes/totalNodes")
+      } else {
+        setPagingData({ enabled: false, offset: 0, first: 50 });
       }
 
       var useAuthCode = widget?.settings?.['useAuthorizationCode'];
@@ -50,11 +78,16 @@ const HtmlWidget = ({ html, customer, widget, isPreview }) => {
           setData({ error: `${error}` });
         }
       } else if (isLikelyGraphQLQuery(query.query)) {
-        var ttt = { query: query.query, variables: { customerId: customer.id } };
+        var ttt = { query: query.query, variables: { customerId: customer.id, offset: pagingData.offset, count: pagingData.first } };
         SendRequest('POST', 'https://api.pillarshub.com/graphql', ttt, (r) => {
           if (r.errors) {
             setData({ error: JSON.stringify(r.errors) });
           } else {
+            const total = getValueByPath(r.data, totalItemsPath);
+            if (typeof total === 'number') {
+              setTotalItems(total);
+            }
+
             setData(r.data)
           }
         }, (error, code) => {
@@ -64,7 +97,7 @@ const HtmlWidget = ({ html, customer, widget, isPreview }) => {
     } else {
       setData({});
     }
-  }, [query, customer?.id])
+  }, [query, customer?.id, pagingData])
 
   useEffect(() => {
     if (html) {
@@ -77,6 +110,13 @@ const HtmlWidget = ({ html, customer, widget, isPreview }) => {
     }
   }, [html, data, customer, authCode])
 
+  const refetch = (pageData) => {
+    setPagingData(prev => ({
+      ...prev,
+      ...pageData
+    }));
+  };
+
   var useIframe = widget?.settings?.['useIframe'];
 
   if (useIframe) {
@@ -86,6 +126,11 @@ const HtmlWidget = ({ html, customer, widget, isPreview }) => {
     delete clone.__typename;
     return <>
       <HtmlFrame htmlContent={output} cssContent={widget.css} data={{ customer: clone, authorizationCode: authCode, data: data }} />
+      {pagingData.enabled && (
+        <div className="card-footer d-flex align-items-center">
+          <Pagination variables={pagingData} refetch={refetch} total={totalItems} />
+        </div>
+      )}
     </>
   } else {
     let renderedOutput = null;
@@ -100,7 +145,14 @@ const HtmlWidget = ({ html, customer, widget, isPreview }) => {
       renderedOutput = <p>Error parsing or rendering output</p>;
     }
 
-    return renderedOutput
+    return (<>
+      {renderedOutput}
+      {pagingData.enabled && (
+        <div className="card-footer d-flex align-items-center">
+          <Pagination variables={pagingData} refetch={refetch} total={totalItems} />
+        </div>
+      )}
+    </>)
   }
 }
 

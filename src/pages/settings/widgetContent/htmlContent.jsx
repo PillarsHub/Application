@@ -41,6 +41,11 @@ const HtmlContent = ({ widget, updateWidget }) => {
     <div className="mb-3 border-bottom">
       <Switch name="useIframe" value={widget?.settings?.['useIframe']} title="Use IFrame (allows Javascript)" onChange={handleWidgetSettingsChange} />
       <Switch name="useAuthorizationCode" value={widget?.settings?.['useAuthorizationCode']} title="Use AuthorizationCode" onChange={handleWidgetSettingsChange} />
+      <Switch name="usePagination" value={widget?.settings?.['usePagination']} title="Use Pagination" onChange={handleWidgetSettingsChange} />
+      <div className="col-6 mb-3">
+        <label className="form-label">Total Path</label>
+        <TextInput name="totalPath" value={widget?.settings?.['totalPath']} title="Total Path" onChange={handleWidgetSettingsChange} />
+      </div>
     </div>
 
     <Tabs>

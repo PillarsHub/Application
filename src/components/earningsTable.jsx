@@ -59,7 +59,7 @@ const EarningsTable = ({ customerId, periodId, overrides }) => {
     bonuses.sort((a, b) => (a.bonusId > b.bonusId) ? 1 : -1);
   }
 
-  const hasBonuses = bonuses?.length > 0 ?? false;
+  const hasBonuses = bonuses?.length > 0;
 
   return <>
     {!hasBonuses && <>
