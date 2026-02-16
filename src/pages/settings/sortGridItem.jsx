@@ -17,7 +17,7 @@ const SortGridItem = ({ id, col, item, widgets, trees, pageId, onAdd, onResize, 
     opacity: isDragging ? 0.7 : isOver ? 0.2 : 1
   };
 
-  let widget = widgets.find((w) => w.id === item?.widgetId ?? '');
+  let widget = widgets.find((w) => w.id === (item?.widgetId ?? ''));
 
   const editUrl = `/settings/pages/${pageId}/widgets/${widget?.id}`;
 

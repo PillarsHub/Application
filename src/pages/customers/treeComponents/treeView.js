@@ -250,6 +250,49 @@ function treeBorad(id, rootId, treeId, periodDate, dataUrl, selectNode, getTempl
     }
   };
 
+  let flipHeightRafId = null;
+  const scheduleFlipHeightSync = () => {
+    if (flipHeightRafId != null) return;
+    flipHeightRafId = requestAnimationFrame(() => {
+      flipHeightRafId = null;
+      syncFlipCardHeight(canvas);
+    });
+  };
+
+  function syncFlipCardHeight(nodeHostOrRoot) {
+    if (!nodeHostOrRoot) return;
+
+    const flipCards = [];
+    if (nodeHostOrRoot.classList?.contains('flip-card')) {
+      flipCards.push(nodeHostOrRoot);
+    }
+    if (typeof nodeHostOrRoot.querySelectorAll === 'function') {
+      nodeHostOrRoot.querySelectorAll('.flip-card').forEach((card) => flipCards.push(card));
+    }
+
+    for (const flipCard of flipCards) {
+      const front = flipCard.querySelector('.flip-card-front');
+      const back = flipCard.querySelector('.flip-card-back');
+      if (!front) continue;
+
+      if (!back) {
+        flipCard.classList.add('no-back');
+        flipCard.style.removeProperty('--flip-card-height');
+        continue;
+      }
+
+      flipCard.classList.remove('no-back');
+      const frontContentHeight = front.firstElementChild?.scrollHeight || 0;
+      const backContentHeight = back.firstElementChild?.scrollHeight || 0;
+      const frontHeight = Math.max(front.scrollHeight || 0, frontContentHeight);
+      const backHeight = Math.max(back.scrollHeight || 0, backContentHeight);
+      const maxHeight = Math.max(frontHeight, backHeight);
+      if (maxHeight > 0) {
+        flipCard.style.setProperty('--flip-card-height', `${maxHeight}px`);
+      }
+    }
+  }
+
 
   add(canvasBox, 'mousedown', onMouseDown);
   add(canvasBox, 'mousemove', onMouseMove);
@@ -260,7 +303,10 @@ function treeBorad(id, rootId, treeId, periodDate, dataUrl, selectNode, getTempl
   add(canvasBox, 'touchstart', onTouchStart, { passive: false });
   add(canvasBox, 'touchmove', onTouchMove, { passive: false });
   add(canvasBox, 'touchend', onTouchEnd, { passive: false });
-  add(window, 'resize', () => { recalcOffsets(); }, { passive: true });
+  add(window, 'resize', () => {
+    recalcOffsets();
+    scheduleFlipHeightSync();
+  }, { passive: true });
 
   // Initial draw
   redraw();
@@ -622,6 +668,8 @@ function treeBorad(id, rootId, treeId, periodDate, dataUrl, selectNode, getTempl
     if (ul1) ulIndex.set(node.nodeId, ul1);
 
     ul.appendChild(li);
+    syncFlipCardHeight(nodeDiv);
+    scheduleFlipHeightSync();
     return result;
   }
 
@@ -1462,6 +1510,8 @@ function treeBorad(id, rootId, treeId, periodDate, dataUrl, selectNode, getTempl
         if (nodeData) {
           const html = renderToStaticMarkup(getTemplate(nodeData)) || '';
           rec.nodeDiv.innerHTML = html;
+          syncFlipCardHeight(rec.nodeDiv);
+          scheduleFlipHeightSync();
         }
         nodeDiv.setAttribute('data-uplineId', toParentId);
         nodeDiv.setAttribute('data-uplineLeg', toUplineLeg ?? '');
@@ -1582,6 +1632,8 @@ function treeBorad(id, rootId, treeId, periodDate, dataUrl, selectNode, getTempl
       if (!rec || !nodeData) return;
       const html = renderToStaticMarkup(getTemplate(nodeData));
       rec.nodeDiv.innerHTML = html;
+      syncFlipCardHeight(rec.nodeDiv);
+      scheduleFlipHeightSync();
     },
 
     removeNode(nodeId) {
@@ -1766,6 +1818,10 @@ function treeBorad(id, rootId, treeId, periodDate, dataUrl, selectNode, getTempl
 
   // --- Cleanup function that also exposes the API ---
   function cleanup() {
+    if (flipHeightRafId != null) {
+      cancelAnimationFrame(flipHeightRafId);
+      flipHeightRafId = null;
+    }
     // remove listeners
     handlers.forEach((off) => {
       try { off(); } catch (e) { /* listener may already be removed */ }

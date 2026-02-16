@@ -33,21 +33,24 @@ const CorporateMenu = ({ itemClick, customerId, showCustomer }) => {
 
   return (<>
     <ul className="navbar-nav">
-      {subMenu && <>
-        <li className={`nav-item customer-menu-side ${showCustomer ? '' : 'd-none'}`}>
+      {subMenu && showCustomer && <>
+        <li className="sidebar-header customer-section-label">Customer</li>
+        <li className="nav-item customer-menu-side">
 
-          <a href="#menu-layout" className="nav-link p-3" data-bs-toggle="collapse" aria-expanded="true">
+          <a href="#menu-layout" className="nav-link px-3 py-2" data-bs-toggle="collapse" aria-expanded="true">
             <div className="row">
-              <div className="col-auto">
+              <div className="col-auto m-auto">
                 <Avatar name={customerMenu.customers?.[0].fullName} url={customerMenu.customers?.[0].profileImage} size="xs" />
               </div>
               <div className="col pe-3 ">
-                <div className="font-weight-medium text-truncate">{customerMenu.customers?.[0].fullName}</div>
+                <div className="font-weight-medium text-truncate" title={customerMenu.customers?.[0].fullName ?? ''}>
+                  {customerMenu.customers?.[0].fullName}
+                </div>
               </div>
             </div>
             <span className="nav-link-toggle"></span>
           </a>
-          <ul className="collapse show pb-2 border-bottom customer-ul collapsed" id="menu-layout">
+          <ul className="collapse show pb-1 border-bottom customer-ul collapsed" id="menu-layout">
 
             {subMenu?.items && subMenu.items.map((sMenu) => {
               let visible = sMenu.status.toLowerCase() == 'enabled' || sMenu.status.toLowerCase() == 'corporate'
@@ -61,7 +64,7 @@ const CorporateMenu = ({ itemClick, customerId, showCustomer }) => {
                       <span className="nav-link-icon d-md-none d-lg-inline-block">
                         {sMenu.icon && parse(sMenu.icon)}
                       </span>
-                      <span className="nav-link-title text-truncate">
+                      <span className="nav-link-title text-truncate" title={sMenu.title}>
                         {sMenu.title}
                       </span>
                     </NavLink>
@@ -74,6 +77,7 @@ const CorporateMenu = ({ itemClick, customerId, showCustomer }) => {
 
           </ul>
         </li>
+        <li className="sidebar-header admin-section-label">Admin</li>
 
       </>}
 
@@ -92,7 +96,7 @@ const CorporateMenu = ({ itemClick, customerId, showCustomer }) => {
                 {icons && <span className="nav-link-icon d-md-none d-lg-inline-block">
                   {mnu.icon && parse(mnu.icon)}
                 </span>}
-                <span className="nav-link-title text-truncate">
+                <span className="nav-link-title text-truncate" title={mnu.title}>
                   {mnu.title}
                 </span>
               </NavLink>
@@ -110,7 +114,7 @@ const CorporateMenu = ({ itemClick, customerId, showCustomer }) => {
           {icons && <span className="nav-link-icon d-md-none d-lg-inline-block">
             <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-adjustments-horizontal" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M14 6m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M4 6l8 0" /><path d="M16 6l4 0" /><path d="M8 12m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M4 12l2 0" /><path d="M10 12l10 0" /><path d="M17 18m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M4 18l11 0" /><path d="M19 18l1 0" /></svg>
           </span>}
-          <span className="nav-link-title text-truncate">
+          <span className="nav-link-title text-truncate" title="Settings">
             Settings
           </span>
         </NavLink>

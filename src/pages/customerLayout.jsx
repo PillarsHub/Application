@@ -11,6 +11,93 @@ import AccountMenu from './accountMenu.jsx';
 import AutoCompleteOrdersCustomers from '../components/autoCompleteOrdersCustomers.jsx';
 import CustomerNav from './customers/customerNav.jsx';
 
+const parseColorToRgb = (color) => {
+  if (!color || typeof color !== 'string') return null;
+
+  const value = color.trim();
+
+  const hexMatch = value.match(/^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/);
+  if (hexMatch) {
+    let hex = hexMatch[1];
+    if (hex.length === 3) {
+      hex = hex.split('').map((c) => c + c).join('');
+    }
+    const int = parseInt(hex, 16);
+    return {
+      r: (int >> 16) & 255,
+      g: (int >> 8) & 255,
+      b: int & 255
+    };
+  }
+
+  const rgbMatch = value.match(/^rgba?\(([^)]+)\)$/i);
+  if (rgbMatch) {
+    const parts = rgbMatch[1].split(',').map((p) => Number.parseFloat(p.trim()));
+    if (parts.length >= 3 && parts.every((n, i) => i > 2 || Number.isFinite(n))) {
+      return {
+        r: Math.max(0, Math.min(255, Math.round(parts[0]))),
+        g: Math.max(0, Math.min(255, Math.round(parts[1]))),
+        b: Math.max(0, Math.min(255, Math.round(parts[2])))
+      };
+    }
+  }
+
+  const rgbSpaceMatch = value.match(/^rgba?\(\s*([0-9.]+)\s+([0-9.]+)\s+([0-9.]+)(?:\s*\/\s*[0-9.]+)?\s*\)$/i);
+  if (rgbSpaceMatch) {
+    return {
+      r: Math.max(0, Math.min(255, Math.round(Number.parseFloat(rgbSpaceMatch[1])))),
+      g: Math.max(0, Math.min(255, Math.round(Number.parseFloat(rgbSpaceMatch[2])))),
+      b: Math.max(0, Math.min(255, Math.round(Number.parseFloat(rgbSpaceMatch[3]))))
+    };
+  }
+
+  // Fallback: let the browser normalize any valid CSS color.
+  if (typeof document !== 'undefined') {
+    const probe = document.createElement('span');
+    probe.style.color = '';
+    probe.style.color = value;
+    if (probe.style.color) {
+      document.body.appendChild(probe);
+      const computed = window.getComputedStyle(probe).color;
+      document.body.removeChild(probe);
+      const computedMatch = computed.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
+      if (computedMatch) {
+        return {
+          r: Number.parseInt(computedMatch[1], 10),
+          g: Number.parseInt(computedMatch[2], 10),
+          b: Number.parseInt(computedMatch[3], 10)
+        };
+      }
+    }
+  }
+
+  return null;
+};
+
+const mixRgb = (base, target, weight) => {
+  const w = Math.max(0, Math.min(1, weight));
+  return {
+    r: Math.round(base.r * (1 - w) + target.r * w),
+    g: Math.round(base.g * (1 - w) + target.g * w),
+    b: Math.round(base.b * (1 - w) + target.b * w)
+  };
+};
+
+const rgbToCss = ({ r, g, b }, alpha = 1) => `rgba(${r}, ${g}, ${b}, ${alpha})`;
+
+const relativeLuminance = ({ r, g, b }) => {
+  const normalize = (v) => {
+    const s = v / 255;
+    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+  };
+
+  const R = normalize(r);
+  const G = normalize(g);
+  const B = normalize(b);
+
+  return (0.2126 * R) + (0.7152 * G) + (0.0722 * B);
+};
+
 const CustomerLayout = () => {
   const { customerId } = useParams();
   const [searchText, setSearchText] = useState();
@@ -20,13 +107,26 @@ const CustomerLayout = () => {
   if (loading) return <DataLoading title="Loading Theme" />;
   if (error) return `Error! ${error}`;
 
+  const baseNavbarColor = parseColorToRgb(theme?.headerColor ?? '#1d273b') ?? { r: 29, g: 39, b: 59 };
+  const baseTextColor = parseColorToRgb(theme?.headerTextColor ?? 'rgba(255,255,255,.8)') ?? { r: 255, g: 255, b: 255 };
+  const hasDarkText = relativeLuminance(baseTextColor) < 0.35;
+  const isLightNavbar = relativeLuminance(baseNavbarColor) > 0.45;
+  const shouldDarkenCustomerSection = hasDarkText || isLightNavbar;
+  const customerMenuTone = shouldDarkenCustomerSection
+    ? mixRgb(baseNavbarColor, { r: 0, g: 0, b: 0 }, 0.09)
+    : mixRgb(baseNavbarColor, { r: 255, g: 255, b: 255 }, 0.06);
+
   const inlineStyle = {
     "--tblr-navbar-bg": (theme?.headerColor ?? '#1d273b'),
     '--tblr-navbar-border-color': (theme?.headerColor ?? '#243049'),
     '--tblr-icon-color': (theme?.headerTextColor ?? 'rgba(255,255,255,.7)'),
     '--tblr-nav-link-font-size': "1rem",
     "--tblr-nav-link-font-weight": "400",
-    "--tblr-body-color": (theme?.headerTextColor ?? 'rgba(255, 255, 255, 0.8)')
+    "--tblr-body-color": (theme?.headerTextColor ?? 'rgba(255, 255, 255, 0.8)'),
+    "--ph-customer-menu-bg": rgbToCss(customerMenuTone, 1),
+    "--ph-customer-menu-separator": rgbToCss(baseTextColor, 0.2),
+    "--ph-customer-menu-active": rgbToCss(baseTextColor, 0.1),
+    "--ph-customer-menu-focus": rgbToCss(baseTextColor, 0.6)
   };
 
   if (theme?.favicon?.url) {

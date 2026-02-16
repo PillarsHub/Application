@@ -75,6 +75,28 @@ input[type=number] {
   width: 11rem;
 }
 
+.navbar-vertical .navbar-collapse {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--tblr-body-color) 45%, transparent) transparent;
+}
+
+.navbar-vertical .navbar-collapse::-webkit-scrollbar {
+  width: 6px;
+}
+
+.navbar-vertical .navbar-collapse::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.navbar-vertical .navbar-collapse::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--tblr-body-color) 45%, transparent);
+  border-radius: 999px;
+}
+
+.navbar-vertical .navbar-collapse::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--tblr-body-color) 60%, transparent);
+}
+
 .theme-navbar .navbar-nav .nav-item .nav-link {
   color: var(--tblr-theme-body-color);
 
@@ -325,11 +347,20 @@ input[type=number] {
 }
 
 .customer-menu-side {
-  background-color: rgba(var(--tblr-black-rgb), .17);
+  margin: .25rem 0rem .5rem;
+  border: 0;
+  border-top: 1px solid var(--ph-customer-menu-separator, color-mix(in srgb, var(--tblr-body-color) 20%, transparent));
+  border-bottom: 1px solid var(--ph-customer-menu-separator, color-mix(in srgb, var(--tblr-body-color) 20%, transparent));
+  border-radius: 0;
+  background-color: var(--ph-customer-menu-bg, color-mix(in srgb, var(--tblr-navbar-bg) 92%, black));
 }
 
 .customer-menu-side .nav-item {
-  padding: .35rem;
+  padding: .2rem .25rem;
+}
+
+.customer-menu-side .customer-ul > .nav-item + .nav-item {
+  margin-top: .125rem;
 }
 
 .customer-menu-side ul {
@@ -337,10 +368,49 @@ input[type=number] {
   overflow-x: hidden;
 }
 
+.customer-menu-side .nav-link {
+  border-radius: .25rem;
+}
+
+.customer-menu-side .nav-link:focus-visible,
+.customer-menu-side .dropdown-item:focus-visible {
+  outline: 2px solid var(--ph-customer-menu-focus, color-mix(in srgb, var(--tblr-body-color) 65%, transparent));
+  outline-offset: 1px;
+  background: var(--ph-customer-menu-active, color-mix(in srgb, var(--tblr-body-color) 12%, transparent));
+}
+
+.customer-menu-side .nav-item.active {
+  background: var(--ph-customer-menu-active, color-mix(in srgb, var(--tblr-body-color) 10%, transparent));
+}
+
+.customer-menu-side .customer-ul > .nav-item.active {
+  border-left-width: 0;
+}
+
+.customer-menu-side .customer-ul > .nav-item.active .dropdown-item {
+  font-weight: var(--tblr-font-weight-semibold);
+}
+
+.navbar-vertical .navbar-nav .nav-link:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--tblr-body-color) 55%, transparent);
+  outline-offset: 1px;
+  border-radius: .375rem;
+}
+
 .customer-menu-side .sidebar-header {
-  padding-top: .75rem;
-  padding-bottom: .25rem;
+  padding-top: .5rem;
+  padding-bottom: .125rem;
   padding-left: 2.1rem;
+}
+
+.customer-section-label,
+.admin-section-label {
+  padding-top: .5rem;
+  padding-bottom: .125rem;
+}
+
+.customer-context-label {
+  letter-spacing: .04em;
 }
 
 /* Prevent table-hover from tinting "detail" rows that contain nested tables */

@@ -1,4 +1,4 @@
-import React from "react-dom/client";
+import React from 'react-dom/client';
 import PropTypes from 'prop-types';
 import Avatar from '../../../components/avatar';
 import Widget from "../../../features/widgets/components/widget";
@@ -27,16 +27,9 @@ const TreeNode = ({ node, dashboard, trees, date }) => {
   }
 
   var hasBack = ((dashboard?.children?.length ?? 0) > 1) && (dashboard?.children?.[1]?.widgetId ?? false);
-  var flipCard = "flip-card";
-
-  if (!hasBack) {
-    flipCard = '';
-  }
-
-
-  return <div className="flip-card">
-    <div className={`${flipCard}-inner`}>
-      <div className={`${flipCard}-front mb-2`}>
+  return <div className={`flip-card${hasBack ? '' : ' no-back'}`}>
+    <div className="flip-card-inner">
+      <div className="flip-card-front mb-2">
         {dashboard && dashboard.children.length > 2 && (
           buildCard(dashboard.children[0], node.customer.widgets, node.customer, node.compensationPlans, trees, date)
         )}
