@@ -16,6 +16,8 @@ import DataError from "../../components/dataError.jsx";
 import AvailabilityInput from "../../components/availabilityInput.jsx";
 import AutoComplete from "../../components/autocomplete.jsx";
 import SaveButton from "../../components/saveButton.jsx";
+import useSubdomain from "../../hooks/useSubdomain.js";
+import { useTheme } from "../../hooks/useTheme.js";
 
 var GET_PREVIEW_DATA = gql`query ($nodeIds: [String]!, $periodDate: Date!) {
   customers(idList: $nodeIds) {
@@ -128,8 +130,61 @@ var GET_DATA = gql`query {
   }
 }`
 
+const THEME_COLOR_WIDGET_HEADER = "widgetHeaderColor";
+const THEME_COLOR_WIDGET_HEADER_TEXT = "widgetHeaderTextColor";
+const THEME_COLOR_WIDGET_BACKGROUND = "widgetBackgroundColor";
+const THEME_COLOR_WIDGET_TEXT = "widgetTextColor";
+const THEME_COLOR_WIDGET_BORDER = "widgetBorderColor";
+
+const FALLBACK_WIDGET_COLORS = {
+  headerColor: "#ffffff",
+  headerTextColor: "#1d273b",
+  backgroundColor: "#ffffff",
+  textColor: "#1d273b",
+  borderColor: "#e6e7e9"
+};
+
+const getThemeColorValue = (theme, name, defaultValue) => {
+  if (!Array.isArray(theme?.colors)) return defaultValue;
+  const color = theme.colors.find((item) => item?.name?.toLowerCase() === name.toLowerCase());
+  return color?.value ?? defaultValue;
+};
+
+const getDefaultWidgetColors = (theme) => ({
+  headerColor: getThemeColorValue(theme, THEME_COLOR_WIDGET_HEADER, FALLBACK_WIDGET_COLORS.headerColor),
+  headerTextColor: getThemeColorValue(theme, THEME_COLOR_WIDGET_HEADER_TEXT, FALLBACK_WIDGET_COLORS.headerTextColor),
+  backgroundColor: getThemeColorValue(theme, THEME_COLOR_WIDGET_BACKGROUND, FALLBACK_WIDGET_COLORS.backgroundColor),
+  textColor: getThemeColorValue(theme, THEME_COLOR_WIDGET_TEXT, FALLBACK_WIDGET_COLORS.textColor),
+  borderColor: getThemeColorValue(theme, THEME_COLOR_WIDGET_BORDER, FALLBACK_WIDGET_COLORS.borderColor)
+});
+
+const normalizeColorValue = (value) => {
+  if (value === undefined || value === null) return null;
+
+  const normalized = `${value}`.trim();
+  return normalized === "" ? null : normalized;
+};
+
+const normalizeWidgetColorsForSave = (widget, defaults) => {
+  const next = { ...widget };
+
+  Object.keys(defaults).forEach((field) => {
+    const current = normalizeColorValue(next[field]);
+    const defaultValue = normalizeColorValue(defaults[field]);
+    const currentKey = current?.toLowerCase();
+    const defaultKey = defaultValue?.toLowerCase();
+
+    next[field] = current === null || currentKey === defaultKey ? null : current;
+  });
+
+  return next;
+};
+
 const EditWidget = () => {
   let params = useParams()
+  const { subdomain } = useSubdomain();
+  const { theme } = useTheme({ subdomain });
+  const defaultWidgetColors = getDefaultWidgetColors(theme);
 
   const [previewId, setPreviewId] = useState();
   const [previewData, setPreviewData] = useState();
@@ -168,13 +223,14 @@ const EditWidget = () => {
     setSaveSettings({ status: 1 });
     var action = "PUT";
     var url = `/api/v1/Widgets/${item.id}`;
+    const payload = normalizeWidgetColorsForSave(item, defaultWidgetColors);
 
     if (item.id === undefined) {
       action = "POST";
       url = `/api/v1/Widgets`;
     }
 
-    SendRequest(action, url, item, (r) => {
+    SendRequest(action, url, payload, (r) => {
       setSaveSettings({ status: 2 });
       setItem(r);
     }, (error) => {
@@ -274,25 +330,25 @@ const EditWidget = () => {
 
                       <div className="col-3 mb-3">
                         <label className="form-label">Header Background Color</label>
-                        <ColorInput name="headerColor" value={item?.headerColor} defaultValue="#ffffff" onChange={handleChange} />
+                        <ColorInput name="headerColor" value={item?.headerColor} defaultValue={defaultWidgetColors.headerColor} onChange={handleChange} />
                       </div>
 
                       <div className="col-3 mb-3">
                         <label className="form-label">Header Text Color</label>
-                        <ColorInput name="headerTextColor" value={item?.headerTextColor} defaultValue="#1d273b" onChange={handleChange} />
+                        <ColorInput name="headerTextColor" value={item?.headerTextColor} defaultValue={defaultWidgetColors.headerTextColor} onChange={handleChange} />
                       </div>
 
                       <div className="col-3 mb-3">
                         <label className="form-label">Card Background Color</label>
-                        <ColorInput name="backgroundColor" value={item?.backgroundColor} defaultValue="#ffffff" onChange={handleChange} />
+                        <ColorInput name="backgroundColor" value={item?.backgroundColor} defaultValue={defaultWidgetColors.backgroundColor} onChange={handleChange} />
                       </div>
                       <div className="col-3 mb-3">
                         <label className="form-label">Card Text Color</label>
-                        <ColorInput name="textColor" value={item?.textColor} defaultValue="#1d273b" onChange={handleChange} />
+                        <ColorInput name="textColor" value={item?.textColor} defaultValue={defaultWidgetColors.textColor} onChange={handleChange} />
                       </div>
                       <div className="col-3 mb-3">
                         <label className="form-label">Card Border Color</label>
-                        <ColorInput name="borderColor" value={item?.borderColor} defaultValue="#e6e7e9" onChange={handleChange} />
+                        <ColorInput name="borderColor" value={item?.borderColor} defaultValue={defaultWidgetColors.borderColor} onChange={handleChange} />
                       </div>
                     </div>
 

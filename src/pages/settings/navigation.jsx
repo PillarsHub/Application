@@ -76,6 +76,7 @@ const Navigation = () => {
         { url: '/schedule', title: 'Event Calendar', type: "Corporate" },
         { url: '/media', title: 'Media Library', type: "Corporate" },
         { url: '/training', title: 'Training Course Admin', type: "Corporate" },
+        { url: '/reports/graphql', title: 'GraphQL Playground', type: "Corporate" },
 
         { url: '/customers/{customerId}/summary', title: 'Customer Details', type: "Customer" },
         { url: '/customers/{customerId}/team', title: 'Customer Team', type: "Customer" },

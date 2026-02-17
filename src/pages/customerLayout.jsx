@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Outlet } from "react-router-dom";
 import { GetScope } from "../features/authentication/hooks/useToken.jsx"
 import { useParams } from "react-router-dom"
@@ -10,6 +10,45 @@ import { useTheme } from '../hooks/useTheme.js';
 import AccountMenu from './accountMenu.jsx';
 import AutoCompleteOrdersCustomers from '../components/autoCompleteOrdersCustomers.jsx';
 import CustomerNav from './customers/customerNav.jsx';
+
+const THEME_SETTING_SHOW_TOP_MENU = 'legacyMenu';
+const THEME_COLOR_WIDGET_HEADER = "widgetHeaderColor";
+const THEME_COLOR_WIDGET_HEADER_TEXT = "widgetHeaderTextColor";
+const THEME_COLOR_WIDGET_BACKGROUND = "widgetBackgroundColor";
+const THEME_COLOR_WIDGET_TEXT = "widgetTextColor";
+const THEME_COLOR_WIDGET_BORDER = "widgetBorderColor";
+const THEME_COLOR_PAGE_BACKGROUND = "pageBackgroundColor";
+const THEME_COLOR_BUTTON = "buttonColor";
+const THEME_COLOR_BUTTON_TEXT = "buttonTextColor";
+const THEME_SETTING_CUSTOMER_SUBMENU_MODE = "customerSubmenuMode";
+const THEME_SETTING_CUSTOMER_SUBMENU_COLOR = "customerSubmenuColor";
+const THEME_SETTING_CUSTOMER_SUBMENU_TEXT_COLOR = "customerSubmenuTextColor";
+
+const getThemeSettingValue = (theme, ...names) => {
+  if (!Array.isArray(theme?.settings) || names.length === 0) return undefined;
+
+  const normalizedNames = names.map((name) => name.toLowerCase());
+  const setting = theme.settings.find((item) => normalizedNames.includes(item?.name?.toLowerCase()));
+
+  return setting?.value;
+};
+
+const getThemeColorValue = (theme, name, defaultValue) => {
+  if (!Array.isArray(theme?.colors)) return defaultValue;
+  const color = theme.colors.find((item) => item?.name?.toLowerCase() === name.toLowerCase());
+  return color?.value ?? defaultValue;
+};
+
+const parseBooleanSetting = (value, defaultValue = true) => {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === 'true') return true;
+    if (normalized === 'false') return false;
+  }
+
+  return defaultValue;
+};
 
 const parseColorToRgb = (color) => {
   if (!color || typeof color !== 'string') return null;
@@ -104,17 +143,67 @@ const CustomerLayout = () => {
   const { subdomain } = useSubdomain();
   const { theme, loading, error } = useTheme({ subdomain: subdomain });
 
+  useEffect(() => {
+    document.documentElement.style.setProperty("--ph-widget-header-bg", getThemeColorValue(theme, THEME_COLOR_WIDGET_HEADER, "#ffffff"));
+    document.documentElement.style.setProperty("--ph-widget-header-text", getThemeColorValue(theme, THEME_COLOR_WIDGET_HEADER_TEXT, "#1d273b"));
+    document.documentElement.style.setProperty("--ph-widget-bg", getThemeColorValue(theme, THEME_COLOR_WIDGET_BACKGROUND, "#ffffff"));
+    document.documentElement.style.setProperty("--ph-widget-text", getThemeColorValue(theme, THEME_COLOR_WIDGET_TEXT, "#1d273b"));
+    document.documentElement.style.setProperty("--ph-widget-border", getThemeColorValue(theme, THEME_COLOR_WIDGET_BORDER, "#e6e7e9"));
+    document.documentElement.style.setProperty("--tblr-body-bg", getThemeColorValue(theme, THEME_COLOR_PAGE_BACKGROUND, "#f1f5f9"));
+    document.documentElement.style.setProperty("--ph-button-bg", getThemeColorValue(theme, THEME_COLOR_BUTTON, "#206bc4"));
+    document.documentElement.style.setProperty("--ph-button-text", getThemeColorValue(theme, THEME_COLOR_BUTTON_TEXT, "#ffffff"));
+  }, [theme]);
+
   if (loading) return <DataLoading title="Loading Theme" />;
   if (error) return `Error! ${error}`;
 
   const baseNavbarColor = parseColorToRgb(theme?.headerColor ?? '#1d273b') ?? { r: 29, g: 39, b: 59 };
   const baseTextColor = parseColorToRgb(theme?.headerTextColor ?? 'rgba(255,255,255,.8)') ?? { r: 255, g: 255, b: 255 };
+  const submenuModeRaw = (getThemeSettingValue(
+    theme,
+    THEME_SETTING_CUSTOMER_SUBMENU_MODE,
+    'customerMenuStyle',
+    'customerSubMenuMode'
+  ) ?? 'auto').toString().trim().toLowerCase();
+  const submenuMode = ['auto', 'light', 'dark', 'custom'].includes(submenuModeRaw) ? submenuModeRaw : 'auto';
+  const customSubmenuColor = parseColorToRgb(getThemeSettingValue(
+    theme,
+    THEME_SETTING_CUSTOMER_SUBMENU_COLOR,
+    'customerSubmenuBg',
+    'customerSubMenuColor'
+  ) ?? '');
+  const customSubmenuTextColor = parseColorToRgb(getThemeSettingValue(
+    theme,
+    THEME_SETTING_CUSTOMER_SUBMENU_TEXT_COLOR,
+    'customerSubmenuText',
+    'customerSubMenuTextColor'
+  ) ?? '');
+
   const hasDarkText = relativeLuminance(baseTextColor) < 0.35;
-  const isLightNavbar = relativeLuminance(baseNavbarColor) > 0.45;
+  const isLightNavbar = relativeLuminance(baseNavbarColor) > 0.38;
   const shouldDarkenCustomerSection = hasDarkText || isLightNavbar;
-  const customerMenuTone = shouldDarkenCustomerSection
+
+  let customerMenuTone = shouldDarkenCustomerSection
     ? mixRgb(baseNavbarColor, { r: 0, g: 0, b: 0 }, 0.09)
     : mixRgb(baseNavbarColor, { r: 255, g: 255, b: 255 }, 0.06);
+
+  if (submenuMode === 'dark') {
+    customerMenuTone = mixRgb(baseNavbarColor, { r: 0, g: 0, b: 0 }, 0.09);
+  } else if (submenuMode === 'light') {
+    customerMenuTone = mixRgb(baseNavbarColor, { r: 255, g: 255, b: 255 }, 0.06);
+  } else if (submenuMode === 'custom' && customSubmenuColor) {
+    customerMenuTone = customSubmenuColor;
+  }
+
+  const customerMenuTextTone = (submenuMode === 'custom' && customSubmenuTextColor)
+    ? customSubmenuTextColor
+    : baseTextColor;
+  const isLightCustomerMenuTone = relativeLuminance(customerMenuTone) > 0.52;
+  const customerMenuHighlightTone = isLightCustomerMenuTone
+    ? { r: 0, g: 0, b: 0 }
+    : { r: 255, g: 255, b: 255 };
+  const customerMenuActiveAlpha = isLightCustomerMenuTone ? 0.24 : 0.16;
+  const customerMenuStrongActiveAlpha = isLightCustomerMenuTone ? 0.30 : 0.22;
 
   const inlineStyle = {
     "--tblr-navbar-bg": (theme?.headerColor ?? '#1d273b'),
@@ -124,9 +213,11 @@ const CustomerLayout = () => {
     "--tblr-nav-link-font-weight": "400",
     "--tblr-body-color": (theme?.headerTextColor ?? 'rgba(255, 255, 255, 0.8)'),
     "--ph-customer-menu-bg": rgbToCss(customerMenuTone, 1),
-    "--ph-customer-menu-separator": rgbToCss(baseTextColor, 0.2),
-    "--ph-customer-menu-active": rgbToCss(baseTextColor, 0.1),
-    "--ph-customer-menu-focus": rgbToCss(baseTextColor, 0.6)
+    "--ph-customer-menu-text": rgbToCss(customerMenuTextTone, 1),
+    "--ph-customer-menu-separator": rgbToCss(customerMenuTextTone, 0.2),
+    "--ph-customer-menu-active": rgbToCss(customerMenuHighlightTone, customerMenuActiveAlpha),
+    "--ph-customer-menu-focus": rgbToCss(customerMenuHighlightTone, 0.62),
+    "--ph-customer-menu-active-strong": rgbToCss(customerMenuHighlightTone, customerMenuStrongActiveAlpha)
   };
 
   if (theme?.favicon?.url) {
@@ -162,7 +253,10 @@ const CustomerLayout = () => {
     if (value?.type === 'order') location = `/customers/${value.customerId}/orders/${value.id}`;
   }
 
-  const showTopMenu = theme?.legacyMenu ?? true;
+  const showTopMenu = parseBooleanSetting(
+    getThemeSettingValue(theme, THEME_SETTING_SHOW_TOP_MENU, 'showTopMenu'),
+    true
+  );
 
   const searchPlaceholder = GetScope() == undefined ? "Search Team or Orders" : "Search Team";
   const navCustomerId = GetScope() == undefined ? customerId : GetScope();

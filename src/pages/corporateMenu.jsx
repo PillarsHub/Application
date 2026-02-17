@@ -34,7 +34,7 @@ const CorporateMenu = ({ itemClick, customerId, showCustomer }) => {
   return (<>
     <ul className="navbar-nav">
       {subMenu && showCustomer && <>
-        <li className="sidebar-header customer-section-label">Customer</li>
+        <li className="sidebar-header customer-section-label">Viewing Customer</li>
         <li className="nav-item customer-menu-side">
 
           <a href="#menu-layout" className="nav-link px-3 py-2" data-bs-toggle="collapse" aria-expanded="true">
@@ -50,7 +50,7 @@ const CorporateMenu = ({ itemClick, customerId, showCustomer }) => {
             </div>
             <span className="nav-link-toggle"></span>
           </a>
-          <ul className="collapse show pb-1 border-bottom customer-ul collapsed" id="menu-layout">
+          <ul className="collapse show pb-3 border-bottom customer-ul collapsed" id="menu-layout">
 
             {subMenu?.items && subMenu.items.map((sMenu) => {
               let visible = sMenu.status.toLowerCase() == 'enabled' || sMenu.status.toLowerCase() == 'corporate'

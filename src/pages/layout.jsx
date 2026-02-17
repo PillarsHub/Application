@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Outlet } from "react-router-dom";
 import { GetScope } from "../features/authentication/hooks/useToken.jsx"
 import BackOfficeMenu from './backOfficeMenu.jsx';
@@ -9,10 +9,36 @@ import { useTheme } from '../hooks/useTheme.js';
 import AccountMenu from './accountMenu.jsx';
 import AutoCompleteOrdersCustomers from '../components/autoCompleteOrdersCustomers.jsx';
 
+const THEME_COLOR_WIDGET_HEADER = "widgetHeaderColor";
+const THEME_COLOR_WIDGET_HEADER_TEXT = "widgetHeaderTextColor";
+const THEME_COLOR_WIDGET_BACKGROUND = "widgetBackgroundColor";
+const THEME_COLOR_WIDGET_TEXT = "widgetTextColor";
+const THEME_COLOR_WIDGET_BORDER = "widgetBorderColor";
+const THEME_COLOR_PAGE_BACKGROUND = "pageBackgroundColor";
+const THEME_COLOR_BUTTON = "buttonColor";
+const THEME_COLOR_BUTTON_TEXT = "buttonTextColor";
+
+const getThemeColorValue = (theme, name, defaultValue) => {
+  if (!Array.isArray(theme?.colors)) return defaultValue;
+  const color = theme.colors.find((item) => item?.name?.toLowerCase() === name.toLowerCase());
+  return color?.value ?? defaultValue;
+};
+
 const Layout = () => {
   const [searchText, setSearchText] = useState();
   const { subdomain } = useSubdomain();
   const { theme, loading, error } = useTheme({ subdomain: subdomain });
+
+  useEffect(() => {
+    document.documentElement.style.setProperty("--ph-widget-header-bg", getThemeColorValue(theme, THEME_COLOR_WIDGET_HEADER, "#ffffff"));
+    document.documentElement.style.setProperty("--ph-widget-header-text", getThemeColorValue(theme, THEME_COLOR_WIDGET_HEADER_TEXT, "#1d273b"));
+    document.documentElement.style.setProperty("--ph-widget-bg", getThemeColorValue(theme, THEME_COLOR_WIDGET_BACKGROUND, "#ffffff"));
+    document.documentElement.style.setProperty("--ph-widget-text", getThemeColorValue(theme, THEME_COLOR_WIDGET_TEXT, "#1d273b"));
+    document.documentElement.style.setProperty("--ph-widget-border", getThemeColorValue(theme, THEME_COLOR_WIDGET_BORDER, "#e6e7e9"));
+    document.documentElement.style.setProperty("--tblr-body-bg", getThemeColorValue(theme, THEME_COLOR_PAGE_BACKGROUND, "#f1f5f9"));
+    document.documentElement.style.setProperty("--ph-button-bg", getThemeColorValue(theme, THEME_COLOR_BUTTON, "#206bc4"));
+    document.documentElement.style.setProperty("--ph-button-text", getThemeColorValue(theme, THEME_COLOR_BUTTON_TEXT, "#ffffff"));
+  }, [theme]);
 
   if (loading) return <DataLoading title="Loading Theme" />;
   if (error) return `Error! ${error}`;

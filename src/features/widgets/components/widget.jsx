@@ -137,12 +137,12 @@ const Widget = ({ widget, customer, compensationPlans, trees, isPreview = false,
   if (widget == undefined) return <EmptyContent title="Widget not found" text="Please check your widget library to verify it has been configured correctly." />;
 
   const inlineStyle = {
-    "--tblr-bg-surface": (widget?.backgroundColor ?? '#ffffff'),
-    "--tblr-card-color": (widget?.textColor ?? '#1d273b'),
-    "--tblr-table-color": (widget?.textColor ?? '#1d273b'),
-    "--tblr-card-title-color": (widget?.headerTextColor ?? '#1d273b'),
-    "--tblr-card-title-gb": (widget?.headerColor ?? '#ffffff'),
-    "--tblr-border-color": (widget?.borderColor ?? '#e6e7e9'),
+    "--tblr-bg-surface": (widget?.backgroundColor ?? 'var(--ph-widget-bg, #ffffff)'),
+    "--tblr-card-color": (widget?.textColor ?? 'var(--ph-widget-text, #1d273b)'),
+    "--tblr-table-color": (widget?.textColor ?? 'var(--ph-widget-text, #1d273b)'),
+    "--tblr-card-title-color": (widget?.headerTextColor ?? 'var(--ph-widget-header-text, #1d273b)'),
+    "--tblr-card-title-gb": (widget?.headerColor ?? 'var(--ph-widget-header-bg, #ffffff)'),
+    "--tblr-border-color": (widget?.borderColor ?? 'var(--ph-widget-border, #e6e7e9)'),
   };
 
   var msStyle = widget?.headerAlignment == 'center' || widget?.headerAlignment == "right" ? "ms-auto" : '';
@@ -201,7 +201,7 @@ const Widget = ({ widget, customer, compensationPlans, trees, isPreview = false,
 
 
   return <div style={{ display: "contents" }} className={widgetId}><div className={`card h-100 ${isPreview ? '' : ''}`} style={inlineStyle}>
-    {(widget.title || widget.showDatePicker) && <div className="card-header" style={{ backgroundColor: (widget?.headerColor ?? '#ffffff') }}>
+    {(widget.title || widget.showDatePicker) && <div className="card-header" style={{ backgroundColor: (widget?.headerColor ?? 'var(--ph-widget-header-bg, #ffffff)') }}>
       <h3 className={`card-title ${msStyle} ${meStyle}`}>{widget.title}</h3>
       {widget.showDatePicker && !supressQuery && widget.type != WidgetTypes.Earnings && <>
         <div className="card-actions">

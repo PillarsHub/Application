@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom"
 import { useFetch, Get } from "../../hooks/useFetch";
 import { GetToken, GetScope } from '../../features/authentication/hooks/useToken.jsx';
@@ -22,7 +22,18 @@ const Report = () => {
   const [downloadLink, setDownloadLink] = useState();
   const [dataLoading, setDataLoading] = useState(notLoading);
   const [dataError, setDataError] = useState();
+  const requestSeq = useRef(0);
   const { loading: metaLoading, error: metaError, data: meta } = useFetch(`/api/v1/Reports/${params.reportId}`);
+
+  useEffect(() => {
+    // Reset report state when navigating to a different report id.
+    requestSeq.current += 1;
+    setValues({ offset: 0, count: 15 });
+    setData();
+    setDownloadLink();
+    setDataLoading(notLoading);
+    setDataError();
+  }, [params.reportId]);
 
   useEffect(() => {
     if (meta) {
@@ -40,6 +51,7 @@ const Report = () => {
       if (meta.filters.every(item => Object.prototype.hasOwnProperty.call(values, item.id) && values[item.id])) {
         setDataLoading((values?.filterUpdate ?? true) ? loadingPage : loadingMore);
         setDataError();
+        const activeRequest = ++requestSeq.current;
 
         const objString = values ? '?' + Object.entries(values).map(([key, value]) => {
           if (Array.isArray(value)) {
@@ -54,6 +66,7 @@ const Report = () => {
         setDownloadLink(`${BaseUrl}/api/v1/reports/${params.reportId}/csv${objString}&authorization=${GetToken().token}`);
 
         Get(`/api/v1/Reports/${params.reportId}/json${objString}`, (r) => {
+          if (activeRequest !== requestSeq.current) return;
           setDataLoading(notLoading);
           if (r.totalRows == -1 && !values.filterUpdate) {
             setData(c => ({
@@ -65,6 +78,7 @@ const Report = () => {
           }
 
         }, (error) => {
+          if (activeRequest !== requestSeq.current) return;
           setDataLoading(notLoading);
           setDataError(error);
         })

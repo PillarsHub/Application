@@ -75,26 +75,28 @@ input[type=number] {
   width: 11rem;
 }
 
-.navbar-vertical .navbar-collapse {
+.navbar.navbar-vertical.navbar-expand-lg {
+  overflow-y: auto;
+  scrollbar-gutter: stable;
   scrollbar-width: thin;
-  scrollbar-color: color-mix(in srgb, var(--tblr-body-color) 45%, transparent) transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.55) transparent;
 }
 
-.navbar-vertical .navbar-collapse::-webkit-scrollbar {
-  width: 6px;
+.navbar.navbar-vertical.navbar-expand-lg::-webkit-scrollbar {
+  width: 8px;
 }
 
-.navbar-vertical .navbar-collapse::-webkit-scrollbar-track {
+.navbar.navbar-vertical.navbar-expand-lg::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.navbar-vertical .navbar-collapse::-webkit-scrollbar-thumb {
-  background: color-mix(in srgb, var(--tblr-body-color) 45%, transparent);
+.navbar.navbar-vertical.navbar-expand-lg::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.55);
   border-radius: 999px;
 }
 
-.navbar-vertical .navbar-collapse::-webkit-scrollbar-thumb:hover {
-  background: color-mix(in srgb, var(--tblr-body-color) 60%, transparent);
+.navbar.navbar-vertical.navbar-expand-lg::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.75);
 }
 
 .theme-navbar .navbar-nav .nav-item .nav-link {
@@ -347,12 +349,12 @@ input[type=number] {
 }
 
 .customer-menu-side {
-  margin: .25rem 0rem .5rem;
+  margin: 0.5rem 0.3rem 0.5rem 0.5rem;
   border: 0;
-  border-top: 1px solid var(--ph-customer-menu-separator, color-mix(in srgb, var(--tblr-body-color) 20%, transparent));
-  border-bottom: 1px solid var(--ph-customer-menu-separator, color-mix(in srgb, var(--tblr-body-color) 20%, transparent));
-  border-radius: 0;
+  border: 1px solid var(--ph-customer-menu-separator, color-mix(in srgb, var(--tblr-body-color) 20%, transparent));
+  border-radius: .45rem;
   background-color: var(--ph-customer-menu-bg, color-mix(in srgb, var(--tblr-navbar-bg) 92%, black));
+  color: var(--ph-customer-menu-text, var(--tblr-body-color));
 }
 
 .customer-menu-side .nav-item {
@@ -370,6 +372,22 @@ input[type=number] {
 
 .customer-menu-side .nav-link {
   border-radius: .25rem;
+  color: var(--ph-customer-menu-text, var(--tblr-body-color));
+}
+
+.navbar-vertical .navbar-nav .customer-menu-side > .nav-link {
+  color: var(--ph-customer-menu-text, var(--tblr-body-color));
+}
+
+.customer-menu-side .font-weight-medium {
+  color: var(--ph-customer-menu-text, var(--tblr-body-color));
+}
+
+.customer-menu-side .dropdown-item,
+.customer-menu-side .nav-link-title,
+.customer-menu-side .nav-link-icon,
+.customer-menu-side .sidebar-header {
+  color: var(--ph-customer-menu-text, var(--tblr-body-color));
 }
 
 .customer-menu-side .nav-link:focus-visible,
@@ -380,15 +398,17 @@ input[type=number] {
 }
 
 .customer-menu-side .nav-item.active {
-  background: var(--ph-customer-menu-active, color-mix(in srgb, var(--tblr-body-color) 10%, transparent));
+  border: 0 var(--tblr-border-style) var(--ph-customer-menu-text, var(--tblr-body-color));
+  border-left-width: 2px;
+  background: color-mix(in srgb, var(--ph-customer-menu-bg, var(--tblr-navbar-bg)) 90%, black);
 }
 
 .customer-menu-side .customer-ul > .nav-item.active {
-  border-left-width: 0;
+  margin-left: 0;
 }
 
 .customer-menu-side .customer-ul > .nav-item.active .dropdown-item {
-  font-weight: var(--tblr-font-weight-semibold);
+  font-weight: var(--tblr-font-weight-bold);
 }
 
 .navbar-vertical .navbar-nav .nav-link:focus-visible {
@@ -411,6 +431,7 @@ input[type=number] {
 
 .customer-context-label {
   letter-spacing: .04em;
+  color: color-mix(in srgb, var(--ph-customer-menu-text, var(--tblr-body-color)) 74%, transparent);
 }
 
 /* Prevent table-hover from tinting "detail" rows that contain nested tables */
@@ -445,4 +466,11 @@ input[type=number] {
   top: 1rem; /* or adjust to match any fixed header */
   z-index: 10; /* stays above other content */
 }
+
+.btn-primary {
+  --tblr-btn-bg: var(--ph-button-bg, var(--tblr-primary));
+  --tblr-btn-border-color: var(--ph-button-bg, var(--tblr-primary));
+  --tblr-btn-color: var(--ph-button-text, #ffffff);
+}
+
 

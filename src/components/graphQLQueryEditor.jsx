@@ -8,9 +8,10 @@ import "monaco-editor/min/vs/editor/editor.main.css";
 import { GetToken } from "../features/authentication/hooks/useToken.jsx";
 import BaseUrl from "../hooks/baseUrl.js";
 
-const GraphQLQueryEditor = ({ query, variables, onChange, onFetch }) => {
+const GraphQLQueryEditor = ({ query, variables, onChange, onFetch, className }) => {
   const [_variables, setVariables] = useState(variables ?? "");
   const [introspectionCache, setIntrospectionCache] = useState(null);
+  const graphiqlKey = `${query ?? ""}::${variables ?? ""}`;
 
   useEffect(() => {
     setVariables(variables ?? "");
@@ -55,7 +56,7 @@ const GraphQLQueryEditor = ({ query, variables, onChange, onFetch }) => {
   };
 
   return (
-    <>
+    <div className={className ?? ""}>
       <style>
         {`
           .graphiql-container{
@@ -90,6 +91,7 @@ const GraphQLQueryEditor = ({ query, variables, onChange, onFetch }) => {
       </style>
 
       <GraphiQL
+        key={graphiqlKey}
         fetcher={fetcher}
         initialQuery={query ?? ""}
         initialVariables={_variables}
@@ -97,7 +99,7 @@ const GraphQLQueryEditor = ({ query, variables, onChange, onFetch }) => {
         onEditVariables={handleVariablesChange}
         defaultQuery=""
       />
-    </>
+    </div>
   );
 };
 
@@ -108,4 +110,5 @@ GraphQLQueryEditor.propTypes = {
   variables: PropTypes.string,
   onChange: PropTypes.func.isRequired,
   onFetch: PropTypes.func,
+  className: PropTypes.string,
 };
