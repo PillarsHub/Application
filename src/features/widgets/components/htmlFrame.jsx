@@ -10,7 +10,7 @@ const generateUUID = () => {
   }
 };
 
-const HtmlFrame = ({ htmlContent, cssContent, data }) => {
+const HtmlFrame = ({ htmlContent, cssContent, data, onQueryVariablesChange }) => {
   const iframeRef = useRef(null);
   const [frameId] = useState(() => 'frame_' + generateUUID());
   const [iframeHeight, setIframeHeight] = useState("150px"); // Default height
@@ -71,28 +71,98 @@ const HtmlFrame = ({ htmlContent, cssContent, data }) => {
       </script>
       <script>
       (function () {
-          let lastHeight = 150;
-          let debounceTimer = null;
+          let lastHeight = 0;
+          let rafId = null;
 
-          function checkHeight() {
-              clearTimeout(debounceTimer);
-              debounceTimer = setTimeout(() => {
-                  const finalHeight = document.body.scrollHeight;
-                  if (finalHeight != lastHeight) {
-                      lastHeight = finalHeight;
-                      window.parent.postMessage({ type: 'resizeIframe', height: lastHeight, frameId: '${frameId}' }, '*');
-                      setInterval(checkHeight, 500);
-                  }
-              }, 200);
+          function getContentHeight() {
+              const body = document.body;
+              const docEl = document.documentElement;
+              if (!body || !docEl) return 150;
+
+              return Math.max(
+                  body.scrollHeight,
+                  body.offsetHeight,
+                  body.clientHeight,
+                  docEl.scrollHeight,
+                  docEl.offsetHeight,
+                  docEl.clientHeight,
+                  150
+              );
           }
 
-          window.addEventListener('load', checkHeight);
-          window.addEventListener('resize', checkHeight);
+          function postHeightIfChanged() {
+              const finalHeight = getContentHeight();
+              if (finalHeight === lastHeight) return;
+
+              lastHeight = finalHeight;
+              window.parent.postMessage({ type: 'resizeIframe', height: lastHeight, frameId: '${frameId}' }, '*');
+          }
+
+          function scheduleHeightCheck() {
+              if (rafId != null) return;
+              rafId = window.requestAnimationFrame(() => {
+                  rafId = null;
+                  postHeightIfChanged();
+              });
+          }
+
+          function startObservers() {
+              const docEl = document.documentElement;
+              const body = document.body;
+              if (!docEl || !body) return;
+
+              if (window.ResizeObserver) {
+                  const resizeObserver = new ResizeObserver(scheduleHeightCheck);
+                  resizeObserver.observe(docEl);
+                  resizeObserver.observe(body);
+              }
+
+              if (window.MutationObserver) {
+                  const mutationObserver = new MutationObserver(scheduleHeightCheck);
+                  mutationObserver.observe(docEl, {
+                      attributes: true,
+                      childList: true,
+                      subtree: true,
+                      characterData: true
+                  });
+              }
+          }
+
+          window.addEventListener('load', scheduleHeightCheck);
+          window.addEventListener('resize', scheduleHeightCheck);
+          window.addEventListener('transitionend', scheduleHeightCheck, true);
+          window.addEventListener('animationend', scheduleHeightCheck, true);
+          document.addEventListener('DOMContentLoaded', () => {
+              startObservers();
+              scheduleHeightCheck();
+          });
+          window.setInterval(scheduleHeightCheck, 500);
+          if (document.readyState !== 'loading') {
+              startObservers();
+          }
+          scheduleHeightCheck();
 
           // Step 1: Define global function in iframe
           window.requestInjectedObject = function () {
             window.parent.postMessage({ type: 'requestJavaObject', frameId: '${frameId}' }, '*');
           };
+
+          // Public helper for widget scripts to request GraphQL variable updates in the host.
+          window.setQueryParams = function (params, options) {
+            const isObject = params && typeof params === 'object' && !Array.isArray(params);
+            const safeParams = isObject ? params : {};
+            const replace = !!(options && options.replace);
+
+            window.parent.postMessage({
+              type: 'updateGraphQLVariables',
+              frameId: '${frameId}',
+              payload: safeParams,
+              replace: replace
+            }, '*');
+          };
+
+          // Backward-compatible alias.
+          window.setWidgetQueryParams = window.setQueryParams;
 
           // Step 2: Listen for the parent's response
           window.addEventListener('message', function (event) {
@@ -118,7 +188,10 @@ const HtmlFrame = ({ htmlContent, cssContent, data }) => {
       const { type, frameId: incomingFrameId, height } = event.data || {};
       if (incomingFrameId !== frameId) return;
 
+      const isFromCurrentIframe = event.source === iframeRef.current?.contentWindow;
+
       if (type === 'resizeIframe') {
+        if (!isFromCurrentIframe) return;
         setIframeHeight(`${height}px`);
         return;
       }
@@ -129,12 +202,18 @@ const HtmlFrame = ({ htmlContent, cssContent, data }) => {
           incomingFrameId: frameId,
           payload: latestDataRef.current
         }, '*');
+        return;
+      }
+
+      if (type === 'updateGraphQLVariables' && onQueryVariablesChange) {
+        if (!isFromCurrentIframe) return;
+        onQueryVariablesChange(event.data.payload, { replace: !!event.data.replace });
       }
     };
 
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-  }, [frameId]);
+  }, [frameId, onQueryVariablesChange]);
 
   // Proactively send data whenever it becomes valid or changes
   useEffect(() => {
@@ -167,5 +246,6 @@ export default HtmlFrame;
 HtmlFrame.propTypes = {
   htmlContent: PropTypes.string.isRequired,
   cssContent: PropTypes.string.isRequired,
-  data: PropTypes.any.isRequired
+  data: PropTypes.any.isRequired,
+  onQueryVariablesChange: PropTypes.func
 };
