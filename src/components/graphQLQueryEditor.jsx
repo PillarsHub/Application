@@ -11,7 +11,7 @@ import BaseUrl from "../hooks/baseUrl.js";
 const GraphQLQueryEditor = ({ query, variables, onChange, onFetch, className }) => {
   const [_variables, setVariables] = useState(variables ?? "");
   const [introspectionCache, setIntrospectionCache] = useState(null);
-  const graphiqlKey = `${query ?? ""}::${variables ?? ""}`;
+  const graphiqlKey = `${variables ?? ""}`;
 
   useEffect(() => {
     setVariables(variables ?? "");
