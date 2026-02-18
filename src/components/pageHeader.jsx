@@ -24,9 +24,10 @@ const PageHeader = ({ preTitle, title, postTitle, children, breadcrumbs, fluid =
             <div className="col me-4">
               {breadcrumbs && <>
                 <ol className="breadcrumb breadcrumb-arrows" aria-label="breadcrumbs">
-                  {breadcrumbs.map((crumb) => {
-                    return <li key={crumb.link} className="breadcrumb-item">
-                      <a href={crumb.link}>{crumb.title}</a>
+                  {breadcrumbs.map((crumb, idx) => {
+                    return <li key={`${crumb.link ?? crumb.title}-${idx}`} className="breadcrumb-item">
+                      {crumb.link && <a href={crumb.link}>{crumb.title}</a>}
+                      {!crumb.link && <span>{crumb.title}</span>}
                     </li>
                   })}
                   {/* <li className="breadcrumb-item active" aria-current="page"><a href="#">Data</a></li> */}

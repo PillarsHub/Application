@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { useLocation, useParams } from 'react-router-dom';
+import { GetScope } from "../../features/authentication/hooks/useToken.jsx";
 import { useFetch } from "../../hooks/useFetch.js";
-import PageHeader from "../../components/pageHeader.jsx";
+import PageHeader, { CardHeader } from "../../components/pageHeader.jsx";
 import DataLoading from "../../components/dataLoading.jsx";
 import ReportList from "./reportList.jsx";
 
@@ -19,9 +20,16 @@ const Reports = () => {
     setTab(e.target.name);
   }
 
+  const hasScope = GetScope() != undefined || params.customerId != undefined;
   let tabName = data?.find((el) => el.id == tab) ?? { name: '' };
 
   return <PageHeader title="Reports" preTitle="Report Center" customerId={params.customerId}>
+    {!hasScope && <CardHeader>
+      <a className="btn btn-primary" href="/reports/new">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon icon-tabler icons-tabler-outline icon-tabler-filter-2-plus"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 6h16" /><path d="M6 12h10" /><path d="M9 18h3" /><path d="M19 15v6" /><path d="M16 18h6" /></svg>
+        Add Report
+      </a>
+    </CardHeader>}
     <div className="page-body">
 
       <div className="container-xl">
@@ -48,7 +56,7 @@ const Reports = () => {
               <div className="card-header">
                 <h2 className="mb-0">{tabName.name} Reports</h2>
               </div>
-              <ReportList categoryId={tab} customerId={params.customerId}/>
+              <ReportList categoryId={tab} customerId={params.customerId} />
             </div>
           </div>
         </div>

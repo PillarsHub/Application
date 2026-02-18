@@ -31,6 +31,7 @@ const EditReport = () => {
   const [saveSettings, setSaveSettings] = useState();
   const [values, setValues] = useState({ offset: 0, count: 10 });
   const { loading, error, data } = useFetch(`/api/v1/Reports/${params.reportId ?? '0'}`);
+  const { loading: categoriesLoading, error: categoriesError, data: categories } = useFetch(`/api/v1/Reports/Categories`);
 
   useEffect(() => {
     if (data) {
@@ -49,7 +50,8 @@ const EditReport = () => {
   }, [error])
 
   if (errorDisplay) return <DataError error={errorDisplay} />
-  if (loading || !report) return <DataLoading />
+  if (categoriesError) return <DataError error={categoriesError} />
+  if (loading || categoriesLoading || !report) return <DataLoading />
 
   const handleSave = () => {
     setSaveSettings({ status: 1 });
@@ -160,7 +162,11 @@ const EditReport = () => {
     setValues(v => ({ ...v, [name]: value }));
   }
 
-  return <PageHeader title="Edit Report" fluid={false} breadcrumbs={[{ title: `Reports`, link: `/reports` }, { title: report.categoryName, link: `/reports#${report.categoryId}` }, { title: `${report.name}`, link: `/reports/${params.reportId}` }]}>
+  const breadcrumbs = !params.reportId
+    ? [{ title: 'Reports', link: '/reports' }, { title: 'Add Report' }]
+    : [{ title: `Reports`, link: `/reports` }, { title: report.categoryName, link: `/reports#${report.categoryId}` }, { title: `${report.name}`, link: `/reports/${params.reportId}` }];
+
+  return <PageHeader title="Edit Report" fluid={false} breadcrumbs={breadcrumbs}>
     <CardHeader>
       <SaveButton settings={saveSettings} onClick={handleSave} />
     </CardHeader>
@@ -175,7 +181,11 @@ const EditReport = () => {
               </div>
               <div className="col-2 mb-3">
                 <label className="form-label">Category</label>
-                <TextInput name="categoryId" value={report.categoryId} onChange={handleChange} />
+                <SelectInput name="categoryId" value={report.categoryId} onChange={handleChange} emptyOption="Select Category" >
+                  {categories && categories.map((category) => {
+                    return <option key={category.id} value={category.id}>{category.name}</option>
+                  })}
+                </SelectInput>
               </div>
               <div className="col-2 mb-3">
                 <label className="form-label">Index</label>
