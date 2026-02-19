@@ -90,6 +90,7 @@ var GET_DATA = gql`query ($orderids: [String]!, $nodeIds: [String]!) {
 
 const OrderDetail = () => {
   let params = useParams()
+  const scopedCustomerId = GetScope();
   const [showMove, setShowMove] = useState(false);
   const [orderUpdate, setOrderUpdate] = useState();
   const [order, setOrder] = useState();
@@ -99,7 +100,7 @@ const OrderDetail = () => {
 
   let showMenu = GetSettings().ecommerce.enableEdit;
   let hasScope = false;
-  if (GetScope()) {
+  if (scopedCustomerId) {
     showMenu = false;
     hasScope = true;
   }
@@ -165,16 +166,27 @@ const OrderDetail = () => {
     }
   });
 
-const calcSubTotal = 0;
-    ///order?.lineItems?.reduce(
-      //(total, li) => total + (li.price * li.quantity),
-      //0
-    //) ?? 0;
+  const calcSubTotal = order?.lineItems?.reduce(
+    (total, li) => total + (Number(li?.price ?? 0) * Number(li?.quantity ?? 0)),
+    0
+  ) ?? 0;
+  const orderSubTotal = Number(order?.subTotal ?? 0);
 
   const countryNames = data?.countries;
-  const totalPaid = order?.payments?.reduce((a, payment) => a + payment?.amount ?? 0, 0) ?? 0;
-  const subTotal = calcSubTotal == 0 ? order?.subTotal ?? 0 : calcSubTotal;
+  const totalPaid = order?.payments?.reduce((a, payment) => a + Number(payment?.amount ?? 0), 0) ?? 0;
+  const subTotal = orderSubTotal > 0 ? orderSubTotal : calcSubTotal;
   const hasDiscount = order?.discount != 0;
+  const payments = order?.payments ?? [];
+  const hasPayments = payments.length > 0;
+  const displayCurrency = order?.currencyCode ?? "USD";
+  const invoiceTotal = Number(order?.total ?? 0);
+  const balanceDue = invoiceTotal - totalPaid;
+  const hasCredit = balanceDue <= 0;
+  const hasLineItems = (order?.lineItems?.length ?? 0) > 0;
+  const isCorporateUser = scopedCustomerId == null || scopedCustomerId === "";
+  const isTeamOrderView = !isCorporateUser && String(scopedCustomerId).toLowerCase() !== String(params.customerId ?? "").toLowerCase();
+  const canViewPaymentDetails = isCorporateUser || !isTeamOrderView;
+  const paymentsAccordionId = `payments-accordion-${order?.id ?? "order"}`;
 
   return <>
     <PageHeader title={data?.customers[0].fullName} customerId={params.customerId} breadcrumbs={[{ title: 'Order History', link: `/customers/${params.customerId}/orders` }, { title: "Order Detail" }]}>
@@ -248,61 +260,111 @@ const calcSubTotal = 0;
                 </div>
               </div>
 
-              {/*  <div className="col-12">
-                <div className="card">
+              {hasPayments && canViewPaymentDetails && (
+                <div className="col-12">
+                  <div className="card">
+                    <div className="card-header">
+                      <h3 className="card-title">Payments</h3>
+                      <div className="card-actions">
+                        <span className="">
+                          {totalPaid.toLocaleString("en-US", { style: "currency", currency: displayCurrency })}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="card-body">
+                      <div className="accordion" id={paymentsAccordionId}>
+                        {payments.map((payment, index) => {
+                          const paymentId = `payment-${order?.id ?? "order"}-${index}`;
+                          const headingId = `heading-${paymentId}`;
+                          const collapseId = `collapse-${paymentId}`;
+                          const showByDefault = index === -1;
 
-                  <div className="card-header">
-                    <h3 className="card-title">Payments</h3>
+                          return (
+                            <div className="accordion-item" key={`${payment.transactionNumber ?? "payment"}-${index}`}>
+                              <h2 className="accordion-header" id={headingId}>
+                                <button
+                                  className={`accordion-button ${showByDefault ? "" : "collapsed"}`}
+                                  type="button"
+                                  data-bs-toggle="collapse"
+                                  data-bs-target={`#${collapseId}`}
+                                  aria-expanded={showByDefault ? "true" : "false"}
+                                  aria-controls={collapseId}
+                                >
+                                  <div className="d-flex w-100 align-items-center justify-content-between pe-2">
+                                    <span className="fw-medium" style={{ fontVariantNumeric: "tabular-nums" }}>
+                                      {Number(payment?.amount ?? 0).toLocaleString("en-US", { style: "currency", currency: displayCurrency })}
+                                    </span>
+                                    <span className="text-muted ms-3"><LocalDate dateString={payment?.date} /></span>
+                                  </div>
+                                </button>
+                              </h2>
+                              <div
+                                id={collapseId}
+                                className={`accordion-collapse collapse ${showByDefault ? "show" : ""}`}
+                                aria-labelledby={headingId}
+                                data-bs-parent={`#${paymentsAccordionId}`}
+                              >
+                                <div className="accordion-body">
+                                  <dl className="row mb-0">
+                                    {payment?.paymentType && (
+                                      <>
+                                        <dt className="col-5">Type</dt>
+                                        <dd className="col-7 text-end">{payment.paymentType}</dd>
+                                      </>
+                                    )}
 
-                    <div className="card-actions btn-actions">
-                      <div className="dropdown">
-                        <a href="#" className="btn-action" data-bs-toggle="dropdown" aria-expanded="false">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><circle cx="12" cy="12" r="1"></circle><circle cx="12" cy="19" r="1"></circle><circle cx="12" cy="5" r="1"></circle></svg>
-                        </a>
-                        <div className="dropdown-menu dropdown-menu-end">
-                          <a href="#" className="dropdown-item">Refund</a>
-                        </div>
+                                    {payment?.status && (
+                                      <>
+                                        <dt className="col-5">Status</dt>
+                                        <dd className="col-7 text-end">{payment.status}</dd>
+                                      </>
+                                    )}
+
+                                    {payment?.merchant && (
+                                      <>
+                                        <dt className="col-5">Merchant</dt>
+                                        <dd className="col-7 text-end">{payment.merchant}</dd>
+                                      </>
+                                    )}
+
+                                    {payment?.authorizationNumber && (
+                                      <>
+                                        <dt className="col-5">Authorization #</dt>
+                                        <dd className="col-7 text-end">{payment.authorizationNumber}</dd>
+                                      </>
+                                    )}
+
+                                    {payment?.transactionNumber && (
+                                      <>
+                                        <dt className="col-5">Transaction #</dt>
+                                        <dd className="col-7 text-end">{payment.transactionNumber}</dd>
+                                      </>
+                                    )}
+
+                                    {payment?.reference && (
+                                      <>
+                                        <dt className="col-5">Reference</dt>
+                                        <dd className="col-7 text-end">{payment.reference}</dd>
+                                      </>
+                                    )}
+
+                                    {payment?.response && (
+                                      <>
+                                        <dt className="col-5">Response</dt>
+                                        <dd className="col-7 text-end">{payment.response}</dd>
+                                      </>
+                                    )}
+                                  </dl>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
-
-                  <div className="card-body">
-
-                    * {JSON.stringify(order.payments)} *
-                    * 
-                                <dl className="row">
-                                <dd className="col-7">
-                                    <strong>Amount Paid</strong>
-                                </dd>
-                                <dd className="col-5 text-end"><strong>$150</strong></dd>
-
-                                <dd className="col-7">Authorization Number</dd>
-                                <dd className="col-5 text-end">A-TSTS</dd>
-
-                                <dd className="col-7">Transaction Number</dd>
-                                <dd className="col-5 text-end">T-TEST</dd>
-
-                                <dd className="col-7">Date Paid</dd>
-                                <dd className="col-5 text-end">Jan 15 2023</dd>
-
-                                <dd className="col-7">Merchant</dd>
-                                <dd className="col-5 text-end">Test Merchant</dd>
-
-                                <dd className="col-7">Payment Response</dd>
-                                <dd className="col-5 text-end">1</dd>
-
-                                <dd className="col-7">Payment Type</dd>
-                                <dd className="col-5 text-end">Charge</dd>
-
-                                <dd className="col-7">Reference</dd>
-                                <dd className="col-5 text-end">554393982</dd>
-
-                                <dd className="col-7">Status</dd>
-                                <dd className="col-5 text-end">Paid</dd>
-                                </dl> *
-                  </div>
                 </div>
-              </div>*/}
+              )}
             </div>
           </div>
 
@@ -340,56 +402,63 @@ const calcSubTotal = 0;
                     <h1>Order {order?.id}</h1>
                   </div> */}
                   </div>
-                  <table className="table table-transparent table-responsive">
+                  <table className="table table-transparent table-responsive align-middle">
                     <thead>
                       <tr>
                         <th colSpan={1}>Product</th>
-                        <th className="text-center" /* style="width: 1%" */>Qnt</th>
-                        <th className="text-end" /* style="width: 1%" */>Unit</th>
+                        <th className="text-center" /* style="width: 1%" */>Qty</th>
+                        <th className="text-end" /* style="width: 1%" */>Unit Price</th>
                         <th className="text-end" /* style="width: 1%" */>Amount</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {order?.lineItems && order?.lineItems.map((item) => {
+                      {hasLineItems && order?.lineItems.map((item) => {
                         return <tr key={item.productId}>
                           <td>
                             <p className="mb-1">{item.description}</p>
                           </td>
                           <td className="text-center">{item.quantity}</td>
-                          <td className="text-end">{item.price.toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</td>
-                          <td className="text-end">{(item.price * item.quantity).toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</td>
+                          <td className="text-end" style={{ fontVariantNumeric: "tabular-nums" }}>{item.price.toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</td>
+                          <td className="text-end" style={{ fontVariantNumeric: "tabular-nums" }}>{(item.price * item.quantity).toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</td>
                         </tr>
                       })}
+                      {!hasLineItems && (
+                        <tr>
+                          <td colSpan="4" className="text-muted text-center py-4">No line items on this order.</td>
+                        </tr>
+                      )}
 
                       <tr>
                         <td colSpan="3" className="strong text-end">Subtotal</td>
-                        <td className="text-end">{subTotal.toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</td>
+                        <td className="text-end" style={{ fontVariantNumeric: "tabular-nums" }}>{subTotal.toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</td>
                       </tr>
                       {hasDiscount && (
                         <tr>
                           <td colSpan="3" className="strong text-end">Discount</td>
-                          <td className="text-end">{(order?.discount * -1).toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</td>
+                          <td className="text-end text-danger" style={{ fontVariantNumeric: "tabular-nums" }}>{(order?.discount * -1).toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</td>
                         </tr>
                       )}
                       <tr>
                         <td colSpan="3" className="strong text-end">Shipping</td>
-                        <td className="text-end">{order?.shipping.toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</td>
+                        <td className="text-end" style={{ fontVariantNumeric: "tabular-nums" }}>{order?.shipping.toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</td>
                       </tr>
                       <tr>
                         <td colSpan="3" className="strong text-end">Tax {order?.taxRate > 0 ? `(${order?.taxRate} %)` : ''} </td>
-                        <td className="text-end">{order?.tax.toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</td>
+                        <td className="text-end" style={{ fontVariantNumeric: "tabular-nums" }}>{order?.tax.toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</td>
                       </tr>
                       <tr className="table-light">
                         <td colSpan="3" className="font-weight-bold text-uppercase text-end"><strong>Invoice Total</strong></td>
-                        <td className="font-weight-bold text-end"><strong>{order?.total.toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</strong></td>
+                        <td className="font-weight-bold text-end" style={{ fontVariantNumeric: "tabular-nums" }}><strong>{invoiceTotal.toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</strong></td>
                       </tr>
                       <tr>
                         <td colSpan="3" className="font-weight-bold text-uppercase text-end">Total Paid</td>
-                        <td className="font-weight-bold text-end">{totalPaid?.toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</td>
+                        <td className="font-weight-bold text-end" style={{ fontVariantNumeric: "tabular-nums" }}>{totalPaid?.toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</td>
                       </tr>
-                      <tr>
-                        <td colSpan="3" className="font-weight-bold text-uppercase text-end">Total Due</td>
-                        <td className="font-weight-bold text-end">{(order?.total - totalPaid)?.toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</td>
+                      <tr className={hasCredit ? "table-success" : "table-warning"}>
+                        <td colSpan="3" className="font-weight-bold text-uppercase text-end">{hasCredit ? "Credit" : "Balance Due"}</td>
+                        <td className="font-weight-bold text-end" style={{ fontVariantNumeric: "tabular-nums" }}>
+                          {Math.abs(balanceDue).toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}
+                        </td>
                       </tr>
                     </tbody>
                   </table>
