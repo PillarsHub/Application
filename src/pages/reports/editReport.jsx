@@ -18,6 +18,27 @@ import FilterInput from "./filterInput";
 
 const filterDelType = "del_filter";
 const columnDelType = "del_column";
+const IMPORT_STRIP_FIELDS = ["id", "createdDate", "createDate", "createdBy", "modifiedDate", "updatedDate", "modifiedBy", "__typename"];
+
+const parseImportReport = (rawValue, currentReportId) => {
+  const parsed = JSON.parse(rawValue);
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new Error("Imported JSON must be a report object.");
+  }
+
+  const reportPayload = parsed.report && typeof parsed.report === "object" && !Array.isArray(parsed.report) ? parsed.report : parsed;
+  const next = { ...reportPayload };
+
+  IMPORT_STRIP_FIELDS.forEach((field) => {
+    delete next[field];
+  });
+
+  if (currentReportId !== undefined && currentReportId !== null && `${currentReportId}` !== "") {
+    next.id = currentReportId;
+  }
+
+  return next;
+};
 
 const EditReport = () => {
   let params = useParams()
@@ -29,6 +50,10 @@ const EditReport = () => {
   const [errorDisplay, setErrorDisplay] = useState();
   const [report, setReport] = useState();
   const [saveSettings, setSaveSettings] = useState();
+  const [showSourceModal, setShowSourceModal] = useState(false);
+  const [sourceJson, setSourceJson] = useState("");
+  const [sourceError, setSourceError] = useState();
+  const [copyState, setCopyState] = useState();
   const [values, setValues] = useState({ offset: 0, count: 10 });
   const { loading, error, data } = useFetch(`/api/v1/Reports/${params.reportId ?? '0'}`);
   const { loading: categoriesLoading, error: categoriesError, data: categories } = useFetch(`/api/v1/Reports/Categories`);
@@ -162,6 +187,41 @@ const EditReport = () => {
     setValues(v => ({ ...v, [name]: value }));
   }
 
+  const handleOpenSourceModal = () => {
+    setSourceJson(JSON.stringify(report ?? {}, null, 2));
+    setSourceError();
+    setCopyState();
+    setShowSourceModal(true);
+  };
+
+  const handleCopySource = async () => {
+    if (!sourceJson) return;
+
+    if (!navigator?.clipboard?.writeText) {
+      setCopyState("Clipboard is not available in this browser.");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(sourceJson);
+      setCopyState("Copied to clipboard.");
+    } catch {
+      setCopyState("Unable to copy. Please select and copy manually.");
+    }
+  };
+
+  const handleApplySource = () => {
+    try {
+      const importedReport = parseImportReport(sourceJson, report?.id ?? params.reportId);
+      setReport((current) => ({ ...current, ...importedReport }));
+      setSourceError();
+      setCopyState();
+      setShowSourceModal(false);
+    } catch (ex) {
+      setSourceError(ex?.message ?? "Invalid JSON.");
+    }
+  };
+
   const breadcrumbs = !params.reportId
     ? [{ title: 'Reports', link: '/reports' }, { title: 'Add Report' }]
     : [{ title: `Reports`, link: `/reports` }, { title: report.categoryName, link: `/reports#${report.categoryId}` }, { title: `${report.name}`, link: `/reports/${params.reportId}` }];
@@ -171,7 +231,7 @@ const EditReport = () => {
       <SaveButton settings={saveSettings} onClick={handleSave} />
     </CardHeader>
     <div className="container-xl">
-      <Tabs>
+      <Tabs headerActions={<button type="button" className="btn btn-sm btn-ghost-secondary" onClick={handleOpenSourceModal}>View Source</button>}>
         <Tab title="Details">
           <div className="card-body">
             <div className="row">
@@ -455,6 +515,37 @@ const EditReport = () => {
       <div className="modal-footer">
         <button type="button" className="btn btn-link link-secondary me-auto" data-bs-dismiss="modal">Cancel</button>
         <button type="button" className="btn btn-danger" onClick={handleDelete}>Delete</button>
+      </div>
+    </Modal>
+
+    <Modal showModal={showSourceModal} onHide={() => setShowSourceModal(false)} size="lg">
+      <div className="modal-header">
+        <h5 className="modal-title">Report Source JSON</h5>
+        <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div className="modal-body">
+        <div className="d-flex justify-content-between align-items-start mb-2">
+          <p className="text-secondary mb-0">Copy this JSON or paste JSON from another environment, then apply it to this form.</p>
+          <button type="button" className="btn btn-icon" onClick={handleCopySource} title="Copy JSON" aria-label="Copy JSON">
+            <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+              <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+              <path d="M15 3v4a1 1 0 0 0 1 1h4"></path>
+              <path d="M18 17h-7a2 2 0 0 1 -2 -2v-10a2 2 0 0 1 2 -2h4l5 5v7a2 2 0 0 1 -2 2z"></path>
+              <path d="M16 17v2a2 2 0 0 1 -2 2h-7a2 2 0 0 1 -2 -2v-10a2 2 0 0 1 2 -2h2"></path>
+            </svg>
+          </button>
+        </div>
+        <textarea className="form-control font-monospace" rows={18} value={sourceJson} onChange={(e) => setSourceJson(e.target.value)} />
+        {sourceError && <div className="alert alert-danger mt-3 mb-0" role="alert">{sourceError}</div>}
+        {copyState && <div className="text-secondary mt-2">{copyState}</div>}
+      </div>
+      <div className="modal-footer">
+        <button type="button" className="btn btn-link link-secondary" data-bs-dismiss="modal">
+          Close
+        </button>
+        <button type="button" className="btn btn-primary" onClick={handleApplySource}>
+          Apply
+        </button>
       </div>
     </Modal>
 

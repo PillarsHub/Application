@@ -16,6 +16,7 @@ import DataError from "../../components/dataError.jsx";
 import AvailabilityInput from "../../components/availabilityInput.jsx";
 import AutoComplete from "../../components/autocomplete.jsx";
 import SaveButton from "../../components/saveButton.jsx";
+import Modal from "../../components/modal.jsx";
 import useSubdomain from "../../hooks/useSubdomain.js";
 import { useTheme } from "../../hooks/useTheme.js";
 
@@ -180,6 +181,28 @@ const normalizeWidgetColorsForSave = (widget, defaults) => {
   return next;
 };
 
+const IMPORT_STRIP_FIELDS = ["id", "createdDate", "createDate", "createdBy", "modifiedDate", "updatedDate", "modifiedBy", "__typename"];
+
+const parseImportWidget = (rawValue, currentWidgetId) => {
+  const parsed = JSON.parse(rawValue);
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new Error("Imported JSON must be a widget object.");
+  }
+
+  const widgetPayload = parsed.widget && typeof parsed.widget === "object" && !Array.isArray(parsed.widget) ? parsed.widget : parsed;
+  const next = { ...widgetPayload };
+
+  IMPORT_STRIP_FIELDS.forEach((field) => {
+    delete next[field];
+  });
+
+  if (currentWidgetId !== undefined && currentWidgetId !== null) {
+    next.id = currentWidgetId;
+  }
+
+  return next;
+};
+
 const EditWidget = () => {
   let params = useParams()
   const { subdomain } = useSubdomain();
@@ -192,6 +215,10 @@ const EditWidget = () => {
   const [saveSettings, setSaveSettings] = useState();
   const [previewSize] = useState(12);
   const [item, setItem] = useState();
+  const [showSourceModal, setShowSourceModal] = useState(false);
+  const [sourceJson, setSourceJson] = useState("");
+  const [sourceError, setSourceError] = useState();
+  const [copyState, setCopyState] = useState();
   const [date] = useState(new Date().toISOString());
   const { widget, error } = useWidget(params.widgetId);
   const { data, loading, error: dataError } = useQuery(GET_DATA, {
@@ -238,6 +265,42 @@ const EditWidget = () => {
     })
   }
 
+  const handleOpenSourceModal = () => {
+    const sourceWidget = item ?? (widget && widget.id !== "new" ? widget : {});
+    setSourceJson(JSON.stringify(sourceWidget ?? {}, null, 2));
+    setSourceError();
+    setCopyState();
+    setShowSourceModal(true);
+  };
+
+  const handleCopySource = async () => {
+    if (!sourceJson) return;
+
+    if (!navigator?.clipboard?.writeText) {
+      setCopyState("Clipboard is not available in this browser.");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(sourceJson);
+      setCopyState("Copied to clipboard.");
+    } catch {
+      setCopyState("Unable to copy. Please select and copy manually.");
+    }
+  };
+
+  const handleApplySource = () => {
+    try {
+      const importedWidget = parseImportWidget(sourceJson, item?.id);
+      setItem((current) => ({ ...current, ...importedWidget }));
+      setSourceError();
+      setCopyState();
+      setShowSourceModal(false);
+    } catch (ex) {
+      setSourceError(ex?.message ?? "Invalid JSON.");
+    }
+  };
+
   const handlePreviewChange = (name, value) => {
 
     if (value) {
@@ -283,7 +346,7 @@ const EditWidget = () => {
 
           <div className="card">
             <div className="">
-              <div className="card-header">
+              <div className="card-header bg-light">
                 <ul className="nav nav-tabs card-header-tabs" data-bs-toggle="tabs" role="tablist">
                   <li className="nav-item" role="presentation">
                     <a href="#tabs-home-7" className="nav-link active" data-bs-toggle="tab" aria-selected="true" role="tab">Content</a>
@@ -295,6 +358,11 @@ const EditWidget = () => {
                     <a href="#tabs-advanced-7" className="nav-link" data-bs-toggle="tab" aria-selected="false" role="tab" tabIndex="-1">CSS Overrides</a>
                   </li>
                 </ul>
+                <div className="card-actions">
+                  <button type="button" className="btn btn-sm btn-ghost-secondary" onClick={handleOpenSourceModal}>
+                    View Source
+                  </button>
+                </div>
               </div>
               <div className="card-body">
                 <div className="tab-content">
@@ -395,6 +463,37 @@ const EditWidget = () => {
         </div>
       </div>
     </div>
+
+    <Modal showModal={showSourceModal} onHide={() => setShowSourceModal(false)} size="lg">
+      <div className="modal-header">
+        <h5 className="modal-title">Widget Source JSON</h5>
+        <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div className="modal-body">
+        <div className="d-flex justify-content-between align-items-start mb-2">
+          <p className="text-secondary mb-0">Copy this JSON or paste JSON from another environment, then apply it to this form.</p>
+          <button type="button" className="btn btn-icon" onClick={handleCopySource} title="Copy JSON" aria-label="Copy JSON">
+            <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
+              <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
+              <path d="M15 3v4a1 1 0 0 0 1 1h4"></path>
+              <path d="M18 17h-7a2 2 0 0 1 -2 -2v-10a2 2 0 0 1 2 -2h4l5 5v7a2 2 0 0 1 -2 2z"></path>
+              <path d="M16 17v2a2 2 0 0 1 -2 2h-7a2 2 0 0 1 -2 -2v-10a2 2 0 0 1 2 -2h2"></path>
+            </svg>
+          </button>
+        </div>
+        <textarea className="form-control font-monospace" rows={18} value={sourceJson} onChange={(e) => setSourceJson(e.target.value)} />
+        {sourceError && <div className="alert alert-danger mt-3 mb-0" role="alert">{sourceError}</div>}
+        {copyState && <div className="text-secondary mt-2">{copyState}</div>}
+      </div>
+      <div className="modal-footer">
+        <button type="button" className="btn btn-link link-secondary" data-bs-dismiss="modal">
+          Close
+        </button>
+        <button type="button" className="btn btn-primary" onClick={handleApplySource}>
+          Apply
+        </button>
+      </div>
+    </Modal>
   </PageHeader>
 }
 

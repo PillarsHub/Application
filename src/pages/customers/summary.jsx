@@ -119,8 +119,11 @@ const CustomerSummary = () => {
       <div className="modal-body">
         <input type="hidden" />
         <input value="@Model.CustomerId" type="hidden" />
-        <div className="modal-title">Are you sure?</div>
-        <div>Do you wish to delete &apos;<em>{customer.fullName}&apos;</em>?</div>
+        <div className="modal-title">Delete Customer?</div>
+        <div>
+          This action permanently deletes <strong>{customer.fullName}</strong>.
+          This cannot be undone.
+        </div>
       </div>
       <div className="modal-footer">
         <button type="button" className="btn btn-link link-secondary me-auto" data-bs-dismiss="modal">Cancel</button>

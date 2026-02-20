@@ -27,6 +27,9 @@ var GET_DATA = gql`query {
 const PlacementRules = () => {
   const [showModal, setShowModal] = useState(false);
   const [activeItem, setActiveItem] = useState();
+  const activeHasLegNames = Array.isArray(activeItem?.legNames)
+    ? activeItem.legNames.length > 0
+    : !!activeItem?.legNames;
   const { loading, error, data, refetch } = useQuery(GET_DATA, {
     variables: {},
   });
@@ -111,16 +114,20 @@ const PlacementRules = () => {
                 <th className="w-1"></th>
               </tr>
             </thead>
-            <tbody>
-              {data?.trees && data.trees.map((tree) => {
-                return <tr key={tree.id}>
-                  <td>{tree.name}</td>
-                  <td>{tree.enableCustomerLegPreference ? 'Enabled' : 'Disabled'}</td>
-                  <td>{tree.enableHoldingTank ? `${tree.holdingTankDurationInDays} days` : 'Disabled'}</td>
-                  <td>{tree.enableCustomerMovements ? `${tree.movementDurationInDays} days` : 'Disabled'}</td>
-                  <td>{tree.enableCustomerMovements && `${tree.maximumAllowedMovementLevels} levels`}</td>
-                  <td>{(tree.isPrivate ?? false) && <span>Yes</span>}</td>
-                  <td>
+	            <tbody>
+	              {data?.trees && data.trees.map((tree) => {
+	                const hasLegNames = Array.isArray(tree.legNames)
+	                  ? tree.legNames.length > 0
+	                  : !!tree.legNames;
+
+	                return <tr key={tree.id}>
+	                  <td>{tree.name}</td>
+	                  <td>{hasLegNames ? (tree.enableCustomerLegPreference ? 'Enabled' : 'Disabled') : '-'}</td>
+	                  <td>{hasLegNames ? (tree.enableHoldingTank ? `${tree.holdingTankDurationInDays} days` : 'Disabled') : '-'}</td>
+	                  <td>{hasLegNames ? '-' : (tree.enableCustomerMovements ? `${tree.movementDurationInDays} days` : 'Disabled')}</td>
+	                  <td>{hasLegNames ? '-' : (tree.enableCustomerMovements ? `${tree.maximumAllowedMovementLevels} levels` : 'Disabled')}</td>
+	                  <td><span>{tree.isPrivate ?? false ? 'Yes' : 'No'}</span></td>
+	                  <td>
                     <button className="btn btn-ghost-secondary btn-icon" onClick={() => handleShow(`${tree.id}`)} >
                       <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-edit" width="40" height="40" viewBox="0 0 24 24" strokeWidth="1" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1"></path><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z"></path><path d="M16 5l3 3"></path></svg>
                     </button>
@@ -140,31 +147,34 @@ const PlacementRules = () => {
         <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div className="modal-body">
-        <div className="mb-3">
-          <Switch title="Leg preference" name="enableCustomerLegPreference" value={activeItem?.enableCustomerLegPreference} onChange={handleChange} />
-          <small className="form-hint">Allows customers to select the desired leg for the automatic placement of new enrollments.</small>
-        </div>
-        <div className="mb-3">
-          <Switch title="Holding tank" name="enableHoldingTank" value={activeItem?.enableHoldingTank} onChange={handleChange} />
-          <small className="form-hint">Enables customers to delay automatic placement of new enrollments.</small>
-        </div>
-        {activeItem?.enableHoldingTank && <div className="mb-3 ms-3">
-          <label className="form-label">Days in holding tank</label>
-          <NumericInput name="holdingTankDurationInDays" value={activeItem?.holdingTankDurationInDays} onChange={handleChange} />
-        </div>}
-        <div className="mb-3">
-          <Switch title="Allow movements" name="enableCustomerMovements" value={activeItem?.enableCustomerMovements} onChange={handleChange} />
-          <small className="form-hint">Allows customers change placements once a placement is made.</small>
-        </div>
-        {activeItem?.enableCustomerMovements && <>
-          <div className="mb-3 ms-3">
-            <label className="form-label">Days to allow movements</label>
-            <NumericInput name="movementDurationInDays" value={activeItem?.movementDurationInDays} onChange={handleChange} />
+        {activeHasLegNames ? <>
+          <div className="mb-3">
+            <Switch title="Leg preference" name="enableCustomerLegPreference" value={activeItem?.enableCustomerLegPreference} onChange={handleChange} />
+            <small className="form-hint">Allows customers to select the desired leg for the automatic placement of new enrollments.</small>
           </div>
-          <div className="mb-3 ms-3">
-            <label className="form-label">Placeable levels</label>
-            <NumericInput name="maximumAllowedMovementLevels" value={activeItem?.maximumAllowedMovementLevels} onChange={handleChange} />
+          <div className="mb-3">
+            <Switch title="Holding tank" name="enableHoldingTank" value={activeItem?.enableHoldingTank} onChange={handleChange} />
+            <small className="form-hint">Enables customers to delay automatic placement of new enrollments.</small>
           </div>
+          {activeItem?.enableHoldingTank && <div className="mb-3 ms-3">
+            <label className="form-label">Days in holding tank</label>
+            <NumericInput name="holdingTankDurationInDays" value={activeItem?.holdingTankDurationInDays} onChange={handleChange} />
+          </div>}
+        </> : <>
+          <div className="mb-3">
+            <Switch title="Allow movements" name="enableCustomerMovements" value={activeItem?.enableCustomerMovements} onChange={handleChange} />
+            <small className="form-hint">Allows customers change placements once a placement is made.</small>
+          </div>
+          {activeItem?.enableCustomerMovements && <>
+            <div className="mb-3 ms-3">
+              <label className="form-label">Days to allow movements</label>
+              <NumericInput name="movementDurationInDays" value={activeItem?.movementDurationInDays} onChange={handleChange} />
+            </div>
+            <div className="mb-3 ms-3">
+              <label className="form-label">Placeable levels</label>
+              <NumericInput name="maximumAllowedMovementLevels" value={activeItem?.maximumAllowedMovementLevels} onChange={handleChange} />
+            </div>
+          </>}
         </>}
         <div className="mb-3">
           <Switch title="Hide customer details" name="isPrivate" value={activeItem?.isPrivate} onChange={handleChange} />

@@ -87,12 +87,16 @@ const MediaList = () => {
   const handleShowAdd = () => setShowAdd(true);
   const handleCloseAdd = () => {
     setActiveItem({});
+    setThumbnailFile(null);
+    setDocumentFile(null);
     setShowAdd(false)
   }
 
   const handleShowEdit = () => setShowEdit(true);
   const handleCloseEdit = () => {
     setActiveItem({});
+    setThumbnailFile(null);
+    setDocumentFile(null);
     setShowEdit(false)
   }
 
@@ -145,9 +149,8 @@ const MediaList = () => {
   const handleEdit = (documentId) => {
     var document = { ...documents.find((d) => d.id == documentId) };
     if (document) {
-      document.linkType = "LF"
       setActiveItem(document);
-      handleShowEdit(true);
+      handleShowEdit();
     }
   }
 
@@ -228,20 +231,22 @@ const MediaList = () => {
     formData.append("language", document.language ?? "");
     formData.append("published", document.published ?? "");
     formData.append("thumbnailUrl", document.thumbnailUrl ?? "");
-    if (document.linkType === "LF") {
+    if (document.linkType === "LF" || !documentFile) {
       formData.append("url", document.url ?? "");
     } else {
       formData.append("file", documentFile);
     }
-    formData.append("thumbnail", thumbnailFile);
+    if (thumbnailFile) {
+      formData.append("thumbnail", thumbnailFile);
+    }
     //document.tags.forEach((tag) => formData.append("tags", tag));
     if (document.categories) document.categories.forEach((cat) => formData.append("categories", cat));
     setIsUploading(true);
 
     SendRawRequest("PUT", '/api/v1/documents', null, formData, (data) => {
       setIsUploading(false);
-      setThumbnailFile();
-      setDocumentFile();
+      setThumbnailFile(null);
+      setDocumentFile(null);
       refetch();
       onComplete(data);
     }, (error, code) => {
@@ -616,6 +621,16 @@ const MediaList = () => {
                 })}
               </MultiSelect>
               <span id="catError" className="text-danger"></span>
+            </div>
+          </div>
+          <div className="col-12">
+            <div className="mb-3">
+              <label className="form-label">Thumbnail</label>
+              <FileInput accept="image/png, image/gif, image/jpeg" id="thumbnail" name="thumbnail" onChange={handleThumbnailFileChange} />
+              <span id="thumbnailError" className="text-danger"></span>
+              <small className="form-hint ms-1 mt-2">
+                The thumbnail must be less than 1MB in size. Recommended size is 200 x 271 pixels
+              </small>
             </div>
           </div>
           {/* <div className="col-12">
