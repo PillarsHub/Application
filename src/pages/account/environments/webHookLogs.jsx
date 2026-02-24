@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useParams } from "react-router-dom"
 import { useFetch } from '../../../hooks/useFetch.js'
-import DataLoading from "../../components/dataLoading.jsx"
-import DataError from "../../components/dataError.jsx"
-import Modal from "../../components/modal.jsx"
-import LocalDate from "../../util/LocalDate.jsx";
+import DataLoading from "../../../components/dataLoading.jsx"
+import DataError from "../../../components/dataError.jsx"
+import Modal from "../../../components/modal.jsx"
+import LocalDate from "../../../util/LocalDate.jsx";
 import PageHeader from '../../../components/pageHeader.jsx';
 
 const WebHookLogs = () => {

@@ -93,7 +93,7 @@ const Autoships = () => {
       </CardHeader>
       <div className="container-xl">
         <div className="row row-cards">
-          {!(data?.customers?.[0]?.autoships.length > 0 ?? false) && <>
+          {!(data?.customers?.[0]?.autoships.length > 0) && <>
             <div className="empty">
               <p className="empty-title">No Autoship Orders Found</p>
               <p className="empty-subtitle text-muted">
