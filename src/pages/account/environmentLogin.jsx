@@ -3,11 +3,13 @@ import PropTypes from 'prop-types';
 import { Get, useFetch } from '../../hooks/useFetch.js'
 import useToken from '../../features/authentication/hooks/useToken.jsx';
 import SelectInput from '../../components/selectInput.jsx';
+import PastDueNotice, { getPastDueNotice } from './pastDueNotice.jsx';
  
-export default function EnvironmentList({ setToken, clearToken }) {
+export default function EnvironmentLogin({ setToken, clearToken }) {
   const { token } = useToken();
   const { data } = useFetch(`/Authentication/token/${token.token}/Environments`);
   const [environmentId, setEnvironmentId] = useState();
+  const pastDueNotice = getPastDueNotice(token);
 
   const handleChange = (name, value) => {
     setEnvironmentId(value);
@@ -18,6 +20,11 @@ export default function EnvironmentList({ setToken, clearToken }) {
 
     var errorElement = document.getElementById("loginError");
     errorElement.innerHTML = '';
+
+    if (pastDueNotice?.blockEnvironmentLogin) {
+      errorElement.innerHTML = 'Environment access is currently disabled because your invoice is past due. Use Manage Account to update billing.';
+      return;
+    }
 
     Get(`/Authentication/refresh/${token.token}?environmentId=${environmentId}`, (response) => {
       setToken(response);
@@ -31,12 +38,16 @@ export default function EnvironmentList({ setToken, clearToken }) {
     })
   }
 
+  const handleManage = () => {
+    location = `/account`;
+  }
+
   const handleClear = () => {
     clearToken();
     location = "/";
   }
 
-  let showList = data?.length < 9;
+  let showList = data?.length < 7;
 
   return (
     <div className="page-wrapper page-center" >
@@ -50,21 +61,25 @@ export default function EnvironmentList({ setToken, clearToken }) {
             </div>
             <h2 className="h2 text-center mb-4">Select Environment</h2>
             <p>There is more than one environment associated with this account. Please select the environment you would like to connect to.</p>
+            <PastDueNotice token={token} showAfterDays={3} />
             <div className="text-danger"></div>
             <div className="mb-3">
               <div className="form-selectgroup form-selectgroup-boxes d-flex flex-column">
-                {showList && <FullList data={data} onChange={handleChange} />}
-                {!showList && <DropDownList data={data} handleChange={handleChange} environmentId={environmentId}/>}
+                {showList && <FullList data={data} onChange={handleChange} disabled={pastDueNotice?.blockEnvironmentLogin} />}
+                {!showList && <DropDownList data={data} handleChange={handleChange} environmentId={environmentId} disabled={pastDueNotice?.blockEnvironmentLogin} />}
               </div>
               <span id="loginError" className="text-danger"></span>
             </div>
             <div className="form-footer">
-              <button className="btn btn-primary w-100" tabIndex="4" onClick={handleSubmit}>Sign in</button>
+              <button type="submit" className="btn btn-primary w-100" disabled={pastDueNotice?.blockEnvironmentLogin}>
+                {pastDueNotice?.blockEnvironmentLogin ? 'Environment Access Disabled' : 'Sign in'}
+              </button>
             </div>
           </div>
         </form>
         <div className="text-center text-muted mt-3">
-          <span>Not finding what you need? <a href="#" onClick={handleClear} tabIndex="-1">Sign out</a></span>
+          <div>Need account-level controls? <a href="#" onClick={handleManage} tabIndex="-1">Manage Account</a></div>
+          <div className="mt-1">Not finding what you need? <a href="#" onClick={handleClear} tabIndex="-1">Sign out</a></div>
         </div>
       </div>
     </div>
@@ -72,12 +87,12 @@ export default function EnvironmentList({ setToken, clearToken }) {
   )
 }
 
-EnvironmentList.propTypes = {
+EnvironmentLogin.propTypes = {
   setToken: PropTypes.func.isRequired,
   clearToken: PropTypes.func.isRequired
 }
 
-function FullList({ data, onChange }) {
+function FullList({ data, onChange, disabled }) {
 
   const handleChange = (event) => {
     var name = event.target.name;
@@ -88,7 +103,7 @@ function FullList({ data, onChange }) {
   return <>
     {data && data.map((env) => {
       return <label key={env.id} className="form-selectgroup-item flex-fill">
-        <input type="radio" name="envId" value={env.id} className="form-selectgroup-input" onChange={handleChange} />
+        <input type="radio" name="envId" value={env.id} className="form-selectgroup-input" onChange={handleChange} disabled={disabled} />
         <div className="form-selectgroup-label d-flex align-items-center p-3">
           <div className="me-3">
             <span className="form-selectgroup-check"></span>
@@ -104,12 +119,13 @@ function FullList({ data, onChange }) {
 
 FullList.propTypes = {
   data: PropTypes.any.isRequired,
-  onChange: PropTypes.func.isRequired
+  onChange: PropTypes.func.isRequired,
+  disabled: PropTypes.bool
 }
 
-function DropDownList({ data, handleChange, environmentId }) {
+function DropDownList({ data, handleChange, environmentId, disabled }) {
   return (
-    <SelectInput value={environmentId} emptyOption="- Select -" onChange={handleChange}>
+    <SelectInput value={environmentId} emptyOption="- Select -" onChange={handleChange} disabled={disabled}>
       {data && data.map((env) => {
         return <option key={env.id} value={env.id}>{env.name}</option>
       })}
@@ -119,5 +135,6 @@ function DropDownList({ data, handleChange, environmentId }) {
 DropDownList.propTypes = {
   data: PropTypes.any.isRequired,
   handleChange: PropTypes.func.isRequired,
-  environmentId: PropTypes.string.isRequired,
+  disabled: PropTypes.bool,
+  environmentId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
 }

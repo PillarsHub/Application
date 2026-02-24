@@ -99,7 +99,7 @@ const PlacementSuite = ({ nodeId, periodDate, treeId, shows, onHide, handlePlace
   const movementDurationInDays = data?.tree?.movementDurationInDays;
 
   const validNodes = data?.tree?.nodes?.[0]?.nodes?.filter((node) =>
-    isWithinLastDays(node.placeDate, node.history, movementDurationInDays)
+    isWithinLastDays(node.customer.enrollDate, node.history, movementDurationInDays)
   ) ?? [];
 
   return <OffCanvas id="PlacementSuite" showModal={show} >
@@ -119,7 +119,7 @@ const PlacementSuite = ({ nodeId, periodDate, treeId, shows, onHide, handlePlace
 
       <div className="list-group list-group-flush">
         {validNodes.length > 0 && validNodes.map((node) => {
-          if (isWithinLastDays(node.placeDate, node.history, movementDurationInDays)) {
+          if (isWithinLastDays(node.customer.enrollDate, node.history, movementDurationInDays)) {
             return <div key={node.nodeId} href="#" className="list-group-item list-group-item-action" aria-current="true">
               <div className="row align-items-center">
                 <div className="col-auto">
@@ -129,7 +129,7 @@ const PlacementSuite = ({ nodeId, periodDate, treeId, shows, onHide, handlePlace
                 </div>
                 <div className="col text-truncate">
                   {node.customer?.fullName}
-                  <div className="d-block text-muted text-truncate mt-n1">{getTimeLeft(node.placeDate, movementDurationInDays)}</div>
+                  <div className="d-block text-muted text-truncate mt-n1">{getTimeLeft(node.customer.enrollDate, movementDurationInDays)}</div>
                 </div>
                 <div className="col-auto">
                   <div className="btn-list flex-nowrap">

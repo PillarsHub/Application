@@ -7,12 +7,13 @@ import useToken, { TokenProvider } from "./features/authentication/hooks/useToke
 
 // Direct render pages (auth guards)
 const Login = lazy(() => import("./pages/account/login.jsx"));
-const EnvironmentList = lazy(() => import("./pages/account/environmentList.jsx"));
+const EnvironmentLogin = lazy(() => import("./pages/account/environmentLogin.jsx"));
 const ForgotPassword = lazy(() => import("./pages/account/forgotPassword.jsx"));
 const ResetPassword = lazy(() => import("./pages/account/resetpassword.jsx"));
 
 // Layouts
 const Layout = lazy(() => import("./pages/layout.jsx"));
+const AccountLayout = lazy(() => import("./pages/accountLayout.jsx"));
 const CustomerLayout = lazy(() => import("./pages/customerLayout.jsx"));
 
 /** Helper: wraps a dynamic import into a lazy route */
@@ -27,8 +28,6 @@ const router = createBrowserRouter([
     element: <Layout />,
     children: [
       { index: true, lazy: lazyRoute(() => import("./pages/home/home.jsx")) },
-      { path: "profile", lazy: lazyRoute(() => import("./pages/account/profile.jsx")) },
-
       // Customers / Inventory
       { path: "customers", lazy: lazyRoute(() => import("./pages/customers/customers.jsx")) },
       { path: "customers/new", lazy: lazyRoute(() => import("./pages/customers/newCustomer.jsx")) },
@@ -101,6 +100,24 @@ const router = createBrowserRouter([
       { path: "*", lazy: lazyRoute(() => import("./pages/nopage.jsx")) },
     ],
   },
+  {
+    path: "/account",
+    element: <AccountLayout />,
+    children: [
+      { index: true, lazy: lazyRoute(() => import("./pages/account/environments/environmentList.jsx")) },
+      { path: "profile", lazy: lazyRoute(() => import("./pages/account/profile.jsx")) },
+      { path: "environments", lazy: lazyRoute(() => import("./pages/account/environments/environmentList.jsx")) },
+      { path: "environments/:id", lazy: lazyRoute(() => import("./pages/account/environments/environementDetail.jsx")) },
+      { path: "environments/:environmentId/webhooklogs/:subscriptionId", lazy: lazyRoute(() => import("./pages/account/environments/webHookLogs.jsx")) },
+      { path: "invoices", lazy: lazyRoute(() => import("./pages/account/invoices.jsx")) },
+      { path: "subscription", lazy: lazyRoute(() => import("./pages/account/subscription.jsx")) },
+      { path: "compensationplans", lazy: lazyRoute(() => import("./pages/account/compensationPlans.jsx")) },
+      { path: "compensationplans/:id/detail", lazy: lazyRoute(() => import("./pages/account/compensationPlan.jsx")) },
+      { path: "users", lazy: lazyRoute(() => import("./pages/account/users.jsx")) },
+      { path: "roles", lazy: lazyRoute(() => import("./pages/account/roles.jsx")) },
+      { path: "logs", lazy: lazyRoute(() => import("./pages/account/logs.jsx")) },
+    ],
+  },
 
   // Customer routes
   {
@@ -140,6 +157,7 @@ const router = createBrowserRouter([
 function App() {
   const { token, setToken, clearToken } = useToken();
   const path = window.location.pathname.toLowerCase();
+  const isEnvironmentDetailPath = /^\/account(?:\/|$)/.test(path);
 
   // Auth redirects handled before router
   if (path === "/account/forgotpassword") {
@@ -156,13 +174,6 @@ function App() {
       </Suspense>
     );
   }
-  if (path === "/account/environments") {
-    return (
-      <Suspense fallback={<></>}>
-        <EnvironmentList setToken={setToken} clearToken={clearToken} />
-      </Suspense>
-    );
-  }
 
   if (!token) {
     return (
@@ -172,9 +183,16 @@ function App() {
     );
   }
   if (!token.environmentId) {
+    if (isEnvironmentDetailPath) {
+      return (
+        <TokenProvider clearToken={clearToken}>
+          <RouterProvider router={router} fallbackElement={<></>} />
+        </TokenProvider>
+      );
+    }
     return (
       <Suspense fallback={<></>}>
-        <EnvironmentList setToken={setToken} clearToken={clearToken} />
+        <EnvironmentLogin setToken={setToken} clearToken={clearToken} />
       </Suspense>
     );
   }

@@ -1,7 +1,10 @@
 import React, { Children } from 'react';
 import PropTypes from 'prop-types';
+import useToken, {GetScope} from '../features/authentication/hooks/useToken.jsx';
+import PastDueNotice from '../pages/account/pastDueNotice';
 
-const PageHeader = ({ preTitle, title, postTitle, children, breadcrumbs, fluid = false }) => {
+const PageHeader = ({ preTitle, title, postTitle, children, breadcrumbs, showAfterDays = 5, fluid = false }) => {
+  const { token } = useToken();
   let header;
   let content = [];
 
@@ -15,6 +18,7 @@ const PageHeader = ({ preTitle, title, postTitle, children, breadcrumbs, fluid =
   });
 
   const continerClass = fluid ? 'container-fluid' : 'container-xl';
+  const scope = GetScope();
 
   return <>
     <div className="page-wrapper">
@@ -47,6 +51,7 @@ const PageHeader = ({ preTitle, title, postTitle, children, breadcrumbs, fluid =
               {!!header && <header>{header}</header>}
             </div>
           </div>
+          {!scope && <PastDueNotice token={token} showAfterDays={showAfterDays} className="mb-0 mt-3" />}
         </div>
       </div>}
       <div className="page-body h-100">
@@ -73,5 +78,6 @@ PageHeader.propTypes = {
   postTitle: PropTypes.string,
   children: PropTypes.any.isRequired,
   breadcrumbs: PropTypes.any,
+  showAfterDays: PropTypes.number,
   fluid: PropTypes.bool
 }

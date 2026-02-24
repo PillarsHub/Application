@@ -87,7 +87,7 @@ const Periods = () => {
   }, [tab]);
 
   if (loading) return <DataLoading />;
-  if (error) return `Error! ${error}`;
+  if (error) return <DataError error={error} />;
 
   const handleModalClose = () => setShowModal(false);
   const handleModalShow = (period, status) => {

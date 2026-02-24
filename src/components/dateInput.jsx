@@ -5,7 +5,7 @@ import 'react-datepicker/dist/react-datepicker.css';
 
 const SESSION_TZ_KEY = 'preferredTimeZone';
 
-/** Resolve system timezone: "local" (or missing) => undefined (browser local); else IANA string */
+/** Resolve display timezone: "local" (or missing) => undefined (browser local); else IANA string */
 function resolveStoredTimeZone() {
   try {
     const raw = localStorage.getItem(SESSION_TZ_KEY);
@@ -16,12 +16,22 @@ function resolveStoredTimeZone() {
   }
 }
 
+/** Parse as UTC instant. If no zone is present, assume UTC by appending Z. */
+function parseAsInstant(dateString) {
+  if (!dateString) return null;
+  const hasZone = /[Zz]$|[+-]\d{2}:\d{2}$/.test(dateString);
+  const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(dateString);
+  const iso = hasZone ? dateString : (isDateOnly ? `${dateString}T00:00:00Z` : `${dateString}Z`);
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? null : d;
+}
+
 /** Offset minutes for `timeZone` at the given instant (e.g., -420 for UTC-07:00). */
 function getTimeZoneOffsetMinutes(timeZone, atInstant) {
   if (!timeZone) {
-    // Browser local offset: JS returns minutes behind UTC; invert the sign to get "+/- minutes from UTC"
     return -atInstant.getTimezoneOffset();
   }
+
   const part = new Intl.DateTimeFormat('en-US', {
     timeZone,
     hour: '2-digit',
@@ -38,10 +48,10 @@ function getTimeZoneOffsetMinutes(timeZone, atInstant) {
   return sign * (hh * 60 + mm);
 }
 
-/** Get Y/M/D *in a timezone* for a given UTC instant */
-function getYMDInTZ(isoUtcString, timeZone) {
-  const d = new Date(isoUtcString);
-  if (isNaN(d)) return null;
+/** Get Y/M/D in selected display timezone for a given instant */
+function getYMDInTZ(dateString, timeZone) {
+  const d = parseAsInstant(dateString);
+  if (!d) return null;
 
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone,
@@ -58,24 +68,21 @@ function getYMDInTZ(isoUtcString, timeZone) {
   return { y, m, d: day };
 }
 
-/** Build a Date object (local) that points to the *calendar day* y-m-d for UI selection */
+/** Build a local Date for UI selection */
 function dateFromYMDLocal(y, m, d) {
-  // Use midday to avoid DST edge cases when calendars compute start/end of day
+  // Use midday to avoid DST edge cases in calendar math.
   return new Date(y, m - 1, d, 12, 0, 0, 0);
 }
 
-/** Given a Y-M-D (selected in UI), interpret it as 00:00 in `timeZone` and return ISO UTC */
+/** Given a Y-M-D in selected display timezone, return UTC ISO for 00:00 in that timezone. */
 function ymdInTZToUtcISO(y, m, d, timeZone) {
-  // Start with a UTC guess for that wall time
   const guessUtcMs = Date.UTC(y, m - 1, d, 0, 0, 0, 0);
   const guessInstant = new Date(guessUtcMs);
 
-  // Pass 1: get offset at the guess
   const off1 = getTimeZoneOffsetMinutes(timeZone, guessInstant);
   const realUtcMs1 = guessUtcMs - off1 * 60_000;
   const realInstant1 = new Date(realUtcMs1);
 
-  // Pass 2 (handles DST transitions right at midnight in that tz)
   const off2 = getTimeZoneOffsetMinutes(timeZone, realInstant1);
   const realUtcMs2 = guessUtcMs - off2 * 60_000;
 
@@ -85,11 +92,10 @@ function ymdInTZToUtcISO(y, m, d, timeZone) {
 const DateInput = ({ className = 'form-control', name, value, onChange, disabled, placeholder, errorText, errored, allowEmpty = true }) => {
   const tz = useMemo(resolveStoredTimeZone, []);
 
-  // Initialize when empty & not allowed to be empty: set to "today 00:00" in system tz
+  // Initialize when empty & not allowed to be empty.
   useEffect(() => {
     if (!allowEmpty && !value) {
       const now = new Date();
-      // Derive today's YMD in the chosen tz
       const parts = new Intl.DateTimeFormat('en-CA', {
         timeZone: tz,
         year: 'numeric',
@@ -100,10 +106,7 @@ const DateInput = ({ className = 'form-control', name, value, onChange, disabled
       const m = Number(parts.find(p => p.type === 'month')?.value);
       const d = Number(parts.find(p => p.type === 'day')?.value);
       if (y && m && d) {
-        const iso = ymdInTZToUtcISO(y, m, d, tz);
-        onChange(name, iso);
-      } else {
-        onChange(name, now.toISOString()); // safe fallback
+        onChange(name, ymdInTZToUtcISO(y, m, d, tz));
       }
     }
   }, [value, allowEmpty]);
@@ -113,16 +116,17 @@ const DateInput = ({ className = 'form-control', name, value, onChange, disabled
       onChange(name, '');
       return;
     }
-    // Extract Y/M/D from the picked date (as shown to the user)
+
+    // Extract local Y/M/D from picked date, then normalize to UTC ISO.
     const y = date.getFullYear();
     const m = date.getMonth() + 1;
     const d = date.getDate();
     const isoUtc = ymdInTZToUtcISO(y, m, d, tz);
-    
+
     onChange(name, isoUtc);
   };
 
-  // Selected date for the DatePicker (convert stored UTC instant → Y/M/D in system tz)
+  // Selected date for DatePicker (read incoming instant in selected display timezone).
   const selected = (() => {
     if (!value) return null;
     const ymd = getYMDInTZ(value, tz);
@@ -145,7 +149,6 @@ const DateInput = ({ className = 'form-control', name, value, onChange, disabled
           disabled={disabled}
           dateFormat="yyyy-MM-dd"
           popperPlacement="bottom-end"
-          // No need for non-standard props like `timezone`
         />
         <span className="input-icon-addon">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"

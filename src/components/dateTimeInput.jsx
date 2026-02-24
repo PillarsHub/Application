@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import PropTypes from 'prop-types';
 
 const SESSION_TZ_KEY = 'preferredTimeZone';
@@ -14,14 +14,46 @@ function resolveStoredTimeZone() {
   }
 }
 
+/** Parse as UTC instant. If no zone is present, assume UTC by appending Z. */
+function parseAsInstant(dateString) {
+  if (!dateString) return null;
+  const hasZone = /[Zz]$|[+-]\d{2}:\d{2}$/.test(dateString);
+  const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(dateString);
+  const iso = hasZone ? dateString : (isDateOnly ? `${dateString}T00:00:00Z` : `${dateString}Z`);
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+/** Returns offset minutes for `timeZone` at `date` (e.g., -420 for UTC-07:00). */
+function getTimeZoneOffsetMinutes(timeZone, date) {
+  if (!timeZone) {
+    return -date.getTimezoneOffset();
+  }
+
+  const part = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZoneName: 'shortOffset',
+    hour12: false
+  }).formatToParts(date).find(p => p.type === 'timeZoneName')?.value || 'UTC';
+
+  const m = part.match(/([UG]MT|UTC)\s*([+-]\d{1,2})(?::?(\d{2}))?/i);
+  if (!m) return 0;
+  const sign = m[2].startsWith('-') ? -1 : 1;
+  const hh = Math.abs(parseInt(m[2], 10)) || 0;
+  const mm = m[3] ? parseInt(m[3], 10) : 0;
+  return sign * (hh * 60 + mm);
+}
+
 /** Format a UTC ISO string for <input type="datetime-local"> in the given tz */
 function formatForInput(isoUtc, timeZone) {
   if (!isoUtc) return '';
-  const d = new Date(isoUtc);
-  if (isNaN(d.getTime())) return '';
+  const d = parseAsInstant(isoUtc);
+  if (!d) return '';
 
   const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone, // undefined => browser local
+    timeZone,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -37,65 +69,29 @@ function formatForInput(isoUtc, timeZone) {
   const hh = get('hour');
   const mi = get('minute');
 
-  // en-CA yields 24h digits already; build "YYYY-MM-DDTHH:mm"
   return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
 }
 
-/** Parse a "YYYY-MM-DDTHH:mm" (wall time) as if it were in `timeZone`, return ISO UTC */
+/** Parse a "YYYY-MM-DDTHH:mm" wall time in `timeZone`, return ISO UTC */
 function parseFromInput(localValue, timeZone) {
-  // Guard
   if (!localValue) return '';
 
-  // Extract components
-  // Expect "YYYY-MM-DDTHH:mm" (datetime-local)
   const m = localValue.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/);
   if (!m) return '';
 
   const [, y, mo, d, h, mi] = m.map(Number);
-
-  // Start with the naive UTC instant for those components
-  // (i.e., “pretend” wall-time is UTC), then adjust by tz offset at that instant.
   const guessUtcMs = Date.UTC(y, mo - 1, d, h, mi, 0, 0);
   const guessDate = new Date(guessUtcMs);
 
-  // Compute offset for the target timezone at that instant, in minutes
-  const offsetMinutes = getTimeZoneOffsetMinutes(timeZone, guessDate);
+  // Two passes handle DST boundary instants.
+  const offset1 = getTimeZoneOffsetMinutes(timeZone, guessDate);
+  const realUtcMs1 = guessUtcMs - offset1 * 60_000;
+  const realDate1 = new Date(realUtcMs1);
 
-  // Real UTC = wall time minus the tz offset
-  const realUtcMs = guessUtcMs - offsetMinutes * 60_000;
-  const realUtc = new Date(realUtcMs);
+  const offset2 = getTimeZoneOffsetMinutes(timeZone, realDate1);
+  const realUtcMs2 = guessUtcMs - offset2 * 60_000;
 
-  return realUtc.toISOString();
-}
-
-/** Returns offset minutes for `timeZone` at `date` (e.g., -420 for UTC-07:00).
- * timeZone === undefined means browser local, so we can just use getTimezoneOffset().
- */
-function getTimeZoneOffsetMinutes(timeZone, date) {
-  if (!timeZone) {
-    // Browser local offset (note: JS returns minutes *behind* UTC, so sign is already correct)
-    return date.getTimezoneOffset() * -1 * -1; // normalize? No—see below.
-
-    // Actually, simpler and correct:
-    // return -date.getTimezoneOffset();
-  }
-
-  // For a specific IANA tz, parse "shortOffset" like "GMT-7" or "UTC+05:30"
-  const part = new Intl.DateTimeFormat('en-US', {
-    timeZone,
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZoneName: 'shortOffset',
-    hour12: false
-  }).formatToParts(date).find(p => p.type === 'timeZoneName')?.value || 'UTC';
-
-  // Normalize to minutes: "UTC+05:30", "GMT-7", etc.
-  const m = part.match(/([UG]MT|UTC)\s*([+-]\d{1,2})(?::?(\d{2}))?/i);
-  if (!m) return 0;
-  const sign = m[2].startsWith('-') ? -1 : 1;
-  const hh = Math.abs(parseInt(m[2], 10)) || 0;
-  const mm = m[3] ? parseInt(m[3], 10) : 0;
-  return sign * (hh * 60 + mm);
+  return new Date(realUtcMs2).toISOString();
 }
 
 const DateTimeInput = ({
@@ -109,30 +105,20 @@ const DateTimeInput = ({
   errored,
   allowEmpty = true
 }) => {
+  const tz = useMemo(resolveStoredTimeZone, []);
 
-  // Ensure a default when allowEmpty === false
   useEffect(() => {
     if (!allowEmpty && !value) {
-      const nowIsoUtc = new Date().toISOString();
-      onChange(name, nowIsoUtc);
+      onChange(name, new Date().toISOString());
     }
   }, [value, allowEmpty]);
 
-  const tz = resolveStoredTimeZone();
-
   const handleChange = (event) => {
     const v = event.target.value;
-    if (v) {
-      const isoUtc = parseFromInput(v, tz);
-      onChange(name, isoUtc);
-    } else {
-      onChange(name, '');
-    }
+    onChange(name, v ? parseFromInput(v, tz) : '');
   };
 
-  // Display value for the input (in chosen tz or browser local if tz is undefined)
   const displayDate = value ? formatForInput(value, tz) : '';
-
   const inputClass = (errorText || errored) ? `${className} is-invalid` : className;
 
   return (
