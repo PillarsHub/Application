@@ -1,10 +1,25 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Editor as MCE } from '@tinymce/tinymce-react';
 import PropTypes from 'prop-types';
 
 
 const Editor = ({ name, value, height = 300, mode = "simple", onChange }) => {
   const editorRef = useRef(null);
+
+  // Allow TinyMCE dialogs/inputs to work when editor is inside Bootstrap modal/offcanvas.
+  useEffect(() => {
+    const handleFocusIn = (event) => {
+      if (
+        event.target?.closest?.('.tox-tinymce-aux, .moxman-window, .tam-assetmanager-root')
+      ) {
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+      }
+    };
+
+    document.addEventListener('focusin', handleFocusIn, true);
+    return () => document.removeEventListener('focusin', handleFocusIn, true);
+  }, []);
 
   const handleChange = () => {
     let value = editorRef.current.getContent();

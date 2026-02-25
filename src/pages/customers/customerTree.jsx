@@ -34,6 +34,8 @@ const GET_DATA = gql`
       legNames
       enableHoldingTank
       enableCustomerMovements
+      customerMovementWarning
+      customerMovementConfirmation
       movementDurationInDays
       maximumAllowedMovementLevels
     }

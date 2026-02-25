@@ -36,6 +36,11 @@ const choiceSuffix = (canUseHoldingTank) =>
   canUseHoldingTank ? ' Choose a different leg or select Holding Tank.' : ' Choose a different leg.';
 
 const plural = (n, s) => `${n} ${s}${n === 1 ? '' : 's'}`;
+const DEFAULT_MOVEMENT_CONFIRMATION = "I understand that all tree-based sponsor commissions I would have received during an open period for activities of this person will be removed from my commissions and paid to this person's new sponsor.";
+const stripHtml = (value) => `${value ?? ""}`
+  .replace(/<[^>]+>/g, " ")
+  .replace(/&nbsp;/gi, " ")
+  .trim();
 
 const MESSAGES = {
   requiredUpline: 'Choose a sponsor to place under.',
@@ -74,6 +79,7 @@ const ChangePlacementModal = ({ tree, treeId, placement, refreshNode }) => {
   const hasLegs = !!(tree?.legNames && tree.legNames.length > 0);
   const maxMoveLevels = Number(tree?.maximumAllowedMovementLevels ?? 0);
   const enforceRange = !!scope && maxMoveLevels > 0;
+  const movementConfirmationText = stripHtml(tree?.customerMovementConfirmation) || DEFAULT_MOVEMENT_CONFIRMATION;
 
   const handleClose = () => setModalShow(false);
 
@@ -457,7 +463,7 @@ const ChangePlacementModal = ({ tree, treeId, placement, refreshNode }) => {
 
         {placement?.disclamerId && (
           <Switch onChange={(_n, v) => setDisclaimer(v)} value={disclaimer} disabled={submitting}
-            title="I understand that all tree-based sponsor commissions I would have received during an open period for activities of this person will be removed from my commissions and paid to this person's new sponsor."
+            title={movementConfirmationText}
           />
         )}
       </div>

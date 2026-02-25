@@ -12,6 +12,7 @@ let GET_PLACEABLE = gql`query ($nodeIds: [String]!, $treeId: ID!) {
     id
     movementDurationInDays
     maximumAllowedMovementLevels
+    customerMovementWarning
     nodes(nodeIds: $nodeIds) {
       nodeId
       uplineId
@@ -36,7 +37,8 @@ let GET_PLACEABLE = gql`query ($nodeIds: [String]!, $treeId: ID!) {
 
 const PlacementSuite = ({ nodeId, periodDate, treeId, shows, onHide, handlePlaceNode }) => {
   const [show, setShow] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState();
   const [data, setData] = useState();
   const { refetch } = useQuery(GET_PLACEABLE, {
@@ -64,8 +66,10 @@ const PlacementSuite = ({ nodeId, periodDate, treeId, shows, onHide, handlePlace
   useEffect(() => {
     if (shows) {
       setShow(true);
+      setSearchTerm("");
     } else {
       setShow(false);
+      setSearchTerm("");
     }
   }, [shows]);
 
@@ -95,12 +99,27 @@ const PlacementSuite = ({ nodeId, periodDate, treeId, shows, onHide, handlePlace
 
 
   const disclaimer = token.environmentId == 10461 ? disclaimerByClient.CL10461: disclaimerByClient.default;
+  const disclaimerReady = !loading && !!data?.tree;
+  const customMovementWarning = `${data?.tree?.customerMovementWarning ?? ""}`;
+  const hasCustomMovementWarning = hasMeaningfulHtml(customMovementWarning);
 
   const movementDurationInDays = data?.tree?.movementDurationInDays;
 
   const validNodes = data?.tree?.nodes?.[0]?.nodes?.filter((node) =>
     isWithinLastDays(node.customer.enrollDate, node.history, movementDurationInDays)
   ) ?? [];
+  const sortedNodes = [...validNodes].sort((a, b) =>
+    getExpirationTimestamp(a.customer?.enrollDate, movementDurationInDays) -
+    getExpirationTimestamp(b.customer?.enrollDate, movementDurationInDays)
+  );
+  const normalizedSearch = searchTerm.trim().toLowerCase();
+  const filteredNodes = normalizedSearch
+    ? sortedNodes.filter((node) => {
+      const fullName = (node.customer?.fullName ?? "").toLowerCase();
+      const nodeRef = String(node.nodeId ?? "").toLowerCase();
+      return fullName.includes(normalizedSearch) || nodeRef.includes(normalizedSearch);
+    })
+    : sortedNodes;
 
   return <OffCanvas id="PlacementSuite" showModal={show} >
     <div className="card-header">
@@ -115,43 +134,70 @@ const PlacementSuite = ({ nodeId, periodDate, treeId, shows, onHide, handlePlace
       <p>{error && `Error loading Holding Tank Data. ${error}`}</p>
       {loading && <DataLoading />}
 
-      {validNodes.length == 0 && <EmptyContent title="No placements available at this time." text="" />}
+      {!loading && validNodes.length > 0 && (
+        <div className="m-3">
+          <input
+            type="text"
+            className="form-control"
+            placeholder="Search customers"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+      )}
+
+      {!loading && validNodes.length == 0 && <EmptyContent title="No placements available at this time." text="" />}
+      {!loading && validNodes.length > 0 && filteredNodes.length == 0 && (
+        <EmptyContent title="No customers match your search." text="" />
+      )}
 
       <div className="list-group list-group-flush">
-        {validNodes.length > 0 && validNodes.map((node) => {
-          if (isWithinLastDays(node.customer.enrollDate, node.history, movementDurationInDays)) {
-            return <div key={node.nodeId} href="#" className="list-group-item list-group-item-action" aria-current="true">
-              <div className="row align-items-center">
-                <div className="col-auto">
-                  <a href="#">
-                    <Avatar name={node.customer?.fullName} url={node.customer?.profileImage} size="" />
-                  </a>
-                </div>
-                <div className="col text-truncate">
-                  {node.customer?.fullName}
-                  <div className="d-block text-muted text-truncate mt-n1">{getTimeLeft(node.customer.enrollDate, movementDurationInDays)}</div>
-                </div>
-                <div className="col-auto">
-                  <div className="btn-list flex-nowrap">
-                    <button className="btn" onClick={() => handleShowPlacemntModel(node)}>
-                      Place
-                    </button>
-                  </div>
+        {filteredNodes.length > 0 && filteredNodes.map((node) => {
+          return <div key={node.nodeId} href="#" className="list-group-item list-group-item-action" aria-current="true">
+            <div className="row align-items-center">
+              <div className="col-auto">
+                <a href="#">
+                  <Avatar name={node.customer?.fullName} url={node.customer?.profileImage} size="" />
+                </a>
+              </div>
+              <div className="col text-truncate">
+                {node.customer?.fullName}
+                <div className="d-block text-muted text-truncate mt-n1">{getTimeLeft(node.customer.enrollDate, movementDurationInDays)}</div>
+              </div>
+              <div className="col-auto">
+                <div className="btn-list flex-nowrap">
+                  <button className="btn" onClick={() => handleShowPlacemntModel(node)}>
+                    Place
+                  </button>
                 </div>
               </div>
             </div>
-          }
+          </div>
         })}
       </div>
 
     </div>
-    <div className="card-footer">
-      <div className="alert alert-warning" role="alert">
-        <h4 className="alert-title">{disclaimer.title}</h4>
-        <div className="text-muted">{disclaimer.body}</div>
+    {disclaimerReady && (
+      <div className="card-footer">
+        <div className="alert alert-warning" role="alert">
+          <h4 className="alert-title">{disclaimer.title}</h4>
+          {hasCustomMovementWarning && (
+            <div className="text-muted" style={{ whiteSpace: "pre-line" }} dangerouslySetInnerHTML={{ __html: customMovementWarning }} />
+          )}
+          {!hasCustomMovementWarning && (
+            <div className="text-muted">{disclaimer.body}</div>
+          )}
+        </div>
       </div>
-    </div>
+    )}
   </OffCanvas>
+}
+
+function hasMeaningfulHtml(value) {
+  return !!`${value ?? ""}`
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .trim();
 }
 
 // Truncate a Date to the minute (drop seconds & milliseconds)
@@ -184,11 +230,8 @@ function isWithinLastDays(dateString, history, movementDurationInDays) {
 function getTimeLeft(dateString, movementDurationInDays) {
   if (!isWithinLastDays(dateString, null, movementDurationInDays)) return null;
 
-  const input = truncateToMinute(new Date(dateString));
   const now = truncateToMinute(new Date());
-
-  // Expiration moment = input + N days
-  const expiresAt = new Date(input.getTime() + movementDurationInDays * 24 * 60 * 60 * 1000);
+  const expiresAt = getExpirationTimestamp(dateString, movementDurationInDays);
   let remainingMs = expiresAt - now;
 
   if (remainingMs <= 0) return null; // just in case boundary conditions hit exactly
@@ -210,6 +253,11 @@ function getTimeLeft(dateString, movementDurationInDays) {
   if (minutes || parts.length === 0) parts.push(`${minutes} minute${minutes !== 1 ? "s" : ""}`);
 
   return parts.join(", ");
+}
+
+function getExpirationTimestamp(dateString, movementDurationInDays) {
+  const input = truncateToMinute(new Date(dateString));
+  return input.getTime() + movementDurationInDays * 24 * 60 * 60 * 1000;
 }
 
 

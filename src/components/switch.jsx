@@ -2,7 +2,6 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 
-
 const Switch = ({ name, value = false, onChange, disabled, title }) => {
 
     const handleChange = (event) => {
@@ -13,7 +12,7 @@ const Switch = ({ name, value = false, onChange, disabled, title }) => {
         onChange(name, value);
     };
 
-    if (title != '')
+    if ((title ?? '') !== '')
     {
         return <label className="form-check form-switch">
             <input type="checkbox" className="form-check-input" name={name} checked={value} disabled={disabled} onChange={handleChange} />

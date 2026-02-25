@@ -5,7 +5,9 @@ import Modal from "../../components/modal";
 import SettingsNav from "./settingsNav";
 import Switch from "../../components/switch";
 import NumericInput from "../../components/numericInput";
+import Editor from "../../components/editor";
 import { SendRequest } from "../../hooks/usePost";
+import DataError from "../../components/dataError";
 
 
 var GET_DATA = gql`query {
@@ -17,6 +19,8 @@ var GET_DATA = gql`query {
     buildPattern
     enableCustomerLegPreference
     enableCustomerMovements
+    customerMovementWarning
+    customerMovementConfirmation
     movementDurationInDays
     maximumAllowedMovementLevels
     enableHoldingTank
@@ -27,6 +31,17 @@ var GET_DATA = gql`query {
 const PlacementRules = () => {
   const [showModal, setShowModal] = useState(false);
   const [activeItem, setActiveItem] = useState();
+  const [overrideMovementWarning, setOverrideMovementWarning] = useState(false);
+  const [overrideMovementConfirmation, setOverrideMovementConfirmation] = useState(false);
+  const stripHtml = (value) => `${value ?? ""}`
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .trim();
+  const isBlankHtml = (value) => !`${value ?? ""}`
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .trim();
+  const isBlankText = (value) => !`${value ?? ""}`.trim();
   const activeHasLegNames = Array.isArray(activeItem?.legNames)
     ? activeItem.legNames.length > 0
     : !!activeItem?.legNames;
@@ -34,11 +49,19 @@ const PlacementRules = () => {
     variables: {},
   });
 
-  if (error) return `Error! ${error}`;
+  if (error) return <DataError error={error} />;
 
   const handleHide = () => setShowModal(false);
   const handleShow = (id) => {
     var item = data?.trees.find(tree => tree.id == id);
+    if (item) {
+      item = { ...item, customerMovementConfirmation: stripHtml(item.customerMovementConfirmation) };
+      setOverrideMovementWarning(!isBlankHtml(item.customerMovementWarning));
+      setOverrideMovementConfirmation(!isBlankText(item.customerMovementConfirmation));
+    } else {
+      setOverrideMovementWarning(false);
+      setOverrideMovementConfirmation(false);
+    }
     setActiveItem(item);
     setShowModal(true);
   }
@@ -69,6 +92,16 @@ const PlacementRules = () => {
         op: "replace",
         path: "/maximumAllowedMovementLevels",
         value: activeItem.maximumAllowedMovementLevels
+      },
+      {
+        op: "replace",
+        path: "/customerMovementWarning",
+        value: overrideMovementWarning ? activeItem.customerMovementWarning : ""
+      },
+      {
+        op: "replace",
+        path: "/customerMovementConfirmation",
+        value: overrideMovementConfirmation ? activeItem.customerMovementConfirmation : ""
       },
       {
         op: "replace",
@@ -108,26 +141,26 @@ const PlacementRules = () => {
                 <th>Tree</th>
                 <th>Leg Preference</th>
                 <th>Holding Tank</th>
-                <th>Allow Movements</th>
+                <th>Enable Placement Suite</th>
                 <th>Placeable Levels</th>
-                <th>Hide Customer Details</th>
+                <th>Personal Info</th>
                 <th className="w-1"></th>
               </tr>
             </thead>
-	            <tbody>
-	              {data?.trees && data.trees.map((tree) => {
-	                const hasLegNames = Array.isArray(tree.legNames)
-	                  ? tree.legNames.length > 0
-	                  : !!tree.legNames;
+            <tbody>
+              {data?.trees && data.trees.map((tree) => {
+                const hasLegNames = Array.isArray(tree.legNames)
+                  ? tree.legNames.length > 0
+                  : !!tree.legNames;
 
-	                return <tr key={tree.id}>
-	                  <td>{tree.name}</td>
-	                  <td>{hasLegNames ? (tree.enableCustomerLegPreference ? 'Enabled' : 'Disabled') : '-'}</td>
-	                  <td>{hasLegNames ? (tree.enableHoldingTank ? `${tree.holdingTankDurationInDays} days` : 'Disabled') : '-'}</td>
-	                  <td>{hasLegNames ? '-' : (tree.enableCustomerMovements ? `${tree.movementDurationInDays} days` : 'Disabled')}</td>
-	                  <td>{hasLegNames ? '-' : (tree.enableCustomerMovements ? `${tree.maximumAllowedMovementLevels} levels` : 'Disabled')}</td>
-	                  <td><span>{tree.isPrivate ?? false ? 'Yes' : 'No'}</span></td>
-	                  <td>
+                return <tr key={tree.id}>
+                  <td>{tree.name}</td>
+                  <td>{hasLegNames ? (tree.enableCustomerLegPreference ? 'Enabled' : 'Disabled') : '-'}</td>
+                  <td>{hasLegNames ? (tree.enableHoldingTank ? `${tree.holdingTankDurationInDays} days` : 'Disabled') : '-'}</td>
+                  <td>{hasLegNames ? '-' : (tree.enableCustomerMovements ? `${tree.movementDurationInDays} days` : 'Disabled')}</td>
+                  <td>{hasLegNames ? '-' : (tree.enableCustomerMovements ? `${tree.maximumAllowedMovementLevels} levels` : 'Disabled')}</td>
+                  <td><span>{tree.isPrivate ?? false ? 'Hidden' : 'Visible'}</span></td>
+                  <td>
                     <button className="btn btn-ghost-secondary btn-icon" onClick={() => handleShow(`${tree.id}`)} >
                       <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-edit" width="40" height="40" viewBox="0 0 24 24" strokeWidth="1" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1"></path><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z"></path><path d="M16 5l3 3"></path></svg>
                     </button>
@@ -152,7 +185,7 @@ const PlacementRules = () => {
             <Switch title="Leg preference" name="enableCustomerLegPreference" value={activeItem?.enableCustomerLegPreference} onChange={handleChange} />
             <small className="form-hint">Allows customers to select the desired leg for the automatic placement of new enrollments.</small>
           </div>
-          <div className="mb-3">
+          <div className="mb-3 mb-3 border-top pt-3">
             <Switch title="Holding tank" name="enableHoldingTank" value={activeItem?.enableHoldingTank} onChange={handleChange} />
             <small className="form-hint">Enables customers to delay automatic placement of new enrollments.</small>
           </div>
@@ -162,7 +195,7 @@ const PlacementRules = () => {
           </div>}
         </> : <>
           <div className="mb-3">
-            <Switch title="Allow movements" name="enableCustomerMovements" value={activeItem?.enableCustomerMovements} onChange={handleChange} />
+            <Switch title="Enable placement suite" name="enableCustomerMovements" value={activeItem?.enableCustomerMovements} onChange={handleChange} />
             <small className="form-hint">Allows customers change placements once a placement is made.</small>
           </div>
           {activeItem?.enableCustomerMovements && <>
@@ -174,11 +207,54 @@ const PlacementRules = () => {
               <label className="form-label">Placeable levels</label>
               <NumericInput name="maximumAllowedMovementLevels" value={activeItem?.maximumAllowedMovementLevels} onChange={handleChange} />
             </div>
+            <div className="mb-3 ms-3">
+              <Switch
+                title="Override default disclaimer"
+                name="overrideMovementWarning"
+                value={overrideMovementWarning}
+                onChange={(_name, value) => setOverrideMovementWarning(value)}
+              />
+            </div>
+            {overrideMovementWarning && <div className="mb-3 ms-4">
+              <label className="form-label">Placement Suite Disclaimer</label>
+              <Editor
+                name="customerMovementWarning"
+                value={activeItem?.customerMovementWarning ?? ""}
+                mode="tiny"
+                height={220}
+                onChange={handleChange}
+              />
+            </div>}
+            <div className="mb-3 ms-3">
+              <Switch
+                title="Override default confirmation"
+                name="overrideMovementConfirmation"
+                value={overrideMovementConfirmation}
+                onChange={(_name, value) => setOverrideMovementConfirmation(value)}
+              />
+            </div>
+            {overrideMovementConfirmation && <div className="mb-3 ms-4">
+              <label className="form-label">Placement Confirmation</label>
+              <textarea
+                className="form-control"
+                name="customerMovementConfirmation"
+                rows="3"
+                placeholder="Leave blank to use the system default confirmation."
+                value={activeItem?.customerMovementConfirmation ?? ""}
+                onChange={(e) => handleChange(e.target.name, e.target.value)}
+              />
+            </div>}
           </>}
         </>}
-        <div className="mb-3">
-          <Switch title="Hide customer details" name="isPrivate" value={activeItem?.isPrivate} onChange={handleChange} />
-          <small className="form-hint">When enabled, personal information will not be displayed for customers in <i>this</i> tree only.</small>
+        <div className="mb-3 border-top pt-3">
+          <Switch
+            title="Allow customer personal info"
+            name="showCustomerDetails"
+            value={!activeItem?.isPrivate}
+            onChange={(_name, value) => handleChange("isPrivate", !value)}
+          />
+          <small className="form-hint">Allows customers to view personal information for customers in their downline in this tree, including email, birth date, phone numbers, and addresses.</small>
+          <small className="form-hint d-block mt-1">If customers are in multiple trees, visibility is allowed if any tree allows it.</small>
         </div>
       </div>
       <div className="modal-footer">

@@ -16,6 +16,17 @@
   text-wrap: pretty;
 }
 
+.form-hint-readable {
+  display: block;
+  max-width: 56ch;
+  line-height: 1.35;
+  text-wrap: pretty;
+}
+
+.form-hint-readable + .form-hint-readable {
+  margin-top: .125rem;
+}
+
 /* Chrome, Safari, Edge, Opera */
 input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
