@@ -67,10 +67,11 @@ const GET_NODE_RELEASES = gql`
 const paymentRowKey = (p) => `${p?.id ?? 'noPay'}|${p?.nodeId ?? 'noNode'}`;
 const paymentDomId = (p) => `details-${paymentRowKey(p).replace(/[^a-zA-Z0-9_-]/g, '')}`;
 
-const renderStatusBadge = (st) => (
+const renderStatusBadge = (st, showSubmittedForPending = false) => (
   <>
     {st === "SUCCESS" && <><span className="badge bg-success me-1" /> Paid</>}
-    {st === "PENDING" && <><span className="badge bg-warning me-1" /> Pending</>}
+    {st === "PENDING" && showSubmittedForPending && <><span className="badge bg-secondary me-1" /> Submitted</>}
+    {st === "PENDING" && !showSubmittedForPending && <><span className="badge bg-warning me-1" /> Pending</>}
     {st === "FAILURE" && <><span className="badge bg-danger me-1" /> Failed</>}
   </>
 );
@@ -79,6 +80,22 @@ const fmtMoney = (n) =>
   (n ?? 0).toLocaleString("en-US", { style: 'currency', currency: 'USD' });
 
 const fmtNumber = (n) => (n == null || isNaN(n) ? '—' : Number(n).toLocaleString());
+
+const renderBatchStatus = (status) => {
+  if (!status) return null;
+
+  const normalized = String(status).toUpperCase();
+  const isProcessing = normalized !== "PROCESSED" && normalized !== "CREATED";
+
+  return (
+    <span className="small text-muted">
+      {isProcessing && (
+        <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+      )}
+      <span className="text-lowercase text-capitalize">{normalized.toLowerCase()}</span>
+    </span>
+  );
+};
 
 const PaymentHistoryDetail = () => {
   const params = useParams();
@@ -204,6 +221,7 @@ const PaymentHistoryDetail = () => {
 
   // ---------- Derivations (hooks run every render) ----------
   const batchCreated = batchMeta.created;
+  const isProcessedBatch = String(batchMeta.status || '').toUpperCase() === 'PROCESSED';
   const paymentsRaw = payments; // aggregated array from state
 
   // Unpaid detail count = sum(totalDetails) for payments not SUCCESS
@@ -558,11 +576,11 @@ const PaymentHistoryDetail = () => {
             {processing ? (
               <>
                 <span className="spinner-border spinner-border-sm me-2" role="status"></span>
-                Submit Batch
+                {isProcessedBatch ? 'Resubmit Batch' : 'Submit Batch'}
               </>
             ) : (
               <>
-                Submit Batch
+                {isProcessedBatch ? 'Resubmit Batch' : 'Submit Batch'}
               </>
             )}
           </button>
@@ -588,7 +606,9 @@ const PaymentHistoryDetail = () => {
       <div className="container-xl">
         <div className="card">
           <div className="card-header">
-            <h3 className="card-title"><span className="me-auto">Batch Detail</span></h3>
+            <h3 className="card-title">
+              <span className="me-2">Batch Detail</span>
+            </h3>
             <span className="card-actions btn-actions">
               {batchCreated && (
                 <>
@@ -679,7 +699,7 @@ const PaymentHistoryDetail = () => {
                           <td>{p.customer.id}</td>
                           <td>{p.id}</td>
                           <td className="text-end fw-bold">{totalFormatted}</td>
-                          <td>{renderStatusBadge(p.status)}</td>
+                          <td>{renderStatusBadge(p.status, isProcessedBatch)}</td>
                           <td>{batchCreated && <LocalDate dateString={batchCreated} hideTime="true" />}</td>
                           <td>{p.totalDetails ?? 0}</td>
                           <td className="text-end" onClick={(e) => e.stopPropagation()}>
@@ -728,7 +748,7 @@ const PaymentHistoryDetail = () => {
                                           <>
                                             <tr key={s.id}>
                                               <td className="text-monospace">{s.id}</td>
-                                              <td>{renderStatusBadge(s.status)}</td>
+                                              <td>{renderStatusBadge(s.status, isProcessedBatch)}</td>
                                               <td>{s.bonus?.bonusTitle || '—'}</td>
                                               <td className="text-end">{fmtNumber(s.bonus?.level)}</td>
                                               <td className="text-end">{fmtNumber(s.bonus?.volume)}</td>
@@ -801,6 +821,10 @@ const PaymentHistoryDetail = () => {
               </table>
             </div>
           )}
+          <div className="card-footer">
+            <span className="small text-muted me-2">Batch status:</span>
+            {renderBatchStatus(batchMeta.status)}
+          </div>
         </div>
       </div>
 

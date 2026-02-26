@@ -157,7 +157,8 @@ const DateRangeInput = ({
     const toEndIso = (dt) => endOfDayISO(dt.getFullYear(), dt.getMonth() + 1, dt.getDate(), tz);
 
     const startIso = s ? toStartIso(s) : null;
-    const endIso = e ? toEndIso(e) : (s ? toEndIso(s) : null);
+    // Keep partial range selections open; only set end when user picks it.
+    const endIso = e ? toEndIso(e) : null;
     onChange(name, startIso, endIso);
   };
 

@@ -6,8 +6,10 @@ import SelectInput from "./selectInput";
 const SESSION_TZ_KEY = "preferredTimeZone";
 
 const TIME_ZONES = {
+  Global: [
+    "Etc/UTC"
+  ],
   Americas: [
-    "UTC",
     "America/Anchorage",
     "America/Los_Angeles",
     "America/Phoenix",
