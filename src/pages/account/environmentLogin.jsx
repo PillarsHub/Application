@@ -3,13 +3,13 @@ import PropTypes from 'prop-types';
 import { Get, useFetch } from '../../hooks/useFetch.js'
 import useToken from '../../features/authentication/hooks/useToken.jsx';
 import SelectInput from '../../components/selectInput.jsx';
-import PastDueNotice, { getPastDueNotice } from './pastDueNotice.jsx';
+import PastDueNotice, { usePastDueNotice } from './pastDueNotice.jsx';
  
 export default function EnvironmentLogin({ setToken, clearToken }) {
   const { token } = useToken();
   const { data } = useFetch(`/Authentication/token/${token.token}/Environments`);
   const [environmentId, setEnvironmentId] = useState();
-  const pastDueNotice = getPastDueNotice(token);
+  const { notice: pastDueNotice } = usePastDueNotice(token, { showAfterDays: 3 });
 
   const handleChange = (name, value) => {
     setEnvironmentId(value);
@@ -61,7 +61,7 @@ export default function EnvironmentLogin({ setToken, clearToken }) {
             </div>
             <h2 className="h2 text-center mb-4">Select Environment</h2>
             <p>There is more than one environment associated with this account. Please select the environment you would like to connect to.</p>
-            <PastDueNotice token={token} showAfterDays={3} />
+            <PastDueNotice token={token} notice={pastDueNotice} showAfterDays={3} />
             <div className="text-danger"></div>
             <div className="mb-3">
               <div className="form-selectgroup form-selectgroup-boxes d-flex flex-column">

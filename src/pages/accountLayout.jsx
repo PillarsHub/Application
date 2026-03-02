@@ -80,7 +80,7 @@ const AccountLayout = () => {
                     Subscription
                   </span>
                 </Link>
-              </li>
+              </li>*/}
               <li className={`nav-item ${activeClass(pageId, 'invoices')}`}>
                 <Link className="nav-link" to="/account/invoices">
                   <span className="nav-link-icon d-md-none d-lg-inline-block">
@@ -90,7 +90,7 @@ const AccountLayout = () => {
                     Invoices
                   </span>
                 </Link>
-              </li> */}
+              </li> 
               <li className={`nav-item ${activeClass(pageId, 'logs')}`}>
                 <Link className="nav-link" to="/account/logs">
                   <span className="nav-link-icon d-md-none d-lg-inline-block">

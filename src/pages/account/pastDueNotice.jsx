@@ -1,8 +1,10 @@
 import React from "react";
 import PropTypes from "prop-types";
+import { useFetch } from "../../hooks/useFetch.js";
 
-export default function PastDueNotice({ token, className = "mt-3", showPayButton = true, showAfterDays = 1 }) {
-  const pastDueNotice = getPastDueNotice(token, { showAfterDays });
+export default function PastDueNotice({ token, notice, className = "mt-3", showPayButton = true, showAfterDays = 1 }) {
+  const { notice: fetchedNotice } = usePastDueNotice(token, { showAfterDays });
+  const pastDueNotice = notice ?? fetchedNotice;
   if (!pastDueNotice) {
     return null;
   }
@@ -28,15 +30,29 @@ export default function PastDueNotice({ token, className = "mt-3", showPayButton
 
 PastDueNotice.propTypes = {
   token: PropTypes.any,
+  notice: PropTypes.object,
   className: PropTypes.string,
   showPayButton: PropTypes.bool,
   showAfterDays: PropTypes.number
 };
 
-export function getPastDueNotice(token, options = {}) {
+export function usePastDueNotice(token, options = {}) {
   const parsedShowAfterDays = Number(options.showAfterDays ?? 1);
   const showAfterDays = Number.isFinite(parsedShowAfterDays) && parsedShowAfterDays > 0 ? parsedShowAfterDays : 1;
-  const daysPastDue = getDaysPastDue(token);
+  const { data: daysLateData, loading, error } = useFetch("/api/v1/EnvironmentInvoices/daysLate");
+  const notice = getPastDueNoticeFromDaysPastDue(token, daysLateData, { showAfterDays });
+  return { notice, daysPastDue: Number(daysLateData) || 0, loading, error };
+}
+
+export function getPastDueNotice(token, options = {}) {
+  return getPastDueNoticeFromDaysPastDue(token, getDaysPastDue(token), options);
+}
+
+export function getPastDueNoticeFromDaysPastDue(token, daysPastDueRaw, options = {}) {
+  const parsedShowAfterDays = Number(options.showAfterDays ?? 1);
+  const showAfterDays = Number.isFinite(parsedShowAfterDays) && parsedShowAfterDays > 0 ? parsedShowAfterDays : 1;
+  const parsedDaysPastDue = Number(daysPastDueRaw);
+  const daysPastDue = Number.isFinite(parsedDaysPastDue) && parsedDaysPastDue > 0 ? parsedDaysPastDue : 0;
   if (daysPastDue < showAfterDays) {
     return null;
   }
@@ -73,9 +89,18 @@ export function getPastDueNotice(token, options = {}) {
 }
 
 function getDaysPastDue(token) {
-  void token;
-  const TEST_DAYS_PAST_DUE = 0;
-  return TEST_DAYS_PAST_DUE;
+  const rawDays = token?.daysPastDue
+    ?? token?.invoiceDaysPastDue
+    ?? token?.billing?.daysPastDue
+    ?? token?.invoice?.daysPastDue
+    ?? 0;
+
+  const parsed = Number(rawDays);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return 0;
+  }
+
+  return parsed;
 }
 
 function getDisableDateText(token, daysPastDue) {

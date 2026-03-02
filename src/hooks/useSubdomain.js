@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
 
 const HOST_OVERRIDES = {
-  "backoffice.celesty.com": "celesty",
-  "backoffice.dreamtrips.com": "dreamtrips",
-  "office.aregobrands.com": "arego",
+  "example.com": "example"
 };
 
 function parseSubdomain(hostname) {
