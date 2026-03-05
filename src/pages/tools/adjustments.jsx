@@ -44,7 +44,7 @@ const ADJUSTMENT_CATALOG = [
   {
     key: "PV",
     label: "PV",
-    effect: "Adjust",
+    effect: "Volume",
     valueKind: "number",
     unitLabel: "PV",
     helper: "This will add or subtract from the calculated PV for this period.",
@@ -52,7 +52,7 @@ const ADJUSTMENT_CATALOG = [
   {
     key: "CV",
     label: "CV",
-    effect: "Adjust",
+    effect: "Volume",
     valueKind: "number",
     unitLabel: "CV",
     helper: "This will add or subtract from the calculated CV for this period.",
@@ -60,7 +60,7 @@ const ADJUSTMENT_CATALOG = [
   {
     key: "QV",
     label: "QV",
-    effect: "Adjust",
+    effect: "Volume",
     valueKind: "number",
     unitLabel: "QV",
     helper: "This will add or subtract from the calculated QV for this period.",
@@ -97,7 +97,7 @@ const badgeClass = (effect) => {
   switch (effect) {
     case "Override":
       return "badge bg-azure-lt text-azure";
-    case "Adjust":
+    case "Volume":
       return "badge bg-orange-lt text-orange";
     case "Payment":
       return "badge bg-green-lt text-green";
@@ -176,7 +176,7 @@ const buildMockRows = () => {
       customerId: "22311",
       customerName: "Susan Jones",
       adjustmentKey: "PV",
-      effect: "Adjust",
+      effect: "Volume",
       valueText: null,
       valueNumber: 432.43,
       beginDate: "2025-10-01",
@@ -206,7 +206,7 @@ const ManualAdjustments = () => {
 
   // Filters
   const [customerFilter, setCustomerFilter] = useState(null); // customerId
-  const [effectFilter, setEffectFilter] = useState("All"); // All | Override | Adjust | Payment
+  const [effectFilter, setEffectFilter] = useState("All"); // All | Override | Volume | Payment
 
   // Search within results (separate from customer filter)
   const [searchText, setSearchText] = useState("");
@@ -413,11 +413,11 @@ const ManualAdjustments = () => {
         <div className="d-flex align-items-center justify-content-between gap-2 flex-wrap">
           <div className="d-flex align-items-center gap-2 flex-wrap">
             <div className="btn-group" role="group" aria-label="Effect filter">
-              {["All", "Override", "Adjust", "Payment"].map((x) => (
+              {["All", "Override", "Volume", "Payment"].map((x) => (
                 <button
                   key={x}
                   type="button"
-                  className={`btn btn-outline-secondary ${effectFilter === x ? "active" : ""}`}
+                  className={`btn btn-default ${effectFilter === x ? "active" : ""}`}
                   onClick={() => setEffectFilter(x)}
                 >
                   {x}
@@ -427,7 +427,7 @@ const ManualAdjustments = () => {
 
             <button className="btn btn-primary" onClick={openAdd}>
               <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-playlist-add" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M19 8h-14"></path><path d="M5 12h9"></path><path d="M11 16h-6"></path><path d="M15 16h6"></path><path d="M18 13v6"></path></svg>
-              Add adjustment
+              Add Adjustment
             </button>
 
           </div>
