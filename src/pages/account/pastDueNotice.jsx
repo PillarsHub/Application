@@ -2,7 +2,7 @@ import React from "react";
 import PropTypes from "prop-types";
 import { useFetch } from "../../hooks/useFetch.js";
 
-export default function PastDueNotice({ token, notice, className = "mt-3", showPayButton = true, showAfterDays = 1 }) {
+export default function PastDueNotice({ token, notice, className = "mt-3", showPayButton = true, showAfterDays = 2 }) {
   const { notice: fetchedNotice } = usePastDueNotice(token, { showAfterDays });
   const pastDueNotice = notice ?? fetchedNotice;
   if (!pastDueNotice) {
@@ -37,7 +37,7 @@ PastDueNotice.propTypes = {
 };
 
 export function usePastDueNotice(token, options = {}) {
-  const parsedShowAfterDays = Number(options.showAfterDays ?? 1);
+  const parsedShowAfterDays = Number(options.showAfterDays ?? 2);
   const showAfterDays = Number.isFinite(parsedShowAfterDays) && parsedShowAfterDays > 0 ? parsedShowAfterDays : 1;
   const { data: daysLateData, loading, error } = useFetch("/api/v1/EnvironmentInvoices/daysLate");
   const notice = getPastDueNoticeFromDaysPastDue(token, daysLateData, { showAfterDays });
@@ -49,7 +49,7 @@ export function getPastDueNotice(token, options = {}) {
 }
 
 export function getPastDueNoticeFromDaysPastDue(token, daysPastDueRaw, options = {}) {
-  const parsedShowAfterDays = Number(options.showAfterDays ?? 1);
+  const parsedShowAfterDays = Number(options.showAfterDays ?? 2);
   const showAfterDays = Number.isFinite(parsedShowAfterDays) && parsedShowAfterDays > 0 ? parsedShowAfterDays : 1;
   const parsedDaysPastDue = Number(daysPastDueRaw);
   const daysPastDue = Number.isFinite(parsedDaysPastDue) && parsedDaysPastDue > 0 ? parsedDaysPastDue : 0;

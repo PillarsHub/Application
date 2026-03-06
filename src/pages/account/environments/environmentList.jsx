@@ -76,7 +76,7 @@ const EnvironmentList = () => {
   const percentage = totalRequests > 0 ? (totalRequests / subTotal * 100) : 0;
 
   return <>
-    <PageHeader title="Environments" postTitle="Overview" showAfterDays={1}>
+    <PageHeader title="Environments" postTitle="Overview" showAfterDays={2}>
       <CardHeader>
         <div className="col-auto ms-auto d-print-none">
           <div className="btn-list">
