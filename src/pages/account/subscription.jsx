@@ -3,16 +3,18 @@ import PageHeader from "../../components/pageHeader";
 import { useFetch } from "../../hooks/useFetch";
 import DataLoading from "../../components/dataLoading";
 import DataError from "../../components/dataError";
-import useToken from "../../features/authentication/hooks/useToken.jsx";
-
-const tiers = [
-  { name: "Developer", base: 0, percent: 0, min: 0, max: 20000, maxNodes: 100, maxEnv: 2, maxApi: 20000, maxWebHook: 1000 },
-  { name: "Starter", base: 3500, percent: 1.5, min: 20001, max: 100000, maxNodes: 100000, maxEnv: 5, maxApi: 500000, maxWebHook: 20000 },
-  { name: "Business", base: 6000, percent: 1.25, min: 100001, max: 250000, maxNodes: 500000, maxEnv: 10, maxApi: 2000000, maxWebHook: 100000 },
-  { name: "Professional", base: 12000, percent: 1.0, min: 250001, max: Infinity, maxNodes: Infinity, maxEnv: 20, maxApi: Infinity, maxWebHook: Infinity },
-];
 
 const formatLimit = (value) => (value === Infinity ? "Unlimited" : value.toLocaleString());
+
+const formatCurrencyValue = (value) => `$${value.toLocaleString()}`;
+
+const formatCurrencyCap = (value) => (value === Infinity ? "Unlimited" : `Up to $${value.toLocaleString()}`);
+
+const formatCurrencyUsage = (used, limit) => {
+  if (used == null) return `Usage unavailable / ${formatCurrencyCap(limit)}`;
+  if (limit === Infinity) return "Unlimited";
+  return `${formatCurrencyValue(used)} / ${formatCurrencyValue(limit)}`;
+};
 
 const formatUsage = (used, limit) => {
   if (limit === Infinity) return "Unlimited";
@@ -24,43 +26,36 @@ const getUsagePercent = (used, limit) => {
   return Math.min((used / limit) * 100, 100);
 };
 
-const getPlanFromToken = (token) => {
-  const raw = token?.planName || token?.subscription?.planName || token?.billing?.planName || "";
-  return String(raw).toLowerCase();
-};
-
-const getTierFromUsage = (requestCount) => {
-  return tiers.find((tier) => requestCount >= tier.min && requestCount <= tier.max) || tiers[tiers.length - 1];
-};
+const normalizeLimit = (value) => (value == null ? Infinity : value);
 
 export default function Subscription() {
-  const today = new Date();
-  const beginningOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-  const tenDaysAgo = new Date();
-  tenDaysAgo.setDate(tenDaysAgo.getDate() - 31);
-  const startDate = beginningOfMonth > tenDaysAgo ? beginningOfMonth : tenDaysAgo;
+  const { loading, error, data: subscriptionData } = useFetch("/api/v1/Subscription", {}, {});
 
-  const { token } = useToken();
-  const { loading: envLoading, error: envError, data: environments } = useFetch("/api/v1/Environments", {}, []);
-  const { loading: statsLoading, error: statsError, data: statsData } = useFetch("/api/v1/Logs/stats", { date: startDate.toISOString() }, []);
+  if (loading) return <DataLoading />;
+  if (error) return <DataError error={error} />;
 
-  if (envLoading || statsLoading) return <DataLoading />;
-  if (envError) return <DataError error={envError} />;
-  if (statsError) return <DataError error={statsError} />;
+  const usage = subscriptionData?.usage ?? {};
+  const pricing = subscriptionData?.pricing ?? {};
+  const limits = subscriptionData?.limits ?? {};
 
-  const monthlyStats = (statsData || []).filter((item) => new Date(item.date) >= beginningOfMonth);
-  const totalRequests = monthlyStats.reduce((sum, item) => sum + (item.callCount || 0), 0);
-  const avgResponseTime = monthlyStats.length
-    ? Math.round(monthlyStats.reduce((sum, item) => sum + (item.averageResponseTime || 0), 0) / monthlyStats.length)
-    : 0;
+  const totalRequests = usage.apiCount ?? 0;
+  const avgResponseTime = usage.averageResponseTimeMs ?? 0;
+  const environmentCount = usage.totalEnvironments ?? 0;
+  const monthlyCommissionsGenerated = usage.totalCommissions ?? 0;
+  const totalCustomers = usage.totalCustomers ?? 0;
+  const totalWebhookMessages = usage.webhookCount ?? 0;
+  const currentTierName = subscriptionData.currentTierName;
+  const currentBase = pricing.baseMonthlyFee;
+  const currentPercent = pricing.commissionRatePercent;
+  const currentApiLimit = normalizeLimit(limits.apiCount);
+  const currentEnvironmentLimit = normalizeLimit(limits.totalEnvironments);
+  const currentCommissionLimit = normalizeLimit(limits.monthlyCommissionCap);
+  const currentCustomerLimit = normalizeLimit(limits.totalCustomers);
+  const currentWebhookLimit = normalizeLimit(limits.webhookCount);
 
-  const environmentCount = (environments || []).length;
-  const tokenPlanName = getPlanFromToken(token);
-  const inferredTier = getTierFromUsage(totalRequests);
-  const currentTier = tiers.find((tier) => tier.name.toLowerCase() === tokenPlanName) || inferredTier;
-
-  const apiPercent = getUsagePercent(totalRequests, currentTier.maxApi);
-  const envPercent = getUsagePercent(environmentCount, currentTier.maxEnv);
+  const apiPercent = getUsagePercent(totalRequests, currentApiLimit);
+  const envPercent = getUsagePercent(environmentCount, currentEnvironmentLimit);
+  const commissionPercent = getUsagePercent(monthlyCommissionsGenerated ?? 0, currentCommissionLimit);
 
   return (
     <PageHeader title="Subscription" preTitle="Account">
@@ -73,26 +68,43 @@ export default function Subscription() {
                   <div className="d-flex flex-wrap gap-3 align-items-start">
                     <div className="me-auto">
                       <div className="text-muted text-uppercase">Current Plan</div>
-                      <h2 className="mb-1">{currentTier.name}</h2>
+                      <h2 className="mb-1">{currentTierName}</h2>
                       <div className="text-muted">
-                        ${currentTier.base.toLocaleString()} base + {currentTier.percent}% of commissions
+                        ${currentBase.toLocaleString()} base + {currentPercent}% of commissions
                       </div>
                     </div>
-                    <div className="d-flex gap-2">
-                      <a href="/account/invoices" className="btn btn-outline-primary">View Invoices</a>
-                      <a href="/account/invoices" className="btn btn-primary">Manage Billing</a>
-                    </div>
-                  </div>
-                </div>
+	                    <div className="d-flex gap-2">
+	                      <a href="/account/invoices" className="btn btn-outline-primary">View Invoices</a>
+	                      <a href="/account/pricing-tiers" className="btn btn-primary">Pricing &amp; Tiers</a>
+	                    </div>
+	                  </div>
+	                </div>
               </div>
             </div>
 
-            <div className="col-md-6">
-              <div className="card">
-                <div className="card-body">
+	            <div className="col-md-4">
+	              <div className="card">
+                  <div className="card-body">
+                    <div className="d-flex align-items-center">
+                    <div className="subheader">Commissions generated monthly</div>
+                    <div className="ms-auto lh-1 text-muted">{formatCurrencyUsage(monthlyCommissionsGenerated, currentCommissionLimit)}</div>
+                  </div>
+                  <div className="h1 mb-2">
+                    {monthlyCommissionsGenerated == null ? "Unavailable" : formatCurrencyValue(monthlyCommissionsGenerated)}
+	                  </div>
+	                  <div className="progress progress-sm">
+	                    <div className="progress-bar bg-yellow" style={{ width: `${commissionPercent}%` }} role="progressbar" />
+	                  </div>
+	                </div>
+	              </div>
+	            </div>
+
+	            <div className="col-md-4">
+	              <div className="card">
+                  <div className="card-body">
                   <div className="d-flex align-items-center">
                     <div className="subheader">API requests this period</div>
-                    <div className="ms-auto lh-1 text-muted">{formatUsage(totalRequests, currentTier.maxApi)}</div>
+                    <div className="ms-auto lh-1 text-muted">{formatUsage(totalRequests, currentApiLimit)}</div>
                   </div>
                   <div className="h1 mb-2">{totalRequests.toLocaleString()}</div>
                   <div className="progress progress-sm">
@@ -102,12 +114,12 @@ export default function Subscription() {
               </div>
             </div>
 
-            <div className="col-md-6">
-              <div className="card">
-                <div className="card-body">
+	            <div className="col-md-4">
+	              <div className="card">
+                  <div className="card-body">
                   <div className="d-flex align-items-center">
                     <div className="subheader">Environments</div>
-                    <div className="ms-auto lh-1 text-muted">{formatUsage(environmentCount, currentTier.maxEnv)}</div>
+                    <div className="ms-auto lh-1 text-muted">{formatUsage(environmentCount, currentEnvironmentLimit)}</div>
                   </div>
                   <div className="h1 mb-2">{environmentCount.toLocaleString()}</div>
                   <div className="progress progress-sm">
@@ -125,7 +137,7 @@ export default function Subscription() {
                       <tr>
                         <th>Metric</th>
                         <th>Current Usage</th>
-                        <th>{currentTier.name} Limit</th>
+                        <th>{currentTierName} Limit</th>
                         <th>Status</th>
                       </tr>
                     </thead>
@@ -133,9 +145,9 @@ export default function Subscription() {
                       <tr>
                         <td>API requests (this month)</td>
                         <td>{totalRequests.toLocaleString()}</td>
-                        <td>{formatLimit(currentTier.maxApi)}</td>
+                        <td>{formatLimit(currentApiLimit)}</td>
                         <td>
-                          {currentTier.maxApi === Infinity || totalRequests <= currentTier.maxApi
+                          {currentApiLimit === Infinity || totalRequests <= currentApiLimit
                             ? <span className="badge bg-success-lt">Within plan</span>
                             : <span className="badge bg-danger-lt">Over limit</span>}
                         </td>
@@ -143,9 +155,29 @@ export default function Subscription() {
                       <tr>
                         <td>Environments</td>
                         <td>{environmentCount.toLocaleString()}</td>
-                        <td>{formatLimit(currentTier.maxEnv)}</td>
+                        <td>{formatLimit(currentEnvironmentLimit)}</td>
                         <td>
-                          {currentTier.maxEnv === Infinity || environmentCount <= currentTier.maxEnv
+                          {currentEnvironmentLimit === Infinity || environmentCount <= currentEnvironmentLimit
+                            ? <span className="badge bg-success-lt">Within plan</span>
+                            : <span className="badge bg-danger-lt">Over limit</span>}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>Customers</td>
+                        <td>{totalCustomers.toLocaleString()}</td>
+                        <td>{formatLimit(currentCustomerLimit)}</td>
+                        <td>
+                          {currentCustomerLimit === Infinity || totalCustomers <= currentCustomerLimit
+                            ? <span className="badge bg-success-lt">Within plan</span>
+                            : <span className="badge bg-danger-lt">Over limit</span>}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td>Webhook messages</td>
+                        <td>{totalWebhookMessages.toLocaleString()}</td>
+                        <td>{formatLimit(currentWebhookLimit)}</td>
+                        <td>
+                          {currentWebhookLimit === Infinity || totalWebhookMessages <= currentWebhookLimit
                             ? <span className="badge bg-success-lt">Within plan</span>
                             : <span className="badge bg-danger-lt">Over limit</span>}
                         </td>
@@ -162,48 +194,9 @@ export default function Subscription() {
               </div>
             </div>
 
-            <div className="col-12">
-              <div className="card">
-                <div className="table-responsive">
-                  <table className="table table-vcenter table-bordered table-nowrap card-table">
-                    <thead>
-                      <tr>
-                        <th>Plan</th>
-                        <th className="text-center">Base</th>
-                        <th className="text-center">Commission Rate</th>
-                        <th className="text-center">API Calls / Month</th>
-                        <th className="text-center">Environments</th>
-                        <th className="text-center">Customer Records</th>
-                        <th className="text-center">Webhook Messages</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {tiers.map((tier) => {
-                        const isCurrent = tier.name === currentTier.name;
-
-                        return (
-                          <tr key={tier.name} className={isCurrent ? "table-success" : ""}>
-                            <td>
-                              <div className="fw-bold">{tier.name}</div>
-                              {isCurrent && <div className="text-success small">Current plan</div>}
-                            </td>
-                            <td className="text-center">${tier.base.toLocaleString()}</td>
-                            <td className="text-center">{tier.percent}%</td>
-                            <td className="text-center">{formatLimit(tier.maxApi)}</td>
-                            <td className="text-center">{formatLimit(tier.maxEnv)}</td>
-                            <td className="text-center">{formatLimit(tier.maxNodes)}</td>
-                            <td className="text-center">{formatLimit(tier.maxWebHook)}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+	          </div>
+	        </div>
+	      </div>
     </PageHeader>
   );
 }

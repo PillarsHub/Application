@@ -613,7 +613,6 @@ const PayableSummaryPanel2 = ({
         <div className="card-body">
           <div className="accordion" id="earningsClassAccordion">
             {viewModel.map(({ earningsClass, periods }) => {
-              const isHold = earningsClass === "HOLD";
               const collapseId = `collapse_${earningsClass}`;
               const headerId = `heading_${earningsClass}`;
               const openByDefault = earningsClass === "RELEASE";
@@ -658,7 +657,6 @@ const PayableSummaryPanel2 = ({
                           <TriStateCheckBox
                             checked={classSel.all}
                             indeterminate={classSel.some}
-                            disabled={isHold}
                             onChange={(checked) => setClassSelected(earningsClass, checked)}
                             ariaLabel="Select/unselect all rows in this section"
                           />
@@ -735,7 +733,6 @@ const PayableSummaryPanel2 = ({
                                       <TriStateCheckBox
                                         checked={periodSel.all}
                                         indeterminate={periodSel.some}
-                                        disabled={isHold}
                                         onChange={(checked) => setPeriodSelected(earningsClass, period.id, checked)}
                                         ariaLabel="Select/unselect all bonuses in this period"
                                       />
@@ -845,7 +842,6 @@ const PayableSummaryPanel2 = ({
                                                           <TriStateCheckBox
                                                             checked={bonusSel.all}
                                                             indeterminate={bonusSel.some}
-                                                            disabled={isHold}
                                                             onChange={(checked) => setBonusSelected(b.earningsClass, b.period?.id, b.bonusTitle, checked)}
                                                             ariaLabel="Select/unselect all customers in this bonus"
                                                           />
@@ -947,7 +943,6 @@ const PayableSummaryPanel2 = ({
                                                                               <td className="w-1">
                                                                                 <CheckBox
                                                                                   name={p.id}
-                                                                                  disabled={isHold}
                                                                                   value={getSelected(b.earningsClass, b.period?.id, b.bonusTitle, p.customer?.id)}
                                                                                   onChange={(name, value) => {
                                                                                     const due = (p.amount ?? 0) - (p.released ?? 0);

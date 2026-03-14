@@ -25,6 +25,11 @@ const toPeriodKey = (earningsClass, periodId) =>
 const toBonusKeyUnderscore = (earningsClass, periodId, bonusTitle) =>
   `${asClass(earningsClass)}_${String(periodId)}_${normalizeBonus(bonusTitle)}`;
 
+const isPayableClass = (earningsClass) => {
+  const cls = asClass(earningsClass);
+  return cls === "RELEASE" || cls === "FORFEIT" || cls === "HOLD";
+};
+
 // Your default rule:
 const baseDefaultSelected = (earningsClass) => asClass(earningsClass) !== "HOLD";
 
@@ -60,7 +65,7 @@ const computeCurrentBatchUi = ({
 
   for (const r of summaryRows) {
     const cls = asClass(r.earningsClass);
-    if (cls === "HOLD") continue;
+    if (!isPayableClass(cls)) continue;
 
     const periodId = r.period?.id;
     const bonusTitle = r.bonusTitle;
@@ -84,8 +89,8 @@ const computeCurrentBatchUi = ({
         totalCustomers += 1;
 
         const due = (leaf.amount ?? 0) - (leaf.released ?? 0);
-        if (cls === "RELEASE") total += due;
         if (cls === "FORFEIT") forfeitTotal += due;
+        else total += due;
 
         if (!bonusGroupsMap.has(bgKey)) {
           bonusGroupsMap.set(bgKey, { bonusTitle, earningsClass: cls, periodId: String(periodId) });
@@ -129,8 +134,8 @@ const computeCurrentBatchUi = ({
         const finalCount = Math.max(0, countSummary - excludedCount);
         const finalDue = dueSummary - excludedDue;
 
-        if (cls === "RELEASE") total += finalDue;
         if (cls === "FORFEIT") forfeitTotal += finalDue;
+        else total += finalDue;
 
         totalCustomers += finalCount;
       } else {
@@ -159,8 +164,8 @@ const computeCurrentBatchUi = ({
             bonusGroupsMap.set(bgKey, { bonusTitle, earningsClass: cls, periodId: String(periodId) });
           }
 
-          if (cls === "RELEASE") total += includedDue;
           if (cls === "FORFEIT") forfeitTotal += includedDue;
+          else total += includedDue;
 
           totalCustomers += includedCount;
         }
@@ -238,7 +243,7 @@ const buildCurrentBatchPayload = ({
 
   for (const r of summaryRows ?? []) {
     const earningsClass = String(r?.earningsClass ?? "").toUpperCase();
-    if (earningsClass !== "RELEASE" && earningsClass !== "FORFEIT") continue;
+    if (!isPayableClass(earningsClass)) continue;
 
     const periodId = String(r?.period?.id ?? "").trim();
     if (!periodId) continue;
@@ -343,7 +348,6 @@ const Payables2 = () => {
 
   const getDefaultSelected = (earningsClass, periodId, bonusTitle) => {
     const cls = asClass(earningsClass);
-    if (cls === "HOLD") return false;
 
     const bKey = toBonusKeyPipe(cls, periodId, bonusTitle);
     const pKey = toPeriodKey(cls, periodId);
@@ -359,7 +363,6 @@ const Payables2 = () => {
 
   const getSelected = (earningsClass, periodId, bonusTitle, customerId) => {
     const cls = asClass(earningsClass);
-    if (cls === "HOLD") return false;
 
     const leafKey = toLeafKey(cls, periodId, bonusTitle, customerId);
     if (leafKey in selectionState.overrides) return !!selectionState.overrides[leafKey];
@@ -369,7 +372,6 @@ const Payables2 = () => {
 
   const setClassSelected = (earningsClass, value) => {
     const cls = asClass(earningsClass);
-    if (cls === "HOLD") return;
 
     setSelectionState(prev => {
       const next = structuredClone(prev);
@@ -402,7 +404,6 @@ const Payables2 = () => {
 
   const setPeriodSelected = (earningsClass, periodId, value) => {
     const cls = asClass(earningsClass);
-    if (cls === "HOLD") return;
     if (periodId == null) return;
 
     setSelectionState(prev => {
@@ -430,7 +431,6 @@ const Payables2 = () => {
 
   const setBonusSelected = (earningsClass, periodId, bonusTitle, value) => {
     const cls = asClass(earningsClass);
-    if (cls === "HOLD") return;
     if (periodId == null) return;
 
     setSelectionState(prev => {
@@ -451,7 +451,6 @@ const Payables2 = () => {
 
   const setLeafSelected = (earningsClass, periodId, bonusTitle, customerId, value) => {
     const cls = asClass(earningsClass);
-    if (cls === "HOLD") return;
 
     setSelectionState(prev => {
       const next = structuredClone(prev);
@@ -693,7 +692,7 @@ const Payables2 = () => {
                       </div>
 
                       <div className="d-flex justify-content-between">
-                        <p className="mb-2">Release Total</p>
+                        <p className="mb-2">Payment Total</p>
                         <p className="mb-2 fw-bold">
                           {(currentBatch.total ?? 0).toLocaleString("en-US", { style: 'currency', currency: 'USD' })}
                         </p>

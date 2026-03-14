@@ -105,9 +105,9 @@ const PayablesModal2 = ({ batchData, showModal, validation, onHide }) => {
 
         {invalid && (
           <div className="alert alert-warning mb-0" role="alert">
-            <div className="alert-title">Negative net payments included</div>
+            <div className="alert-title">Payments included that are below the minimum threshold</div>
             <div className="text-muted">
-              One or more customers will receive a negative payment amount.
+              One or more customers will receive a payment amount that is below the minimum threshold.
             </div>
           </div>
         )}

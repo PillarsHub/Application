@@ -33,6 +33,7 @@ const GET_CUSTOMER = gql`query ($nodeId: String, $date: Date) {
     nodeId
     amount
     bonusTitle
+    earningsClass
     level
     released
     commissionDate
@@ -142,11 +143,12 @@ const CustomerPayablePanel2 = ({
         };
       }
 
-      const key = normalizeBonus(item.bonusTitle);
+      const itemEarningsClass = asClass(item.earningsClass);
+      const key = `${normalizeBonus(item.bonusTitle)}|${itemEarningsClass}`;
       if (!acc[pid].items[key]) {
         acc[pid].items[key] = {
           bonusTitle: item.bonusTitle,
-          earningsClass: c.status?.earningsClass,
+          earningsClass: itemEarningsClass,
           period: item.period,
           amount: 0,
           released: 0,
@@ -164,7 +166,7 @@ const CustomerPayablePanel2 = ({
       .map(p => {
         const items = Object.values(p.items).map(row => ({
           ...row,
-          id: `${p.period.id}_${normalizeBonus(row.bonusTitle)}`,
+          id: `${p.period.id}_${normalizeBonus(row.bonusTitle)}_${asClass(row.earningsClass)}`,
         }))
           .sort((a, b) => String(a.bonusTitle ?? "").localeCompare(String(b.bonusTitle ?? "")));
 
@@ -176,7 +178,7 @@ const CustomerPayablePanel2 = ({
       .sort((a, b) => new Date(a.period?.end) - new Date(b.period?.end));
 
     setPeriods(periodList);
-  }, [data, customerId, bonusDetails, summaryRows]); // depend on lifted selection state so UI updates correctly
+  }, [data, customerId, bonusDetails, summaryRows]);
 
   const setPeriodSelectedLocal = (periodId, checked) => {
     const p = periods.find(x => x.period?.id === periodId);
@@ -201,8 +203,6 @@ const CustomerPayablePanel2 = ({
       }
     }
   };
-
-  const isHold = asClass(customer?.status?.earningsClass) === 'HOLD';
 
   const customerTotals = useMemo(() => {
     let totalDue = 0;
@@ -339,7 +339,7 @@ const CustomerPayablePanel2 = ({
                     <TriStateCheckBox
                       checked={customerSel.all}
                       indeterminate={customerSel.some}
-                      disabled={isHold || allBonusRows.length === 0}
+                      disabled={allBonusRows.length === 0}
                       onChange={(checked) => setAllSelectedLocal(checked)}
                       ariaLabel="Select/unselect all payables for this customer"
                     />
@@ -380,7 +380,6 @@ const CustomerPayablePanel2 = ({
                           <TriStateCheckBox
                             checked={periodSel.all}
                             indeterminate={periodSel.some}
-                            disabled={isHold}
                             onChange={(checked) => setPeriodSelectedLocal(periodId, checked)}
                             ariaLabel="Select/unselect all bonuses in this period"
                           />
@@ -417,7 +416,6 @@ const CustomerPayablePanel2 = ({
                               <div className="d-flex align-items-center gap-2 ps-3">
                                 <CheckBox
                                   name={it.id}
-                                  disabled={isHold}
                                   value={selected}
                                   onChange={(name, value) => {
                                     setLeafDue(it.earningsClass, periodId, it.bonusTitle, customerId, due);
