@@ -96,6 +96,7 @@ const AvailabilityInput = ({ name, value, resourceName, onChange }) => {
                     <option value="Status">Customer Status</option>
                     <option value="language">Language</option>
                     <option value="country">Country</option>
+                    <option value="product">Product</option>
                     {allValues && allValues.map((value) => {
                       return <option key={value.valueId} value={value.valueId}>
                         {value.name} ({value.valueId})

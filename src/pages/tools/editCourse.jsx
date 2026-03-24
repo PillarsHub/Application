@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom"
 import { useFetch } from "../../hooks/useFetch.js";
 import { SendRequest, SendRawRequest } from "../../hooks/usePost.js";
 import DataLoading from "../../components/dataLoading.jsx";
-import PageHeader from '../../components/pageHeader.jsx';
+import PageHeader, { CardHeader } from '../../components/pageHeader.jsx';
 import TextInput from '../../components/textInput.jsx';
 import TextArea from '../../components/textArea.jsx';
 import Switch from '../../components/switch.jsx';
@@ -12,6 +12,7 @@ import NumericInput from '../../components/numericInput.jsx';
 import AvailabilityInput from '../../components/availabilityInput.jsx';
 import FileInput from "../../components/fileInput.jsx";
 import Modal from '../../components/modal.jsx';
+import SaveButton from '../../components/saveButton.jsx';
 
 const MAX_DOCUMENT_SIZE = 1024 * 1024; // 1 MB (adjust the size as needed)
 
@@ -23,7 +24,7 @@ const EditCourse = () => {
   const [course, setCource] = useState({ id: 0 });
   const [processing, setProcessing] = useState();
   const [sizeError, setSizeError] = useState();
-  const [saveState, setSaveState] = useState();
+  const [saveSettings, setSaveSettings] = useState();
   const [showDelete, setShowDelete] = useState();
 
   useEffect(() => {
@@ -151,13 +152,14 @@ const EditCourse = () => {
   const handleSave = () => {
     var method = course.id > 0 ? "PUT" : "POST";
     var url = course.id > 0 ? `/api/v1/Courses/${course.id}` : `/api/v1/Courses`;
+    setSaveSettings({ status: 1 });
 
     SendRequest(method, url, course, (r) => {
       setCource(r);
-      setSaveState({ code: 0, message: "Success" });
+      setSaveSettings({ status: 2 });
       setProcessing();
     }, (error, code) => {
-      setSaveState({ code, message: error });
+      setSaveSettings({ status: 0, error: error });
       setProcessing();
     })
   }
@@ -170,6 +172,9 @@ const EditCourse = () => {
 
   return <>
     <PageHeader title="Edit Course" breadcrumbs={[{ title: 'Training Courses', link: `/training` }, { title: "Course" }]}>
+      <CardHeader>
+        <SaveButton settings={saveSettings} onClick={handleSave} />
+      </CardHeader>
       <div className="container-xl">
         <div className="row row-deck">
 
@@ -279,15 +284,6 @@ const EditCourse = () => {
                   </div>
                 </div>
               </div>}
-            </div>
-          </div>
-
-          <div className="col-12">
-            <div className="card">
-              <div className="card-body">
-                <button type="submit" className="btn btn-primary" onClick={handleSave}>Save</button>
-                {saveState?.code > 0 && <span className="text-danger ms-2">{JSON.stringify(saveState)}</span>}
-              </div>
             </div>
           </div>
         </div>

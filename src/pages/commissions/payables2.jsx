@@ -31,7 +31,7 @@ const isPayableClass = (earningsClass) => {
 };
 
 // Your default rule:
-const baseDefaultSelected = (earningsClass) => asClass(earningsClass) !== "HOLD";
+const baseDefaultSelected = (earningsClass) => asClass(earningsClass) === "RELEASE";
 
 // 1) Compute the UI batch model (this is your existing logic, extracted verbatim)
 const computeCurrentBatchUi = ({
