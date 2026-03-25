@@ -12,7 +12,7 @@ const BonusesCard = ({ bonuses, definitions, customerTypes, ranks }) => {
         {bonuses && bonuses.sort((a, b) => (a.index > b.index) ? 1 : -1).map((bonus) => {
           let customerType = customerTypes?.find(x => x.value == (bonus.customerTypeId ?? "1"));
           return <div key={bonus.id} className="">
-            <h2 className="accordion-header" id={`heading-${bonus.id}`}>
+            <h2 className="card-header" id={`heading-${bonus.id}`}>
               <button className="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target={`#collapse-${bonus.id}`} aria-expanded="true">
                 {bonus.name}  ({bonus.periodId})
                 {<div className="col-auto ms-1">

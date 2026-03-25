@@ -11,7 +11,7 @@ const RanksCard = ({ ranks }) => {
       <div className="col-lg-12">
         <div className="card">
           <div className="">
-            <h2 className="accordion-header" id="heading-003">
+            <h2 className="card-header" id="heading-003">
               <button className="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-003" aria-expanded="true">
                 Ranks and Qualifications
               </button>

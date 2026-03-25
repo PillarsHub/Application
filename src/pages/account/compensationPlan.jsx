@@ -163,7 +163,7 @@ const CompensationPlan = () => {
             <div className="col-lg-12">
               <div className="card">
                 <div className="">
-                  <h2 className="accordion-header" id="heading-002">
+                  <h2 className="card-header" id="heading-002">
                     <button className="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-002" aria-expanded="false">
                       Glossary of Terms
                     </button>
