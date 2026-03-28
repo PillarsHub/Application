@@ -15,6 +15,14 @@ const notLoading = 0;
 const loadingPage = 1;
 const loadingMore = 2;
 
+const hasFilterValue = (filter, values) => {
+  if (filter.inputType === "DateRange") {
+    return Boolean(values[`${filter.id}_begin`] && values[`${filter.id}_end`]);
+  }
+
+  return Boolean(Object.prototype.hasOwnProperty.call(values, filter.id) && values[filter.id]);
+};
+
 const Report = () => {
   let params = useParams()
   const [values, setValues] = useState({ offset: 0, count: 15 });
@@ -48,7 +56,8 @@ const Report = () => {
 
   useEffect(() => {
     if (meta) {
-      if (meta.filters.every(item => Object.prototype.hasOwnProperty.call(values, item.id) && values[item.id])) {
+      if (meta.filters.every(item => hasFilterValue(item, values))) {
+
         setDataLoading((values?.filterUpdate ?? true) ? loadingPage : loadingMore);
         setDataError();
         const activeRequest = ++requestSeq.current;

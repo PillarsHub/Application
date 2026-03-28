@@ -24,9 +24,15 @@ const FilterInput = ({ filter, values, onChange }) => {
   const { inputType } = filter;
   switch (inputType) {
     case "Text":
-      return <div className="col-md-2 col-sm-12"><TextInput name={filter.id} placeholder={filter.id} value={values[filter.id] ?? ''} onChange={onChange} /></div>
+      return <div className="col-md-2 col-sm-12">
+        {filter.title && <label className="form-label">{filter.title}</label>}
+        <TextInput name={filter.id} placeholder={filter.id} value={values[filter.id] ?? ''} onChange={onChange} />
+      </div>
     case "Number":
-      return <div className="col-md-2 col-sm-12"><NumericInput name={filter.id} placeholder={filter.id} value={values[filter.id] ?? ''} onChange={onChange} /></div>
+      return <div className="col-md-2 col-sm-12">
+        {filter.title && <label className="form-label">{filter.title}</label>}
+        <NumericInput name={filter.id} placeholder={filter.id} value={values[filter.id] ?? ''} onChange={onChange} />
+      </div>
     case "Period": {
       let options = {
         hideTime: true,
@@ -36,6 +42,7 @@ const FilterInput = ({ filter, values, onChange }) => {
       return <>
         < div className="col" ></div>
         <div className="col-auto ms-auto">
+          {filter.title && <label className="form-label">{filter.title}</label>}
           <PeriodPicker periodId={Number(values?.periodId ?? '0')} setPeriodId={(value) => onChange('periodId', Number(value))} options={options} />
         </div>
       </>;

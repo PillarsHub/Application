@@ -4,21 +4,65 @@ import {
   RouterProvider,
 } from "react-router-dom";
 import useToken, { TokenProvider } from "./features/authentication/hooks/useToken.jsx";
+import DataLoading from "./components/dataLoading.jsx";
+
+const CHUNK_RELOAD_KEY = "ph:chunk-reload";
+
+const isChunkLoadError = (error) => {
+  const message = error?.message?.toLowerCase?.() ?? "";
+
+  return message.includes("failed to fetch dynamically imported module")
+    || message.includes("error loading dynamically imported module")
+    || message.includes("importing a module script failed")
+    || message.includes("chunkloaderror")
+    || message.includes("loading chunk");
+};
+
+const reloadForChunkError = (error) => {
+  if (!isChunkLoadError(error)) {
+    throw error;
+  }
+
+  const hasReloaded = sessionStorage.getItem(CHUNK_RELOAD_KEY) === "true";
+
+  if (!hasReloaded) {
+    sessionStorage.setItem(CHUNK_RELOAD_KEY, "true");
+    window.location.reload();
+    return new Promise(() => {});
+  }
+
+  sessionStorage.removeItem(CHUNK_RELOAD_KEY);
+  throw error;
+};
+
+const loadRouteModule = async (importer) => {
+  try {
+    const mod = await importer();
+    sessionStorage.removeItem(CHUNK_RELOAD_KEY);
+    return mod;
+  } catch (error) {
+    return reloadForChunkError(error);
+  }
+};
+
+const safeLazy = (importer) => lazy(() => loadRouteModule(importer));
+
+const AppLoading = ({ title }) => <DataLoading title={title} />;
 
 // Direct render pages (auth guards)
-const Login = lazy(() => import("./pages/account/login.jsx"));
-const EnvironmentLogin = lazy(() => import("./pages/account/environmentLogin.jsx"));
-const ForgotPassword = lazy(() => import("./pages/account/forgotPassword.jsx"));
-const ResetPassword = lazy(() => import("./pages/account/resetpassword.jsx"));
+const Login = safeLazy(() => import("./pages/account/login.jsx"));
+const EnvironmentLogin = safeLazy(() => import("./pages/account/environmentLogin.jsx"));
+const ForgotPassword = safeLazy(() => import("./pages/account/forgotPassword.jsx"));
+const ResetPassword = safeLazy(() => import("./pages/account/resetpassword.jsx"));
 
 // Layouts
-const Layout = lazy(() => import("./pages/layout.jsx"));
-const AccountLayout = lazy(() => import("./pages/accountLayout.jsx"));
-const CustomerLayout = lazy(() => import("./pages/customerLayout.jsx"));
+const Layout = safeLazy(() => import("./pages/layout.jsx"));
+const AccountLayout = safeLazy(() => import("./pages/accountLayout.jsx"));
+const CustomerLayout = safeLazy(() => import("./pages/customerLayout.jsx"));
 
 /** Helper: wraps a dynamic import into a lazy route */
 const lazyRoute = (importer) => async () => {
-  const mod = await importer();
+  const mod = await loadRouteModule(importer);
   return { Component: mod.default ?? mod.Component };
 };
 
@@ -163,14 +207,14 @@ function App() {
   // Auth redirects handled before router
   if (path === "/account/forgotpassword") {
     return (
-      <Suspense fallback={<></>}>
+      <Suspense fallback={<AppLoading title="Loading password recovery" />}>
         <ForgotPassword />
       </Suspense>
     );
   }
   if (path === "/account/resetpassword") {
     return (
-      <Suspense fallback={<></>}>
+      <Suspense fallback={<AppLoading title="Loading password reset" />}>
         <ResetPassword />
       </Suspense>
     );
@@ -178,7 +222,7 @@ function App() {
 
   if (!token) {
     return (
-      <Suspense fallback={<></>}>
+      <Suspense fallback={<AppLoading title="Loading sign in" />}>
         <Login setToken={setToken} />
       </Suspense>
     );
@@ -187,12 +231,12 @@ function App() {
     if (isEnvironmentDetailPath) {
       return (
         <TokenProvider clearToken={clearToken}>
-          <RouterProvider router={router} fallbackElement={<></>} />
+          <RouterProvider router={router} fallbackElement={<AppLoading title="Loading page" />} />
         </TokenProvider>
       );
     }
     return (
-      <Suspense fallback={<></>}>
+      <Suspense fallback={<AppLoading title="Loading environment access" />}>
         <EnvironmentLogin setToken={setToken} clearToken={clearToken} />
       </Suspense>
     );
@@ -200,7 +244,7 @@ function App() {
 
   return (
     <TokenProvider clearToken={clearToken}>
-      <RouterProvider router={router} fallbackElement={<></>} />
+      <RouterProvider router={router} fallbackElement={<AppLoading title="Loading page" />} />
     </TokenProvider>
   );
 }
