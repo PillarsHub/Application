@@ -15,17 +15,17 @@ function parseSubdomain(hostname) {
 }
 
 export default function useSubdomain() {
-  const [subdomain, setSubdomain] = useState(null);
+  const hostname = window.location.hostname;
+  const [subdomain, setSubdomain] = useState(() => parseSubdomain(hostname));
 
   useEffect(() => {
-    const hostname = window.location.hostname;
     const d = parseSubdomain(hostname);
 
     // Cache per-host (your current approach)
     sessionStorage.setItem(hostname, d ?? "");
 
     setSubdomain(d);
-  }, []);
+  }, [hostname]);
 
-  return { subdomain };
+  return { subdomain, domain: hostname };
 }

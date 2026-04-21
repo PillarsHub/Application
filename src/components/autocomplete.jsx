@@ -34,7 +34,7 @@ const AutoComplete = ({ name, value, placeholder = 'Search...', showIcon = true,
   const inputClass = (errorText || errored) ? `${className} is-invalid` : className;
 
   const showClearIcon = showClear && value != '' && value != null;
-  const groupClass = showClearIcon ? 'input-group input-group-flat' : 'input-icon';
+  const groupClass = showClearIcon ? 'input-group input-group-flat atuocomplete-pane' : 'input-icon atuocomplete-pane';
 
   return <>
     <div className={groupClass}>

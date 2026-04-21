@@ -17,7 +17,6 @@ import AvailabilityInput from "../../components/availabilityInput.jsx";
 import AutoComplete from "../../components/autocomplete.jsx";
 import SaveButton from "../../components/saveButton.jsx";
 import Modal from "../../components/modal.jsx";
-import useSubdomain from "../../hooks/useSubdomain.js";
 import { useTheme } from "../../hooks/useTheme.js";
 
 var GET_PREVIEW_DATA = gql`query ($nodeIds: [String]!, $periodDate: Date!) {
@@ -205,8 +204,7 @@ const parseImportWidget = (rawValue, currentWidgetId) => {
 
 const EditWidget = () => {
   let params = useParams()
-  const { subdomain } = useSubdomain();
-  const { theme } = useTheme({ subdomain });
+  const { theme } = useTheme();
   const defaultWidgetColors = getDefaultWidgetColors(theme);
 
   const [previewId, setPreviewId] = useState();

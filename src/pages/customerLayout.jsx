@@ -5,7 +5,6 @@ import { useParams } from "react-router-dom"
 import BackOfficeMenu from './backOfficeMenu.jsx';
 import CorporateMenu from './corporateMenu.jsx';
 import DataLoading from '../components/dataLoading.jsx';
-import useSubdomain from '../hooks/useSubdomain.js';
 import { useTheme } from '../hooks/useTheme.js';
 import AccountMenu from './accountMenu.jsx';
 import AutoCompleteOrdersCustomers from '../components/autoCompleteOrdersCustomers.jsx';
@@ -140,8 +139,7 @@ const relativeLuminance = ({ r, g, b }) => {
 const CustomerLayout = () => {
   const { customerId } = useParams();
   const [searchText, setSearchText] = useState();
-  const { subdomain } = useSubdomain();
-  const { theme, loading, error } = useTheme({ subdomain: subdomain });
+  const { theme, loading, error } = useTheme();
 
   useEffect(() => {
     document.documentElement.style.setProperty("--ph-widget-header-bg", getThemeColorValue(theme, THEME_COLOR_WIDGET_HEADER, "#ffffff"));

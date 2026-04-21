@@ -1,13 +1,11 @@
 import React, { useState } from "react";
 import { SendRequest } from '../../hooks/usePost';
-import useSubdomain from "../../hooks/useSubdomain";
 import { useTheme } from '../../hooks/useTheme';
 import DataLoading from '../../components/dataLoading';
 
 const ForgotPassword = () => {
   const [emailAddress, setEmailAddress] = useState();
-  const { subdomain } = useSubdomain();
-  const { theme, loading, error } = useTheme({ subdomain: subdomain });
+  const { theme, loading, error } = useTheme();
 
   if (loading) return <DataLoading title="Loading Theme" />;
   if (error) return `Error! ${error}`;

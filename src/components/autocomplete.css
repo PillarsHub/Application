@@ -62,3 +62,8 @@
     overflow-y: auto;
     min-width: 400px;
   }
+
+  .atuocomplete-pane .input-icon-addon {
+    right: 0;
+    left: auto;
+  }

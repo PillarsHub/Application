@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { Get } from '../../hooks/useFetch';
-import useSubdomain from '../../hooks/useSubdomain';
 import { useTheme } from '../../hooks/useTheme';
 import DataLoading from '../../components/dataLoading';
 
@@ -10,15 +9,8 @@ export default function Login({ setToken }) {
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState({});
   const [loginError, setLoginError] = useState('');
-  const { subdomain } = useSubdomain();
-  const { theme, loading, error } = useTheme({ subdomain: subdomain });
+  const { theme, loading, error } = useTheme();
   const usernameRef = useRef(null);
-
-  useEffect(() => {
-    if (!loading && usernameRef.current) {
-      usernameRef.current.focus();
-    }
-  }, [loading]);
 
   const validate = () => {
     const errors = {};
@@ -53,6 +45,15 @@ export default function Login({ setToken }) {
   };
 
   useEffect(() => {
+    if (!theme || theme.init) return;
+
+    var loginRedirectUrl = getDomainLoginRedirectUrl(theme);
+    if (loginRedirectUrl) {
+      window.location.replace(loginRedirectUrl);
+    } else {
+      usernameRef.current.focus();
+    }
+
     document.title = theme?.title ? `${theme.title}` : 'Pillars';
     if (theme?.favicon?.url) {
       const favicon = document.querySelector('link[rel="icon"]');
@@ -126,3 +127,24 @@ export default function Login({ setToken }) {
 Login.propTypes = {
   setToken: PropTypes.func.isRequired,
 };
+
+function getDomainLoginRedirectUrl(theme) {
+  if (!Array.isArray(theme?.domains)) return null;
+
+  const currentHost = window.location.hostname.toLowerCase();
+  const match = theme.domains.find((domain) => {
+    return domain?.domain?.toLowerCase() === currentHost && domain?.loginUrl;
+  });
+
+  if (!match) return null;
+
+  let redirectUrl;
+  try {
+    redirectUrl = new URL(match.loginUrl, window.location.origin);
+  } catch {
+    return null;
+  }
+
+  if (redirectUrl.origin === window.location.origin) return null;
+  return redirectUrl.href;
+}

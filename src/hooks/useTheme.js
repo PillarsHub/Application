@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { Get } from "../hooks/useFetch";
+import { Get } from "../hooks/useFetch";  
+import useSubdomain from './useSubdomain';
 import { GetToken } from "../features/authentication/hooks/useToken.jsx";
 
 //To set the environment to a con
 const _environmentId_override = null;
 
-export default function useTheme({ subdomain } = {}) {
+export default function useTheme() {
   const [environmentId] = useState(_environmentId_override);
   const [loading, setLoading] = useState(false);
   const [error] = useState(false);
   const [theme, setTheme] = useState({ init: true });
+  const { subdomain, domain } = useSubdomain();
 
   useEffect(() => {
     setTheme(() => {
@@ -29,7 +31,11 @@ export default function useTheme({ subdomain } = {}) {
     if (theme == undefined) {
       let path = '/api/v1/Theme';
       if (subdomain) { path += "/" + subdomain; }
-      if (environmentId) path = `/api/v1/Theme?environmentId=${environmentId}`;
+      const params = new URLSearchParams();
+      if (domain) params.set('domain', domain);
+      if (environmentId) params.set('environmentId', environmentId);
+      const queryString = params.toString();
+      if (queryString) path += `?${queryString}`;
 
       Get(path, (data) => {
         setLoading(false);
@@ -40,7 +46,7 @@ export default function useTheme({ subdomain } = {}) {
         setTheme({});
       })
     }
-  }, [theme]);
+  }, [theme, subdomain, domain, environmentId]);
 
   return { theme, loading, error };
 }
@@ -76,5 +82,6 @@ function SetThemeInLocalStorage(theme, key) {
 export { useTheme, ClearTheme };
 
 useTheme.propTypes = {
-  subdomain: PropTypes.string
+  subdomain: PropTypes.string,
+  domain: PropTypes.string
 }
