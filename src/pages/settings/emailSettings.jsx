@@ -58,7 +58,7 @@ const EmailSettings = () => {
           </div>
           <div className="mb-3">
             <label className="form-label">Password</label>
-            <TextInput type="password" name="password" value={item?.password} required={true} onChange={handleChange} />
+            <TextInput type="password" name="password" value={item?.password} placeholder="****************" required={true} onChange={handleChange} />
           </div>
         </div>
         <div className="card-footer">

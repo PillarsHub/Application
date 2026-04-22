@@ -54,6 +54,8 @@ const upsertNamedValue = (items, name, value) => {
   return next;
 };
 
+const getThemeDomains = (domains) => Array.isArray(domains) ? domains : [];
+
 const parseBoolean = (value, defaultValue = true) => {
   if (typeof value === "boolean") return value;
   if (typeof value === "string") {
@@ -100,6 +102,32 @@ const Theme = () => {
     setItem((current) => ({
       ...current,
       settings: upsertNamedValue(current?.settings, name, `${value}`)
+    }));
+  };
+
+  const handleThemeDomainChange = (index, name, value) => {
+    setItem((current) => {
+      const domains = getThemeDomains(current?.domains).map((domain) => ({ ...domain }));
+      domains[index] = { ...domains[index], [name]: value };
+
+      return { ...current, domains };
+    });
+  };
+
+  const handleAddThemeDomain = () => {
+    setItem((current) => ({
+      ...current,
+      domains: [
+        ...getThemeDomains(current?.domains),
+        { domain: "", loginUrl: "", logoutUrl: "", accountUrl: "" }
+      ]
+    }));
+  };
+
+  const handleRemoveThemeDomain = (index) => {
+    setItem((current) => ({
+      ...current,
+      domains: getThemeDomains(current?.domains).filter((_, domainIndex) => domainIndex !== index)
     }));
   };
 
@@ -169,6 +197,7 @@ const Theme = () => {
   const customerSubmenuColor = getNamedValue(item?.settings, THEME_SETTING_CUSTOMER_SUBMENU_COLOR) ?? "#243049";
   const customerSubmenuTextColor = getNamedValue(item?.settings, THEME_SETTING_CUSTOMER_SUBMENU_TEXT_COLOR) ?? (item?.headerTextColor ?? "#ffffff");
   const customerMenuPlacement = showTopMenu ? "topNavigation" : "sideNavigation";
+  const themeDomains = getThemeDomains(item?.domains);
 
   const inlineStyle = {
     "--tblr-navbar-bg": (item?.headerColor ?? '#1d273b'),
@@ -270,6 +299,81 @@ const Theme = () => {
                 </div>
               </div>
             </div>}
+          </div>
+        </div>
+
+        <div className="card mb-4 d-none">
+          <div className="card-body p-3">
+            <div className="border-bottom pb-2 mb-3 d-flex align-items-center">
+              <div>
+                <h3 className="h3 mb-1">Domain URLs</h3>
+                <p className="text-secondary small mb-0">Configure login, logout, and account links for each hosted domain.</p>
+              </div>
+              <button type="button" className="btn btn-default ms-auto" onClick={handleAddThemeDomain}>
+                Add Domain
+              </button>
+            </div>
+
+            {themeDomains.length === 0 && <div className="text-secondary">
+              No domain URLs configured.
+            </div>}
+
+            {themeDomains.map((domain, index) => (
+              <div className="border-bottom pb-3 mb-3" key={index}>
+                <div className="mb-3 row">
+                  <label className="col-3 col-form-label text-secondary">Domain</label>
+                  <div className="col">
+                    <TextInput
+                      placeholder="app.example.com"
+                      name="domain"
+                      value={domain?.domain ?? ""}
+                      onChange={(name, value) => handleThemeDomainChange(index, name, value)}
+                    />
+                  </div>
+                </div>
+                <div className="mb-3 row">
+                  <label className="col-3 col-form-label text-secondary">Login URL</label>
+                  <div className="col">
+                    <TextInput
+                      type="url"
+                      placeholder="https://login.example.com"
+                      name="loginUrl"
+                      value={domain?.loginUrl ?? ""}
+                      onChange={(name, value) => handleThemeDomainChange(index, name, value)}
+                    />
+                  </div>
+                </div>
+                <div className="mb-3 row">
+                  <label className="col-3 col-form-label text-secondary">Logout URL</label>
+                  <div className="col">
+                    <TextInput
+                      type="url"
+                      placeholder="https://login.example.com/logout"
+                      name="logoutUrl"
+                      value={domain?.logoutUrl ?? ""}
+                      onChange={(name, value) => handleThemeDomainChange(index, name, value)}
+                    />
+                  </div>
+                </div>
+                <div className="mb-0 row">
+                  <label className="col-3 col-form-label text-secondary">Account URL</label>
+                  <div className="col">
+                    <div className="d-flex gap-2">
+                      <TextInput
+                        type="url"
+                        placeholder="https://account.example.com"
+                        name="accountUrl"
+                        value={domain?.accountUrl ?? ""}
+                        onChange={(name, value) => handleThemeDomainChange(index, name, value)}
+                      />
+                      <button type="button" className="btn btn-outline-danger" onClick={() => handleRemoveThemeDomain(index)}>
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 

@@ -18,6 +18,7 @@ import AutoComplete from "../../components/autocomplete.jsx";
 import SaveButton from "../../components/saveButton.jsx";
 import Modal from "../../components/modal.jsx";
 import { useTheme } from "../../hooks/useTheme.js";
+import Switch from "../../components/switch.jsx";
 
 var GET_PREVIEW_DATA = gql`query ($nodeIds: [String]!, $periodDate: Date!) {
   customers(idList: $nodeIds) {
@@ -422,6 +423,7 @@ const EditWidget = () => {
 
                   </div>
                   <div className="tab-pane" id="tabs-requirements-7" role="tabpanel">
+                    <Switch name="corporate" value={item?.corporate} title="Corporate Widget" onChange={handleChange} />
                     <AvailabilityInput name="availability" resourceName="widget" value={item?.availability ?? []} onChange={handleChange} />
                   </div>
                   <div className="tab-pane" id="tabs-advanced-7" role="tabpanel">
