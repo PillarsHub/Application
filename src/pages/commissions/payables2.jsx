@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { SendRequest } from "../../hooks/usePost.js";
-import PageHeader from "../../components/pageHeader.jsx";
+import PageHeader, { CardHeader } from "../../components/pageHeader.jsx";
+import AddPayableModal from './payableComponents/addPayableModal.jsx';
 import AutoComplete from '../../components/autocomplete.jsx';
 import DateTimeInput from '../../components/dateTimeInput.jsx';
 import DataLoading from '../../components/dataLoading.jsx';
@@ -604,6 +605,9 @@ const Payables2 = () => {
   return (
     <>
       <PageHeader title="Commission Payables">
+        <CardHeader>
+          <AddPayableModal setCurrentBatch={setCurrentBatch} refetch={handleRefetch} />
+        </CardHeader>
         <div className="container-xl">
           <div className="row row-cards">
             <div className="col-xl-9">
