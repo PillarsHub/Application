@@ -110,7 +110,7 @@ const HtmlWidget = ({ html, customer, widget, isPreview }) => {
         var url = Mustache.render(query.query, { customer: customer, authorizationCode: authCode, data: data });
         try {
           SendRequest('GET', url, {}, (data) => {
-            setData(data)
+            setData({...data, queryParameters: isLikelyGraphQLQuery(query?.query) ? buildGraphQLVariables() : {}});
           }, (error, code) => {
             setData({ error: `${code} - ${error}` });
           });
@@ -129,7 +129,7 @@ const HtmlWidget = ({ html, customer, widget, isPreview }) => {
               setTotalItems(total);
             }
 
-            setData(r.data)
+            setData({...r.data, queryParameters: isLikelyGraphQLQuery(query.query) ? buildGraphQLVariables() : {}});
           }
         }, (error, code) => {
           setData({ error: `${code} - ${error}` });
@@ -175,7 +175,6 @@ const HtmlWidget = ({ html, customer, widget, isPreview }) => {
   var useIframe = widget?.settings?.['useIframe'];
 
   if (useIframe) {
-    const queryParameters = isLikelyGraphQLQuery(query?.query) ? buildGraphQLVariables() : {};
     var clone = { ...customer, widgets: [], cards: [] };
     delete clone.widgets;
     delete clone.cards;
@@ -184,7 +183,7 @@ const HtmlWidget = ({ html, customer, widget, isPreview }) => {
       <HtmlFrame
         htmlContent={output}
         cssContent={widget.css}
-        data={{ customer: clone, authorizationCode: authCode, data: data, queryParameters: queryParameters }}
+        data={{ customer: clone, authorizationCode: authCode, data: data, queryParameters: data.queryParameters }}
         onQueryVariablesChange={handleQueryVariablesChange}
       />
       {pagingData.enabled && (
