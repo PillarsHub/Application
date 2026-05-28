@@ -212,8 +212,6 @@ function isWithinLastDays(dateString, history, movementDurationInDays) {
     return false;
   }
 
-  if (history?.length > 1) return false;
-
   const input = new Date(dateString);
   if (isNaN(input)) return false;
 
