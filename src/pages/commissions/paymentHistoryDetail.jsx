@@ -10,6 +10,12 @@ import Avatar from '../../components/avatar';
 // ---------- Config ----------
 const PAYMENTS_PAGE_SIZE = 300;
 const DETAIL_PAGE_SIZE = 100;
+const PAYMENT_STATUS_OPTIONS = [
+  { value: 'ALL', label: 'All statuses' },
+  { value: 'SUCCESS', label: 'Paid' },
+  { value: 'PENDING', label: 'Pending / Submitted' },
+  { value: 'FAILURE', label: 'Failed' }
+];
 
 // ---------- GraphQL ----------
 
@@ -114,8 +120,9 @@ const PaymentHistoryDetail = () => {
   const [loadProgress, setLoadProgress] = useState({ loaded: 0, total: 0 });
   const [selectedPaymentIds, setSelectedPaymentIds] = useState(() => new Set());
 
-  // search
-  const [searchText, setSearchText] = useState('');
+	  // search and filters
+	  const [searchText, setSearchText] = useState('');
+	  const [statusFilter, setStatusFilter] = useState('ALL');
 
   // expanded rows keyed by composite rowKey
   const [expanded, setExpanded] = useState(() => new Set());
@@ -242,15 +249,19 @@ const PaymentHistoryDetail = () => {
     });
   }, [paymentsRaw]);
 
-  const normalizedSearch = useMemo(() => (searchText || '').trim().toLocaleLowerCase(), [searchText]);
+	  const normalizedSearch = useMemo(() => (searchText || '').trim().toLocaleLowerCase(), [searchText]);
 
-  const filteredPayments = useMemo(() => {
-    if (!normalizedSearch) return sortedPayments;
+	  const filteredPayments = useMemo(() => {
+	    const normalizedStatus = String(statusFilter || 'ALL').toUpperCase();
 
-    return sortedPayments.filter(p => {
-      const name = (p.customer?.fullName || '').toLocaleLowerCase();
-      const customerId = String(p.customer?.id ?? '').toLocaleLowerCase();
-      const paymentId = String(p.id ?? '').toLocaleLowerCase();
+	    return sortedPayments.filter(p => {
+	      const matchesStatus = normalizedStatus === 'ALL' || String(p.status || '').toUpperCase() === normalizedStatus;
+	      if (!matchesStatus) return false;
+	      if (!normalizedSearch) return true;
+
+	      const name = (p.customer?.fullName || '').toLocaleLowerCase();
+	      const customerId = String(p.customer?.id ?? '').toLocaleLowerCase();
+	      const paymentId = String(p.id ?? '').toLocaleLowerCase();
 
       // optional: include nodeId as a fallback (handy when customer name missing)
       const nodeId = String(p.nodeId ?? '').toLocaleLowerCase();
@@ -258,11 +269,11 @@ const PaymentHistoryDetail = () => {
       return (
         name.includes(normalizedSearch) ||
         customerId.includes(normalizedSearch) ||
-        paymentId.includes(normalizedSearch) ||
-        nodeId.includes(normalizedSearch)
-      );
-    });
-  }, [sortedPayments, normalizedSearch]);
+	        paymentId.includes(normalizedSearch) ||
+	        nodeId.includes(normalizedSearch)
+	      );
+	    });
+	  }, [sortedPayments, normalizedSearch, statusFilter]);
 
 
 
@@ -537,13 +548,28 @@ const PaymentHistoryDetail = () => {
                   </svg>
                 </span>
               )}
-            </div>
-          </div>
+	            </div>
+	          </div>
 
+	          <div className="me-2" style={{ minWidth: 190 }}>
+	            <select
+	              className="form-select"
+	              value={statusFilter}
+	              onChange={(e) => setStatusFilter(e.target.value)}
+	              aria-label="Filter payments by status"
+	            >
+	              {PAYMENT_STATUS_OPTIONS.map(option => (
+	                <option key={option.value} value={option.value}>
+	                  {option.label}
+	                </option>
+	              ))}
+	            </select>
+	          </div>
 
-
-
-          {/* Bulk actions (parent-only selection) */}
+	
+	
+	
+	          {/* Bulk actions (parent-only selection) */}
           {selectedPaymentIds.size > 0 && <div className="dropdown">
             <button className="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" >
               Bulk actions {selectedPaymentIds.size > 0 ? `(${selectedPaymentIds.size})` : ''}
@@ -615,10 +641,10 @@ const PaymentHistoryDetail = () => {
                   <span className="small text-muted pe-3"><LocalDate dateString={batchCreated} /></span>
                 </>
               )}
-              {searchText && (
-                <span className="small text-muted pe-3">
-                  Showing <strong>{filteredPayments.length}</strong> of{' '}
-                  <strong>{sortedPayments.length}</strong>
+	              {(searchText || statusFilter !== 'ALL') && (
+	                <span className="small text-muted pe-3">
+	                  Showing <strong>{filteredPayments.length}</strong> of{' '}
+	                  <strong>{sortedPayments.length}</strong>
                 </span>
               )}
             </span>
@@ -665,9 +691,10 @@ const PaymentHistoryDetail = () => {
                     const rowKey = paymentRowKey(p);
                     const isOpen = expanded.has(rowKey);
                     const selected = selectedPaymentIds.has(p.id);
-                    const totalFormatted = fmtMoney(p.amount);
-
-                    const dstate = detailMap.get(rowKey);
+	                    const totalFormatted = fmtMoney(p.amount);
+	
+	                    const dstate = detailMap.get(rowKey);
+	                    const statusReason = String(p.statusReason || '').trim();
 
                     return (
                       <React.Fragment key={rowKey}>
@@ -726,10 +753,15 @@ const PaymentHistoryDetail = () => {
                                   </div>
                                 )}
 
-                                {/* If we have items (even if loading more), render the table and append a spinner row while loading */}
-                                {dstate?.items?.length > 0 && (
-                                  <div className="table-responsive">
-                                    <table className="table table-sm table-bordered">
+	                                {/* If we have items (even if loading more), render the table and append a spinner row while loading */}
+	                                {dstate?.items?.length > 0 && (
+	                                  <div className="table-responsive">
+	                                    {statusReason && (
+	                                      <div className="alert alert-danger text-break mb-3" style={{ textWrap: 'auto' }}>
+	                                        {statusReason}
+	                                      </div>
+	                                    )}
+	                                    <table className="table table-sm table-bordered text-wrap" style={{ tableLayout: 'fixed', overflowWrap: 'anywhere' }}>
                                       <thead>
                                         <tr>
                                           <th>Release Id</th>
@@ -744,10 +776,9 @@ const PaymentHistoryDetail = () => {
                                         </tr>
                                       </thead>
                                       <tbody>
-                                        {dstate.items.map((s) => (
-                                          <>
-                                            <tr key={s.id}>
-                                              <td className="text-monospace">{s.id}</td>
+	                                        {dstate.items.map((s) => (
+	                                          <tr key={s.id}>
+	                                              <td className="text-monospace text-break" style={{ overflowWrap: 'anywhere' }}>{s.id}</td>
                                               <td>{renderStatusBadge(s.status, isProcessedBatch)}</td>
                                               <td>{s.bonus?.bonusTitle || '—'}</td>
                                               <td className="text-end">{fmtNumber(s.bonus?.level)}</td>
@@ -761,14 +792,7 @@ const PaymentHistoryDetail = () => {
                                               </td>
                                               <td className="text-end"><LocalDate dateString={s.period?.end} hideTime="true" /></td>
                                             </tr>
-                                            {p.statusReason && p.statusReason != '' && (
-                                              <tr>
-                                                <td></td>
-                                                <td colSpan={8} className="pb-3">{p.statusReason}</td>
-                                              </tr>
-                                            )}
-                                          </>
-                                        ))}
+	                                        ))}
 
                                         {/* Append spinner row when loading more */}
                                         {dstate.loading && dstate.items.length > 0 && (
