@@ -22,7 +22,8 @@ let GET_PLACEABLE = gql`query ($nodeIds: [String]!, $treeId: ID!) {
         nodeId
         uplineLeg
         placeDate
-        history (first: 3) {
+        history (first: 5) {
+          uplineId
           placeDate
         }
         customer {
@@ -212,6 +213,8 @@ function isWithinLastDays(dateString, history, movementDurationInDays) {
     return false;
   }
 
+  if (getDistinctHistoryCount(history) > 1) return false;
+
   const input = new Date(dateString);
   if (isNaN(input)) return false;
 
@@ -256,6 +259,16 @@ function getTimeLeft(dateString, movementDurationInDays) {
 function getExpirationTimestamp(dateString, movementDurationInDays) {
   const input = truncateToMinute(new Date(dateString));
   return input.getTime() + movementDurationInDays * 24 * 60 * 60 * 1000;
+}
+
+function getDistinctHistoryCount(history) {
+  const orderedUplineIds = (history ?? [])
+    .map((item) => item?.uplineId)
+    .filter((id) => id != null && id !== "");
+
+  return orderedUplineIds.reduce((count, id, index) => (
+    index === 0 || id !== orderedUplineIds[index - 1] ? count + 1 : count
+  ), 0);
 }
 
 
