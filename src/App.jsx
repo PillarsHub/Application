@@ -200,7 +200,7 @@ const router = createBrowserRouter([
 ]);
 
 function App() {
-  const { token, setToken, clearToken } = useToken();
+  const { token, setToken, clearToken, initializing } = useToken();
   const path = window.location.pathname.toLowerCase();
   const isEnvironmentDetailPath = /^\/account(?:\/|$)/.test(path);
 
@@ -218,6 +218,10 @@ function App() {
         <ResetPassword />
       </Suspense>
     );
+  }
+
+  if (initializing) {
+    return <AppLoading title="Signing in" />;
   }
 
   if (!token) {

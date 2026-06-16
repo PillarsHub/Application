@@ -28,32 +28,24 @@ export const TokenProvider = ({ clearToken, children }) => {
 
 export default function useToken() {
   const [token, setToken] = useState(GetToken());
-
-  const getQueryParam = (name) => {
-    const queryString = window.location.search.substring(1);
-    const queryParams = queryString.split('&');
-
-    for (let i = 0; i < queryParams.length; i++) {
-      const pair = queryParams[i].split('=');
-      if (pair[0] === name) {
-        return pair[1];
-      }
-    }
-
-    return null;
-  };
+  const [initializing, setInitializing] = useState(() => Boolean(getQueryParam('token')));
 
   useEffect(() => {
 
     const ssoToken = getQueryParam('token');
     if (ssoToken) {
-      Get(`/Authentication/refresh/${ssoToken}`, (response) => {
+      Get(`/Authentication/refresh/${encodeURIComponent(ssoToken)}`, (response) => {
         response.SSO = true;
         saveToken(response);
+        removeQueryParam('token');
+        setInitializing(false);
       }, () => {
         clearToken();
+        setInitializing(false);
         return null;
       })
+    } else {
+      setInitializing(false);
     }
 
     const interval = setInterval(() => {
@@ -87,7 +79,50 @@ export default function useToken() {
   return {
     setToken: saveToken,
     clearToken: clearToken,
+    initializing,
     token
+  }
+}
+
+function getQueryParam(name) {
+  const queryString = window.location.search ? window.location.search.substring(1) : '';
+  if (!queryString) return null;
+
+  const queryParams = queryString.split('&');
+  for (let i = 0; i < queryParams.length; i++) {
+    const pair = queryParams[i].split('=');
+    if (safeDecodeURIComponent(pair[0] ?? '') === name) {
+      return safeDecodeURIComponent((pair.slice(1).join('=') ?? '').replace(/\+/g, ' '));
+    }
+  }
+
+  return null;
+}
+
+function removeQueryParam(name) {
+  if (!window.history?.replaceState) return;
+
+  const queryString = window.location.search ? window.location.search.substring(1) : '';
+  if (!queryString) return;
+
+  const remaining = queryString
+    .split('&')
+    .filter((part) => safeDecodeURIComponent((part.split('=')[0] ?? '')) !== name);
+
+  const newSearch = remaining.length ? `?${remaining.join('&')}` : '';
+  const newUrl = `${window.location.pathname}${newSearch}${window.location.hash}`;
+  try {
+    window.history.replaceState(window.history.state, document.title, newUrl);
+  } catch {
+    // Auth has already been saved; failing to clean the address bar should not break sign-in.
+  }
+}
+
+function safeDecodeURIComponent(value) {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
   }
 }
 
