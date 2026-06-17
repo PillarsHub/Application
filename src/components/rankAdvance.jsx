@@ -71,8 +71,7 @@ const RankAdvance = ({ currentRank, ranks, valueMap, period, options, isPreview 
         fetchHighRank({ nodeIds: customerId })
           .then((result) => {
             var highRankId = result.data.customers?.[0]?.values?.[0].value;
-            const initialRank = ranks.slice().sort((a, b) => a.rankId - b.rankId).find(r => r.rankId == highRankId) || ranks.find(r => r.rankId === highRankId) ||
-              ranks.slice().sort((a, b) => a.rankId - b.rankId).find(r => r.rankId > currentRank) || ranks.find(r => r.rankId === currentRank) || null;
+            const initialRank = getRankById(ranks, highRankId) || getInitialRank(ranks, currentRank);
             setHighRank(initialRank);
           })
           .catch((error) => {
@@ -83,18 +82,19 @@ const RankAdvance = ({ currentRank, ranks, valueMap, period, options, isPreview 
   }, [customerId]);
 
   useEffect(() => {
-    if (ranks && currentRank) {
+    if (ranks && currentRank != null) {
       setCustomerId(ranks[0].nodeId);
       setInitRanks(ranks);
       setActiveRanks(ranks);
 
-      const initialRank = ranks.slice().sort((a, b) => a.rankId - b.rankId).find(r => r.rankId > currentRank) || ranks.find(r => r.rankId === currentRank) || null;
+      const initialRank = getInitialRank(ranks, currentRank);
       setActiveRank(initialRank);
     }
   }, [ranks, currentRank])
 
   if (loading) return <DataLoading />
   if (!activeRank) return <><EmptyContent title="No ranks found" text="Ranks are not available at the moment." />
+    <div className="mb-3">{JSON.stringify(currentRank)}</div>
     <div className="mb-3">{JSON.stringify(activeRanks)}</div>
     <div className="mb-3">{JSON.stringify(activeRank)}</div>
   </>;
@@ -125,12 +125,12 @@ const RankAdvance = ({ currentRank, ranks, valueMap, period, options, isPreview 
     setActiveTab(periodIndex);
     if (periodIndex === 1) {
       setActiveRanks(initRanks);
-      const initialRank = ranks.slice().sort((a, b) => a.rankId - b.rankId).find(r => r.rankId > currentRank) || ranks.find(r => r.rankId === currentRank) || null;
+      const initialRank = getInitialRank(ranks, currentRank);
       setActiveRank(initialRank);
     } else {
       if (lastRanks) {
         setActiveRanks(lastRanks);
-        const initialRank = lastRanks.slice().sort((a, b) => a.rankId - b.rankId).find(r => r.rankId > lastRankId) || lastRanks.find(r => r.rankId === lastRankId) || lastRanks[0];
+        const initialRank = getInitialRank(lastRanks, lastRankId) || lastRanks[0];
         setActiveRank(initialRank);
       } else {
         loadLastRank();
@@ -151,7 +151,7 @@ const RankAdvance = ({ currentRank, ranks, valueMap, period, options, isPreview 
 
           var lastRankId = result.data.customers?.[0]?.values?.[0].value;
           setLastRankId(lastRankId);
-          const initialRank = newRankAdvance.slice().sort((a, b) => a.rankId - b.rankId).find(r => r.rankId > lastRankId) || newRankAdvance.find(r => r.rankId === lastRankId) || null;
+          const initialRank = getInitialRank(newRankAdvance, lastRankId);
           setActiveRank(initialRank);
           setLoading(false);
         })
@@ -565,6 +565,22 @@ function truncateDecimals(number, valueMap, digits) {
   return result.toLocaleString();
 }
 
+function getInitialRank(ranks, currentRank) {
+  const sortedRanks = getSortedRanks(ranks);
+  const currentRankId = Number(currentRank);
+
+  return sortedRanks.find(r => Number(r.rankId) > currentRankId) || getRankById(sortedRanks, currentRankId) || null;
+}
+
+function getRankById(ranks, rankId) {
+  const targetRankId = Number(rankId);
+
+  return ranks?.find(r => Number(r.rankId) === targetRankId) || null;
+}
+
+function getSortedRanks(ranks) {
+  return ranks?.slice().sort((a, b) => Number(a.rankId) - Number(b.rankId)) || [];
+}
 
 function getPercentTotal(activeRank) {
   var percents = activeRank?.requirements?.map(requirement => {
@@ -630,7 +646,7 @@ function subtractOneDay(isoDateString) {
 export default RankAdvance;
 
 RankAdvance.propTypes = {
-  currentRank: PropTypes.string.isRequired,
+  currentRank: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
   ranks: PropTypes.any.isRequired,
   valueMap: PropTypes.array,
   period: PropTypes.any.isRequired,
