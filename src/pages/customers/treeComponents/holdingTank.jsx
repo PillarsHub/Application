@@ -135,7 +135,7 @@ const HoldingTank = ({ customer, nodeId, periodDate, treeId, overrideShow, uplin
       count: PAGE_SIZE,
     });
 
-    setLegNames(resp?.data?.tree?.legNames)
+    setLegNames(resp?.data?.tree?.legNames ?? []);
     const nodeBlock = resp?.data?.tree?.nodes?.[0];
     const total = Number(nodeBlock?.totalChildNodes ?? 0);
     totalRef.current = total;

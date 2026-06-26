@@ -142,7 +142,7 @@ const OrdersWidget = ({ customer, useExternalId }) => {
                 const volume = getVolumeForVolumeId(order, volumeId);
                 return <td key={index}>{(volume !== null ? volume : 0) == 0 ? '-' : volume}</td>
               })}
-              <td>{order.total.toLocaleString("en-US", { style: 'currency', currency: order?.currencyCode ?? 'USD' })}</td>
+              <td>{formatCurrency(order.total, order.currencyCode)}</td>
               <td>{order.statusDetail?.name ?? order.status}</td>
             </tr>
           })}
@@ -163,7 +163,19 @@ OrdersWidget.propTypes = {
   useExternalId: PropTypes.bool.isRequired
 }
 
-
+function formatCurrency(amount, currencyCode) {
+    try {
+        return amount.toLocaleString("en-US", {
+            style: "currency",
+            currency: currencyCode ?? "USD"
+        });
+    } catch {
+        return amount.toLocaleString("en-US", {
+            style: "currency",
+            currency: "USD"
+        });
+    }
+}
 
 /* 
 
