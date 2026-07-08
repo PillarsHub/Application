@@ -8,6 +8,7 @@ import FormatPhoneNumber from "../../../util/phoneNumberFormatter";
 import Avatar from '../../../components/avatar';
 import StatusPill from '../../../pages/customers/statusPill.jsx';
 import SocialMediaLink from "../../../components/socialMediaLink";
+import CopyString from '../../../components/copyString.jsx';
 
 var GET_DATA = gql`query {
   countries{
@@ -69,12 +70,12 @@ const ProfileWidget = ({ customer, widget }) => {
             <svg xmlns="http://www.w3.org/2000/svg" className="icon me-2 text-muted" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M7.5 7.5m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0" /><path d="M3 6v5.172a2 2 0 0 0 .586 1.414l7.71 7.71a2.41 2.41 0 0 0 3.408 0l5.592 -5.592a2.41 2.41 0 0 0 0 -3.408l-7.71 -7.71a2 2 0 0 0 -1.414 -.586h-5.172a3 3 0 0 0 -3 3z" /></svg>
             Handle
           </dd>
-          <dd className="col-7 text-end">{customer.webAlias ?? customer.id}</dd>
+          <dd className="col-7 text-end">{customer.webAlias ?? customer.id} <CopyString text={customer.webAlias ?? customer.id} /></dd>
           {true && <>
             <dd className="col-5">
               <svg xmlns="http://www.w3.org/2000/svg" className="icon me-2 text-muted" width="24" height="24" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M3 5m0 2a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2z"></path><path d="M3 7l9 6l9 -6"></path></svg>
               Email</dd>
-            <dd className="col-7 text-end">{customer.emailAddress}</dd>
+            <dd className="col-7 text-end">{customer.emailAddress} <CopyString text={customer.emailAddress} /></dd>
 
 
             <dd className="col-5">
