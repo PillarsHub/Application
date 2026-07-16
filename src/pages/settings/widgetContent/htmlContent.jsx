@@ -27,6 +27,10 @@ const HtmlContent = ({ widget, updateWidget }) => {
     }
   }
 
+  const handleWidgetChange = (name, value) => {
+    updateWidget((v) => ({ ...v, [name]: value }));
+  }
+
   const handleWidgetSettingsChange = (name, value) => {
     updateWidget((v) => ({
       ...v,
@@ -38,13 +42,39 @@ const HtmlContent = ({ widget, updateWidget }) => {
   };
 
   return <>
-    <div className="mb-3 border-bottom">
-      <Switch name="useIframe" value={widget?.settings?.['useIframe']} title="Use IFrame (allows Javascript)" onChange={handleWidgetSettingsChange} />
-      <Switch name="useAuthorizationCode" value={widget?.settings?.['useAuthorizationCode']} title="Use AuthorizationCode" onChange={handleWidgetSettingsChange} />
-      <Switch name="usePagination" value={widget?.settings?.['usePagination']} title="Use Pagination" onChange={handleWidgetSettingsChange} />
-      <div className="col-6 mb-3">
-        <label className="form-label">Total Path</label>
-        <TextInput name="totalPath" value={widget?.settings?.['totalPath']} title="Total Path" onChange={handleWidgetSettingsChange} />
+    <div className="row row-cards mb-3 border-bottom">
+      <div className="col-md-6">
+        <div className="mb-3 border-bottom">
+          <Switch name="useIframe" value={widget?.settings?.['useIframe']} title="Use IFrame (allows Javascript)" onChange={handleWidgetSettingsChange} />
+          <Switch name="useAuthorizationCode" value={widget?.settings?.['useAuthorizationCode']} title="Use AuthorizationCode" onChange={handleWidgetSettingsChange} />
+          <Switch name="usePagination" value={widget?.settings?.['usePagination']} title="Use Pagination" onChange={handleWidgetSettingsChange} />
+          {widget?.settings?.['usePagination'] && <>
+            <div className="col-6 mb-3">
+              <label className="form-label">Total Path</label>
+              <TextInput name="totalPath" value={widget?.settings?.['totalPath']} title="Total Path" onChange={handleWidgetSettingsChange} />
+            </div>
+          </>}
+        </div>
+      </div>
+      <div className="col-md-6">
+        <div className="mb-2 border-bottom">
+          <Switch name="showDatePicker" value={widget?.showDatePicker} title="Enable Date Selector" onChange={handleWidgetChange} />
+          <Switch name="showPeriodPicker" value={widget?.settings?.['showPeriodPicker']} title="Enable Period Selector" onChange={handleWidgetSettingsChange} />
+        </div>
+        {widget?.settings?.['showPeriodPicker'] && <>
+          <div className="mb-2 border-bottom">
+            <Switch name="tabbedUI" value={widget?.settings?.['tabbedUI']} title="Use Tabbed UI" onChange={handleWidgetSettingsChange} />
+            <Switch name="hideOpen" value={widget?.settings?.['hideOpen']} title="Hide Open Periods" onChange={handleWidgetSettingsChange} />
+            <Switch name="hideTime" value={widget?.settings?.['hideTime']} title="Hide Time" onChange={handleWidgetSettingsChange} />
+            <Switch name="hideEnd" value={widget?.settings?.['hideEnd']} title="Hide Period End" onChange={handleWidgetSettingsChange} />
+            <label className="form-label">defaultIndex</label>
+            <TextInput name="defaultIndex" value={widget?.settings?.['defaultIndex']} onChange={handleWidgetSettingsChange} />
+            <label className="form-label">defaultPlan</label>
+            <TextInput name="defaultPlan" value={widget?.settings?.['defaultPlan']} onChange={handleWidgetSettingsChange} />
+            <label className="form-label">planIds</label>
+            <TextInput name="planIds" value={widget?.settings?.['planIds']} onChange={handleWidgetSettingsChange} />
+          </div>
+        </>}
       </div>
     </div>
 

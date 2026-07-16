@@ -119,7 +119,7 @@ const PeriodPicker = ({ periodId, setPeriodId, options }) => {
 
   if (loading) return <span>-</span>;
   if (error) return `Error! ${error}`;
-  if (!localData) return null;
+  if (!localData) return <span>-</span>;
 
   if (opts.tabbedUI) {
     return <>

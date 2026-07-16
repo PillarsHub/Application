@@ -152,9 +152,11 @@ const Widget = ({ widget, customer, compensationPlans, trees, isPreview = false,
 
   useEffect(() => {
     if (widget) {
-      if (widget.showDatePicker && !supressQuery && widget.type == WidgetTypes.Earnings) {
+      if ((widget.type == WidgetTypes.Earnings && !supressQuery && widget.showDatePicker) ||
+        (widget.type == WidgetTypes.Html && !supressQuery && widget?.settings?.['showPeriodPicker'])) {
         setWidgetValues(v => ({
           ...v,
+          showPeriodPicker: widget?.settings?.['showPeriodPicker'] ?? false,
           tabbedUI: widget?.settings?.['tabbedUI'] ?? false,
           hideOpen: widget?.settings?.['hideOpen'] ?? false,
           hideEnd: widget?.settings?.['hideEnd'] ?? false,
@@ -164,6 +166,9 @@ const Widget = ({ widget, customer, compensationPlans, trees, isPreview = false,
           defaultIndex: Number(widget?.settings?.['defaultIndex'] ?? 0),
           planIds: widget?.settings?.['planIds'] ? widget.settings['planIds'].split(',').map(Number) : null
         }));
+      } 
+      else {
+        setWidgetValues();
       }
     }
   }, [widget])
@@ -214,6 +219,11 @@ const Widget = ({ widget, customer, compensationPlans, trees, isPreview = false,
         </div>
       </>}
       {widget.showDatePicker && !supressQuery && widget.type == WidgetTypes.Earnings && <>
+        <div className="card-actions">
+          <PeriodPicker periodId={widgetValues?.periodId} setPeriodId={handlePeriodChange} options={widgetValues} />
+        </div>
+      </>}
+      {widget.type == WidgetTypes.Html && !supressQuery && widget?.settings?.['showPeriodPicker'] && <>
         <div className="card-actions">
           <PeriodPicker periodId={widgetValues?.periodId} setPeriodId={handlePeriodChange} options={widgetValues} />
         </div>
@@ -385,7 +395,7 @@ function Content(widget, date, customer, compensationPlans, trees, isPreview, wi
 
   if (widget.type == WidgetTypes.Html) {
     const html = widget.panes ? widget.panes[0]?.text : '';
-    return <HtmlWidget html={html} customer={customer} widget={widget} isPreview={isPreview} />
+    return <HtmlWidget html={html} customer={customer} widget={widget} date={date} periodId={widgetValues?.periodId} isPreview={isPreview} />
   }
 
   if (widget.type == WidgetTypes.Earnings) {

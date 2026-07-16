@@ -48,7 +48,7 @@ function stripDocumentOnlyTags(htmlContent) {
 }
 
 
-const HtmlWidget = ({ html, customer, widget, isPreview }) => {
+const HtmlWidget = ({ html, customer, widget, date, periodId, isPreview }) => {
   var [data, setData] = useState({});
   var [query, setQuery] = useState({});
   var [output, setOutput] = useState('<div>Loading</div>');
@@ -65,6 +65,8 @@ const HtmlWidget = ({ html, customer, widget, isPreview }) => {
 
     return {
       customerId: customer.id,
+      periodId: periodId,
+      date: date,
       ...defaults,
       ...runtimeVariables
     };
@@ -138,7 +140,7 @@ const HtmlWidget = ({ html, customer, widget, isPreview }) => {
     } else {
       setData({});
     }
-  }, [query, customer?.id, pagingData, runtimeVariables])
+  }, [query, customer?.id, pagingData, runtimeVariables, date, periodId])
 
   useEffect(() => {
     if (html) {
