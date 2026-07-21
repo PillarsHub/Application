@@ -8,6 +8,7 @@ import LocalDate from '../../../util/LocalDate.jsx';
 import { GetScope } from "../../../features/authentication/hooks/useToken.jsx"
 import DataLoading from '../../../components/dataLoading.jsx';
 import Widget from '../../../features/widgets/components/widget.jsx';
+import CopyString from '../../../components/copyString.jsx';
 
 let GET_CUSTOMER = `query ($nodeIds: [String]!, $periodDate: Date!) {
   customers(idList: $nodeIds) {
@@ -166,6 +167,7 @@ const TreeSideCard = ({ customerId, periodDate, treeId, showModal, dashboard }) 
             <div className="col ">
               <h2 className="card-title m-0">{customer?.fullName}</h2>
               <a className='small text-muted' href={`/customers/${customer.id}/summary`}>{customer.webAlias ?? customer.id}</a>
+              <CopyString text={customer.webAlias ?? customer.id} />
             </div>
           </div>
         </h2>
