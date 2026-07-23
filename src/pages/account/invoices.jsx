@@ -4,6 +4,7 @@ import { useFetch } from "../../hooks/useFetch.js";
 import DataError from "../../components/dataError.jsx";
 import DataLoading from "../../components/dataLoading.jsx";
 import LocalDate from "../../util/LocalDate.jsx";
+import Modal from "../../components/modal.jsx";
 
 const PAGE_SIZE = 10;
 const currencyFormatter = new Intl.NumberFormat("en-US", {
@@ -30,6 +31,7 @@ const Invoices = () => {
   const [overdueOnly, setOverdueOnly] = useState(false);
   const [hasBalance, setHasBalance] = useState(false);
   const [offset, setOffset] = useState(0);
+  const [paymentDetailInvoice, setPaymentDetailInvoice] = useState(null);
 
   const query = buildQuery({ search, overdueOnly, hasBalance, offset });
 
@@ -82,7 +84,7 @@ const Invoices = () => {
   const getInvoiceTotals = (invoice) => {
     const paid = (invoice.payments || []).reduce((paymentSum, payment) => paymentSum + (payment.amount || 0), 0);
     const amount = invoice.amount || 0;
-    const balance = Math.max(0, amount - paid);
+    const balance = Math.max(0, Math.round(amount, 2) - Math.round(paid, 2));
     return { paid, amount, balance };
   };
   const canPrev = offset > 0;
@@ -224,11 +226,11 @@ const Invoices = () => {
                           </tr>
                         </thead>
                         <tbody>
-	                          {invoices.map((invoice) => {
-	                            const { paid, amount, balance } = getInvoiceTotals(invoice);
-	                            const dueDate = invoice.dueDate ? new Date(invoice.dueDate) : null;
-	                            const isPastDueDate = dueDate instanceof Date && !Number.isNaN(dueDate.getTime()) && dueDate < new Date();
-	                            const isOverdue = balance > 0 && isPastDueDate;
+                          {invoices.map((invoice) => {
+                            const { paid, amount, balance } = getInvoiceTotals(invoice);
+                            const dueDate = invoice.dueDate ? new Date(invoice.dueDate) : null;
+                            const isPastDueDate = dueDate instanceof Date && !Number.isNaN(dueDate.getTime()) && dueDate < new Date();
+                            const isOverdue = balance > 0 && isPastDueDate;
 
                             return (
                               <tr key={invoice.id}>
@@ -240,7 +242,21 @@ const Invoices = () => {
                                   <LocalDate dateString={invoice.dueDate} hideTime />
                                 </td>
                                 <td className="text-end">{formatCurrency(amount)}</td>
-                                <td className="text-end">{formatCurrency(paid)}</td>
+                                <td className="text-end">
+                                  {invoice.payments?.length ? (
+                                    <button
+                                      type="button"
+                                      className="btn btn-link p-0 text-reset"
+                                      onClick={() => setPaymentDetailInvoice(invoice)}
+                                      title="View payment details"
+                                      aria-label={`View payment details for invoice ${invoice.id}`}
+                                    >
+                                      {formatCurrency(paid)}
+                                    </button>
+                                  ) : (
+                                    formatCurrency(paid)
+                                  )}
+                                </td>
                                 <td className="text-end">{formatCurrency(balance)}</td>
                                 <td>
                                   {isOverdue ? (
@@ -252,12 +268,12 @@ const Invoices = () => {
                                   )}
                                 </td>
                                 <td>
-                                  {invoice.paymentUrl ? (
+                                  {(invoice.paymentUrl && balance > 0) ? (
                                     <a className="btn btn-sm btn-outline-primary" href={invoice.paymentUrl} target="_blank" rel="noreferrer">
                                       Pay Invoice
                                     </a>
                                   ) : (
-                                    <span className="text-muted">N/A</span>
+                                    <span className="text-muted"></span>
                                   )}
                                 </td>
                               </tr>
@@ -283,6 +299,44 @@ const Invoices = () => {
             </div>
           </div>
         </div>
+
+        <Modal showModal={paymentDetailInvoice !== null} onHide={() => setPaymentDetailInvoice(null)} size="sm" centered="true" >
+          <div className="modal-header">
+            <h5 className="modal-title">
+              Payment details{paymentDetailInvoice ? ` · Invoice ${paymentDetailInvoice.id}` : ""}
+            </h5>
+            <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close" />
+          </div>
+          <div className="modal-body p-0">
+            <table className="table table-vcenter card-table mb-0">
+              <thead>
+                <tr>
+                  <th>Date paid</th>
+                  <th className="text-end">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(paymentDetailInvoice?.payments || []).map((payment, index) => (
+                  <tr key={payment.id ?? index}>
+                    <td><LocalDate dateString={payment.date} hideTime /></td>
+                    <td className="text-end">{formatCurrency(payment.amount)}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <th>Total paid</th>
+                  <th className="text-end">
+                    {formatCurrency(paymentDetailInvoice ? getInvoiceTotals(paymentDetailInvoice).paid : 0)}
+                  </th>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          <div className="modal-footer">
+            <button type="button" className="btn" data-bs-dismiss="modal">Close</button>
+          </div>
+        </Modal>
       </div>
     </PageHeader>
   );
