@@ -190,7 +190,7 @@ const CustomerDetail = () => {
   };
 
   return <>
-    <PageHeader preTitle="Customer Detail" title={customer.fullName} pageId='summary' customerId={customer.id}>
+    <PageHeader preTitle="Details" title={customer.fullName} pageId='summary' customerId={customer.id}>
       <CardHeader>
         <div className="btn-list">
 
