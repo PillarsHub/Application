@@ -31,7 +31,7 @@ const AssignTemplateModal = ({ templateId }) => {
         setWorking(true);
         SendRequest("POST", url, {}, () => {
           setWorking(false);
-          location = `/environments/${assignData.environmentId}`;
+          location = `/account/environments/${assignData.environmentId}`;
         }, (error) => {
           setWorking(false);
           setAssignData(v => ({ ...v, postError: error }));

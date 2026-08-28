@@ -14,8 +14,8 @@ const AddEnvironmentModal = ({ refetch }) => {
   const handleSubmit = () => {
     if (newEnv.name) {
       SendRequest("POST", "/api/v1/Environments", newEnv, () => {
-        refetch();
         setNewEnv();
+        refetch();
       }, (error) => {
         setNewEnv(v => ({ ...v, error: error }));
       })

@@ -84,7 +84,7 @@ const Invoices = () => {
   const getInvoiceTotals = (invoice) => {
     const paid = (invoice.payments || []).reduce((paymentSum, payment) => paymentSum + (payment.amount || 0), 0);
     const amount = invoice.amount || 0;
-    const balance = Math.max(0, Math.round(amount, 2) - Math.round(paid, 2));
+    const balance = Math.max(0, amount - paid);
     return { paid, amount, balance };
   };
   const canPrev = offset > 0;

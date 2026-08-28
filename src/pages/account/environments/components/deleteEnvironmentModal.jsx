@@ -15,7 +15,7 @@ const DeleteEnvironmentModal = ({ environmentId, environmentName }) => {
     if (newEnv.name) {
       if (newEnv.name == environmentName) {
         SendRequest("DELETE", "/api/v1/Environments/" + environmentId, newEnv, () => {
-          location = "/";
+          location = "/account/environments";
         }, (error) => {
           setNewEnv(v => ({ ...v, error: error }));
         })

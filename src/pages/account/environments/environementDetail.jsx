@@ -6,7 +6,6 @@ import DeleteEnvironmentModal from './components/deleteEnvironmentModal.jsx';
 import PlanCard from './components/planCard.jsx';
 import ECommerceCard from './components/ecommerceCard.jsx';
 import MoneyOutCard from './components/moneyOutCard.jsx';
-//import DailyCountChart from '../home/charts/dailyCountChart.jsx';
 import AccessTokens from './components/accessTokens.jsx';
 import EditEnvironmentModal from './components/editEnvironmentModal.jsx';
 
@@ -101,11 +100,6 @@ const EnvironementDetail = () => {
                     })}
                   </tbody>
                 </table>
-                {/* <div className="card-footer">
-                <div className="d-flex">
-                  <button className="btn btn-default ms-auto" >New Webhook</button>
-                </div>
-              </div> */}
               </div>
             </div>
 
