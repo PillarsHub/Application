@@ -183,7 +183,7 @@ const Logs = () => {
       </div>
     </PageHeader>
 
-    <Modal showModal={trace != undefined} onHide={() => setTrace()} centered={true} size="lg" >
+    <Modal showModal={trace != undefined} onHide={() => setTrace()} centered={true} size="xl" >
       <div className="modal-header">
         <h5 className="modal-title">Log Detail</h5>
         <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
