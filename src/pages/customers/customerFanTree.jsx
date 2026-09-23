@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { useParams } from "react-router-dom";
 import { useQuery, gql } from "@apollo/client";
 import { useFetch } from "../../hooks/useFetch";
@@ -6,14 +6,14 @@ import PageHeader, { CardHeader } from '../../components/pageHeader.jsx';
 import TreeSideCard from './treeComponents/treeSideCard.jsx';
 import PeriodDatePicker from '../../components/periodDatePicker.jsx';
 import DataLoading from '../../components/dataLoading.jsx';
-import { treeBorad } from './treeComponents/treeView.js';
-import TreeNode from './treeComponents/treeNode.jsx';
 import HoldingTank from './treeComponents/holdingTank.jsx';
 import ChangePlacementModal from './treeComponents/changePlacementModal.jsx';
-import LoadingNode from './treeComponents/loadingNode.jsx';
 import DataError from '../../components/dataError.jsx';
 import PlacementSuite from './treeComponents/placementSuite.jsx';
 import EmptyContent from '../../components/emptyContent.jsx';
+import FanView from './treeComponents/fanView.jsx';
+
+const NO_LEGS = [];
 
 const GET_DATA = gql`
   query ($nodeIds: [String]!, $treeIds: [String]!, $treeId: ID!, $periodDate: Date) {
@@ -45,24 +45,20 @@ const GET_DATA = gql`
   }
 `;
 
-const CustomerTree = () => {
+const CustomerFanTree = () => {
   const params = useParams();
   const [placement, setPlacement] = useState();
-  const [activeId, setActiveId] = useState();
-  //const [periodDate, setPeriodDate] = useState(new Date().toISOString());
+  const [fanFocusId, setFanFocusId] = useState();
+  const [fanDetailsOpen, setFanDetailsOpen] = useState(false);
+  const [fanHeaderTarget, setFanHeaderTarget] = useState(null);
   // pickerDate: what the PeriodDatePicker shows (UI)
   const [pickerDate, setPickerDate] = useState(new Date().toISOString());
-  // effectiveDate: what the tree engine & side widgets actually use
+  // effectiveDate: what the fan & side widgets actually use
   const [effectiveDate, setEffectiveDate] = useState(() => new Date().toISOString());
 
   const [htNode, setHTNode] = useState();
   const [showPlacementSuite, setShowPlacementSuite] = useState(false);
   const [showHoldingTank, setShowHoldingTank] = useState(false);
-  const [availableLegButtons, setAvailableLegButtons] = useState([]);
-
-  const treeCleanupRef = useRef(null);
-  const treeApiRef = useRef(null);
-
   const { data, loading, error, refetch } = useQuery(GET_DATA, {
     variables: { nodeIds: [params.customerId], treeIds: [params.treeId], treeId: params.treeId, periodDate: pickerDate },
   });
@@ -74,10 +70,6 @@ const CustomerTree = () => {
     // user is browsing a specific point in time
     setPickerDate(value);
     setEffectiveDate(value);
-    // keep the tree engine in sync for lazy loads
-    if (treeApiRef.current?.setPeriodDate) {
-      treeApiRef.current.setPeriodDate(value);
-    }
     refetch({ nodeIds: [params.customerId], periodDate: value });
   };
 
@@ -85,81 +77,16 @@ const CustomerTree = () => {
 
   const handleSelectNode = (node) => {
     setShowPlacementSuite(false);
-    setActiveId(node?.id);
+    setFanDetailsOpen(false);
     setHTNode(node?.id === undefined && node?.uplineLeg !== undefined ? node : undefined);
   };
 
-  // Prefer surgical node move when ChangePlacementModal completes
-  const handleRefreshNode = (move) => {
-    // Always switch the tree engine to "now" (current second) when a move is made
-    const movedAt = new Date().toISOString();
-    setEffectiveDate(movedAt);
+  const handleRefreshNode = () => {
+    // Refresh the fan at the current time after a placement changes.
+    setEffectiveDate(new Date().toISOString());
     setHTNode(undefined);
-    if (treeApiRef.current?.setPeriodDate) {
-      treeApiRef.current.setPeriodDate(movedAt);
-    }
-
-    if (move && treeApiRef.current?.moveNode) {
-      treeApiRef.current.moveNode(move);
-      return;
-    }
     refetch();
   };
-
-  useEffect(() => {
-    // Teardown any existing tree
-    if (typeof treeCleanupRef.current === 'function') {
-      treeCleanupRef.current();
-      treeCleanupRef.current = null;
-      treeApiRef.current = null;
-    }
-
-    setAvailableLegButtons([]);
-    if (!loading && !dbLoading && data?.customers?.[0]) {
-      const cleanup = treeBorad(
-        'box',
-        params.customerId,
-        params.treeId,
-        effectiveDate,
-        '/graphql',
-        function onSelect(node) {
-          handleSelectNode(node);
-        },
-        function renderNode(node) {
-
-          let card = dashboard.children[0];
-          let widget = node.customer?.widgets?.find((w) => w.id === card?.widgetId);
-          if (node.customer && card && !widget && (!card.children || card.children.length == 0)) return null;
-
-          return <TreeNode node={node} dashboard={dashboard} trees={data?.trees} date={effectiveDate} />;
-        },
-        function renderLoading(id) {
-          return <LoadingNode node={id} />;
-        }
-      );
-
-      treeCleanupRef.current = cleanup;
-      treeApiRef.current = cleanup?.api ?? null;
-
-      // Subscribe to engine-ready (after root + first gen load) to build buttons
-      treeApiRef.current?.onReady?.((info) => {
-        // `info.legsWithRealNodeAtRoot` is lowercased; keep original casing for labels from GET_DATA
-        const originalLegNames = data?.trees?.[0]?.legNames || [];
-        const available = originalLegNames.filter((name) =>
-          (info.legsWithRealNodeAtRoot || []).includes(String(name).toLowerCase())
-        );
-        setAvailableLegButtons(available);
-      });
-    }
-
-    return () => {
-      if (typeof treeCleanupRef.current === 'function') {
-        treeCleanupRef.current();
-        treeCleanupRef.current = null;
-        treeApiRef.current = null;
-      }
-    };
-  }, [data, params.customerId, params.treeId, pickerDate, dashboard, loading, dbLoading]);
 
   if (loading || dbLoading) return <DataLoading />;
   if (error) return <DataError error={error} />;
@@ -172,13 +99,23 @@ const CustomerTree = () => {
 
   return (
     <>
-      <PageHeader preTitle={`${data?.trees?.[0]?.name} Tree`} title={data?.customers?.[0]?.fullName}
-        pageId="tree" customerId={params.customerId} subPage={params.treeId}>
+      <PageHeader className="fan-page" fluid
+        preTitle={`${data?.trees?.[0]?.name} Fan Tree`}
+        title={data?.customers?.[0]?.fullName}
+        titleContent={data?.customers?.[0] ? <div ref={setFanHeaderTarget} /> : undefined}
+        pageId="fan" customerId={params.customerId} subPage={params.treeId} >
         <CardHeader>
           <div className="d-flex align-items-center gap-2 flex-wrap">
             <div>
               <PeriodDatePicker name="periodDate" value={pickerDate} onChange={handlePeriodChange} />
             </div>
+            {data?.customers?.[0] && <button type="button" className="btn"
+              disabled={!fanFocusId} aria-expanded={fanDetailsOpen} aria-controls="offCanvasCard"
+              onClick={() => {
+                setFanDetailsOpen(open => !open);
+                setShowPlacementSuite(false);
+                setHTNode(undefined);
+              }}>{fanDetailsOpen ? 'Hide details' : 'Details'}</button>}
             {data?.trees?.[0]?.enableHoldingTank && treeSetting.holdingTank && data?.customers?.[0]?.nodes?.[0]?.totalChildNodes > 1 && (
               <button className="btn btn-primary" onClick={() => setShowHoldingTank(true)}>
                 Holding Tank
@@ -213,57 +150,27 @@ const CustomerTree = () => {
           </div>
         </>}
 
-        <div id="box" className="h-100" />
-        <div className="tree_footer">
-          {availableLegButtons?.length > 0 && (
-            <div className="card">
-              <div className="card-footer">
-                <div className="d-flex align-items-center flex-wrap w-100">
-                  {availableLegButtons.map((leg, index) => {
-                    const count = availableLegButtons.length;
-
-                    // figure out alignment class
-                    let alignmentClass = "";
-                    if (count === 1) {
-                      alignmentClass = "mx-auto"; // center
-                    } else if (count === 2) {
-                      alignmentClass = index === 0 ? "me-auto" : "ms-auto"; // first left, last right
-                    } else {
-                      if (index === 0) alignmentClass = "me-auto"; // first left
-                      else if (index === count - 1) alignmentClass = "ms-auto"; // last right
-                      else alignmentClass = "mx-auto"; // middle ones centered
-                    }
-
-                    return (
-                      <button
-                        key={leg}
-                        className={`btn btn-default ${alignmentClass}`}
-                        onClick={() =>
-                          treeApiRef.current?.goToBottom?.({
-                            fromNodeId: params.customerId,
-                            leg,
-                            mode: "surrogate", // progressive surrogate mode
-                          })
-                        }
-                      >
-                        Bottom {leg}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+        {data?.customers?.[0] && <FanView
+          rootId={params.customerId}
+          rootName={data.customers[0].fullName}
+          headerTarget={fanHeaderTarget}
+          treeId={params.treeId}
+          date={effectiveDate}
+          legNames={tree?.legNames || NO_LEGS}
+          dashboard={dashboard}
+          onSelect={handleSelectNode}
+          trees={data?.trees}
+          onFocusChange={setFanFocusId}
+        />}
 
         <TreeSideCard
-          customerId={activeId}
+          customerId={fanDetailsOpen ? fanFocusId : undefined}
           periodDate={effectiveDate}
           treeId={params.treeId}
           dashboard={dashboard}
           showModal={handleShow}
           onClose={() => {
-            setActiveId(undefined);
+            setFanDetailsOpen(false);
           }}
         />
         <HoldingTank
@@ -297,4 +204,4 @@ const CustomerTree = () => {
   );
 };
 
-export default CustomerTree;
+export default CustomerFanTree;

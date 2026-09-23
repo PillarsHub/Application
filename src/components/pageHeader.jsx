@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import useToken, {GetScope} from '../features/authentication/hooks/useToken.jsx';
 import PastDueNotice from '../pages/account/pastDueNotice';
 
-const PageHeader = ({ preTitle, title, postTitle, children, breadcrumbs, showAfterDays = 5, fluid = false }) => {
+const PageHeader = ({ preTitle, title, titleContent, postTitle, children, breadcrumbs, showAfterDays = 5, fluid = false, className = '' }) => {
   const { token } = useToken();
   let header;
   let content = [];
@@ -21,8 +21,8 @@ const PageHeader = ({ preTitle, title, postTitle, children, breadcrumbs, showAft
   const scope = GetScope();
 
   return <>
-    <div className="page-wrapper">
-      {title && <div className={continerClass}>
+    <div className={`page-wrapper ${className}`}>
+      {(title || titleContent) && <div className={continerClass}>
         <div className="page-header d-print-none">
           <div className="row g-3 align-items-center">
             <div className="col me-4">
@@ -40,9 +40,9 @@ const PageHeader = ({ preTitle, title, postTitle, children, breadcrumbs, showAft
               {preTitle && <div className="page-pretitle">
                 {preTitle}
               </div>}
-              {title && <h2 className="page-title">
+              {titleContent || (title && <h2 className="page-title">
                 <span className="text-truncate">{title}</span>
-              </h2>}
+              </h2>)}
               {postTitle && <div className="page-pretitle">
                 {postTitle}
               </div>}
@@ -75,9 +75,11 @@ CardHeader.propTypes = {
 PageHeader.propTypes = {
   preTitle: PropTypes.string,
   title: PropTypes.string,
+  titleContent: PropTypes.node,
   postTitle: PropTypes.string,
   children: PropTypes.any.isRequired,
   breadcrumbs: PropTypes.any,
   showAfterDays: PropTypes.number,
-  fluid: PropTypes.bool
+  fluid: PropTypes.bool,
+  className: PropTypes.string
 }

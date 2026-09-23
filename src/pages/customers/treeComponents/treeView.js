@@ -1,5 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { Post } from "../../../hooks/usePost";
+import { treeCardCustomerFields } from './treeCardData.js';
 import "./treeView.css";
 
 function treeBorad(id, rootId, treeId, periodDate, dataUrl, selectNode, getTemplate, getLoading) {
@@ -9,6 +10,7 @@ function treeBorad(id, rootId, treeId, periodDate, dataUrl, selectNode, getTempl
   };
 
   let currentPeriodDate = periodDate;
+  let disposed = false;
 
   // --- State & indexes ---
   const nodeIndex = new Map(); // nodeId -> { li, nodeDiv, parentUl }
@@ -108,6 +110,7 @@ function treeBorad(id, rootId, treeId, periodDate, dataUrl, selectNode, getTempl
   // GPU-batched redraw
   let rafId = null;
   const scheduleRedraw = () => {
+    if (disposed) return;
     if (rafId != null) return;
     rafId = requestAnimationFrame(() => {
       rafId = null;
@@ -488,42 +491,7 @@ function treeBorad(id, rootId, treeId, periodDate, dataUrl, selectNode, getTempl
             uplineLeg
             totalChildNodes
             customer {
-              id
-              webAlias
-              fullName
-              enrollDate
-              profileImage
-              status { id name statusClass }
-              phoneNumbers { type number }
-              emailAddress
-              customerType { id name }
-              cards(idList: $cardIds, date: $date) {
-                name
-                values { value valueName valueId }
-              }
-              widgets {
-                id
-                name
-                title
-                description
-                type
-                showDatePicker
-                headerColor
-                headerTextColor
-                headerAlignment
-                backgroundColor
-                textColor
-                borderColor
-                css
-                settings
-                panes {
-                  imageUrl
-                  title
-                  text
-                  description
-                  values { text value }
-                }
-              }
+              ${treeCardCustomerFields()}
             }
           }
         }
@@ -689,18 +657,7 @@ function treeBorad(id, rootId, treeId, periodDate, dataUrl, selectNode, getTempl
             nodeId
             totalChildNodes
             customer{
-              id fullName enrollDate profileImage webAlias
-              status { id, name, statusClass }
-              phoneNumbers { type number }
-              emailAddress
-              customerType { id name }
-              cards(idList: $cardIds, date: $periodDate){ name values { value valueName valueId } }
-              widgets {
-                id name title description type showDatePicker
-                headerColor headerTextColor headerAlignment
-                backgroundColor textColor borderColor css settings
-                panes { imageUrl title text description values { text value } }
-              }
+              ${treeCardCustomerFields('$periodDate')}
             }
           }
         }
@@ -709,6 +666,7 @@ function treeBorad(id, rootId, treeId, periodDate, dataUrl, selectNode, getTempl
     };
 
     Post(dataUrl, data, (nodeData) => {
+      if (disposed) return;
       parent.removeChild(loading);
       const baseNode = nodeData?.data?.trees?.[0];
       if (!baseNode) return;
@@ -736,6 +694,7 @@ function treeBorad(id, rootId, treeId, periodDate, dataUrl, selectNode, getTempl
 
       // NOTE: Do NOT fire onReady here — first-gen hasn't finished loading yet.
     }, (error) => {
+      if (disposed) return;
       try { parent.removeChild(loading); } catch (e) {
         //empty
       }
@@ -782,42 +741,7 @@ function treeBorad(id, rootId, treeId, periodDate, dataUrl, selectNode, getTempl
             uplineLeg
             totalChildNodes
             customer {
-              id
-              webAlias
-              fullName
-              enrollDate
-              profileImage
-              status { id, name, statusClass }
-              phoneNumbers { type number }
-              emailAddress
-              customerType { id name }
-              cards(idList: $cardIds, date: $periodDate) {
-                name
-                values { value valueName valueId }
-              }
-              widgets {
-                id
-                name
-                title
-                description
-                type
-                showDatePicker
-                headerColor
-                headerTextColor
-                headerAlignment
-                backgroundColor
-                textColor
-                borderColor
-                css
-                settings
-                panes {
-                  imageUrl
-                  title
-                  text
-                  description
-                  values { text value }
-                }
-              }
+              ${treeCardCustomerFields('$periodDate')}
             }
           }
         }
@@ -835,6 +759,7 @@ function treeBorad(id, rootId, treeId, periodDate, dataUrl, selectNode, getTempl
     };
 
     Post(dataUrl, data, (nodeData) => {
+      if (disposed) return;
       try { parent.removeChild(loading); } catch (_) {  /* empty */ }
 
       const tree = nodeData?.data?.trees?.[0];
@@ -970,6 +895,7 @@ function treeBorad(id, rootId, treeId, periodDate, dataUrl, selectNode, getTempl
         redraw();
       }
     }, (error) => {
+      if (disposed) return;
       try { parent.removeChild(loading); } catch (_) {  /* empty */ }
       // On error, let user try again by keeping (or restoring) the Load More row if paging
       if (!getPaging(nodeId).done) {
@@ -1818,6 +1744,12 @@ function treeBorad(id, rootId, treeId, periodDate, dataUrl, selectNode, getTempl
 
   // --- Cleanup function that also exposes the API ---
   function cleanup() {
+    disposed = true;
+    readyCallbacks.length = 0;
+    if (rafId != null) {
+      cancelAnimationFrame(rafId);
+      rafId = null;
+    }
     if (flipHeightRafId != null) {
       cancelAnimationFrame(flipHeightRafId);
       flipHeightRafId = null;

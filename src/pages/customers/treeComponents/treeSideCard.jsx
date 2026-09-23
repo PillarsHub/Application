@@ -121,44 +121,46 @@ let GET_CUSTOMER = `query ($nodeIds: [String]!, $periodDate: Date!) {
   }
 }`;
 
-const TreeSideCard = ({ customerId, periodDate, treeId, showModal, dashboard }) => {
-  const [customer, setCustomer] = useState(undefined);
-  const [data, setData] = useState(undefined);
-  const [show, setShow] = useState(false);
-  const [loading, setLoading] = useState(false);
-
-  const handleClose = () => setShow(false);
+const TreeSideCard = ({ customerId, periodDate, treeId, showModal, dashboard, onClose }) => {
+  const [result, setResult] = useState(null);
+  const current = result?.customerId === customerId && result?.periodDate === periodDate && result?.treeId === treeId ? result : null;
+  const customer = current?.customer;
+  const data = current?.data;
+  const loading = Boolean(customerId && !current);
 
   const handleShowPlacemntModel = () => {
     showModal({ nodeId: customer.tree.nodeId, uplineId: customer.tree.uplineId, uplineLeg: customer.tree.uplineLeg, fromNodeId: customer.tree.uplineId, fromLeg: customer.tree.uplineLeg });
   }
 
   useEffect(() => {
+    let active = true;
+    setResult(null);
     if (customerId) {
-      setLoading(true);
-      setShow(true);
+      const context = { customerId, periodDate, treeId };
+      const failed = () => {
+        if (active) setResult({ ...context, error: 'Unable to load customer details. Close the panel and try again.' });
+      };
       Post('/graphql', { query: GET_CUSTOMER, variables: { nodeIds: [customerId], periodDate: periodDate, treeId: treeId } }, (r) => {
-        r.data.customers[0].tree = r.data.trees.find(t => t.id == treeId).nodes[0];
-        setData(r.data);
-        setCustomer(r.data.customers[0]);
-        setLoading(false);
-      }, (error) => {
-        alert(error);
-      });
-    } else {
-      setShow(false);
+        if (!active) return;
+        const loadedCustomer = r?.data?.customers?.[0];
+        const treeNode = r?.data?.trees?.find(t => t.id == treeId)?.nodes?.[0];
+        if (r?.errors?.length || !loadedCustomer || !treeNode) { failed(); return; }
+        setResult({ ...context, data: r.data, customer: { ...loadedCustomer, tree: treeNode } });
+      }, failed);
     }
-  }, [customerId, periodDate]);
+    // Rapid focus changes must never show an older customer's response.
+    return () => { active = false; };
+  }, [customerId, periodDate, treeId]);
 
   let compensationPlans = data?.compensationPlans;
   let trees = data?.trees;
   let widgets = customer?.widgets;
 
-  return <OffCanvas showModal={show} onHide={handleClose} >
-    {(loading) && <span><DataLoading /></span>}
-    {!loading && customer && <>
-      <div className="card-header">
-        <h2 className="card-title">
+  return <OffCanvas showModal={Boolean(customerId)} >
+    <div className="card-header">
+      <div className="card-title">
+        {!customer && <h2 className="card-title m-0">Customer details</h2>}
+        {customer &&
           <div className="row g-2 align-items-top">
             <div className="col-auto">
               <Avatar name={customer?.fullName} url={customer?.profileImage} size="" />
@@ -168,11 +170,15 @@ const TreeSideCard = ({ customerId, periodDate, treeId, showModal, dashboard }) 
               <a className='small text-muted' href={`/customers/${customer.id}/summary`}>{customer.webAlias ?? customer.id}</a>
             </div>
           </div>
-        </h2>
-        <div className="card-actions">
-          <button type="button" className="btn-close text-reset" onClick={handleClose} ></button>
-        </div>
+        }
       </div>
+      <div className="card-actions">
+        <button type="button" className="btn-close text-reset" aria-label="Close customer details" onClick={onClose} ></button>
+      </div>
+    </div>
+    {loading && <DataLoading />}
+    {current?.error && <div className="card-body" role="alert">{current.error}</div>}
+    {!loading && customer && <>
       {GetScope() == undefined && <>
         <div className="card-body">
           <h3 className="card-title" >Upline</h3>
@@ -262,5 +268,6 @@ TreeSideCard.propTypes = {
   periodDate: PropTypes.string.isRequired,
   treeId: PropTypes.string.isRequired,
   showModal: PropTypes.func.isRequired,
-  dashboard: PropTypes.any.isRequired
+  dashboard: PropTypes.any.isRequired,
+  onClose: PropTypes.func.isRequired
 }

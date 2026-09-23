@@ -1,4 +1,4 @@
-import React from 'react-dom/client';
+import React from 'react';
 import PropTypes from 'prop-types';
 import Avatar from '../../../components/avatar';
 import Widget from "../../../features/widgets/components/widget";
@@ -30,29 +30,7 @@ const TreeNode = ({ node, dashboard, trees, date }) => {
   return <div className={`flip-card${hasBack ? '' : ' no-back'}`}>
     <div className="flip-card-inner">
       <div className="flip-card-front mb-2">
-        {dashboard && dashboard.children.length > 2 && (
-          buildCard(dashboard.children[0], node.customer.widgets, node.customer, node.compensationPlans, trees, date)
-        )}
-        {((dashboard?.children?.length ?? 0) <= 2) && <>
-          <div className="card d-flex flex-column box-shadow">
-            <div className="card-body d-flex flex-column">
-              <h1 className="d-flex align-items-center">
-                <span className="me-3">
-                  <Avatar name={node.customer?.fullName} url={node.customer?.profileImage} size="sm" />
-                </span>
-                <span className='cardTitle'>{node.customer?.fullName}</span>
-              </h1>
-              <dl className="row">
-                {node.card?.values && node.card.values.map((stat) => {
-                  return <>
-                    <dd className="col-7">{stat.valueName} {stat.valueId == stat.valueName ? `` : `(${stat.valueId})`}</dd>
-                    <dt className="col-5  text-end">{stat.value}</dt>
-                  </>
-                })}
-              </dl>
-            </div>
-          </div>
-        </>}
+        <TreeNodeFront node={node} dashboard={dashboard} trees={trees} date={date} />
       </div>
       {hasBack && <>
         <div className="flip-card-back mb-2">
@@ -92,6 +70,29 @@ const TreeNode = ({ node, dashboard, trees, date }) => {
   </div>
 }
 
+export const TreeNodeFront = ({ node, dashboard, trees, date }) => {
+  if ((dashboard?.children?.length ?? 0) > 2) {
+    return buildCard(dashboard.children[0], node.customer.widgets, node.customer, node.compensationPlans, trees, date);
+  }
+  const card = node.card ?? node.customer?.cards?.[0];
+  return <div className="card d-flex flex-column box-shadow">
+    <div className="card-body d-flex flex-column">
+      <h1 className="d-flex align-items-center">
+        <span className="me-3">
+          <Avatar name={node.customer?.fullName} url={node.customer?.profileImage} size="sm" />
+        </span>
+        <span className="cardTitle">{node.customer?.fullName}</span>
+      </h1>
+      <dl className="row">
+        {card?.values?.map((stat, index) => <React.Fragment key={`${stat.valueId}-${index}`}>
+          <dd className="col-7">{stat.valueName} {stat.valueId == stat.valueName ? '' : `(${stat.valueId})`}</dd>
+          <dt className="col-5 text-end">{stat.value}</dt>
+        </React.Fragment>)}
+      </dl>
+    </div>
+  </div>;
+};
+
 function buildCard(card, widgets, customer, compensationPlans, trees, date) {
   if ((card?.widgetId || card?.children) && widgets !== undefined) {
     let widget = widgets.find((w) => w.id === card?.widgetId);
@@ -122,3 +123,5 @@ TreeNode.propTypes = {
   trees: PropTypes.any.isRequired,
   date: PropTypes.any.isRequired
 }
+
+TreeNodeFront.propTypes = TreeNode.propTypes;

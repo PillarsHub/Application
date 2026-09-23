@@ -190,6 +190,7 @@ const router = createBrowserRouter([
       { path: "commissions", lazy: lazyRoute(() => import("./pages/customers/commissionsDetail.jsx")) },
       { path: "commissions/:bonusId", lazy: lazyRoute(() => import("./pages/customers/commissionsBonusDetail.jsx")) },
       { path: "tree/:treeId", lazy: lazyRoute(() => import("./pages/customers/customerTree.jsx")) },
+      { path: "fan/:treeId", lazy: lazyRoute(() => import("./pages/customers/customerFanTree.jsx")) },
       { path: "placements", lazy: lazyRoute(() => import("./pages/customers/placementSuite.jsx")) },
       { path: "reports", lazy: lazyRoute(() => import("./pages/reports/reports.jsx")) },
       { path: "reports/:reportId", lazy: lazyRoute(() => import("./pages/reports/report.jsx")) },

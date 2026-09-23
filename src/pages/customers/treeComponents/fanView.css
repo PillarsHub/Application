@@ -1,0 +1,124 @@
+.fan-view { padding-bottom: 1rem; }
+.fan-child-pages-panel { overflow: visible; }
+.fan-child-pages {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 100%;
+  padding: 8px;
+  border: 1px solid var(--tblr-border-color, #dce1e7);
+  border-radius: 8px;
+  background: var(--tblr-card-bg, #fff);
+  box-shadow: 0 3px 12px #0001;
+  cursor: default;
+}
+.fan-child-page-caption { font-size: 12px; line-height: 16px; font-weight: 600; }
+.fan-child-page-buttons { display: flex; gap: 6px; }
+.fan-child-page-buttons .btn { min-height: 26px; padding: 3px 10px; font-size: 12px; line-height: 18px; }
+.fan-page .page-header .row > .col { min-width: 0; }
+.fan-breadcrumbs { padding-block: 0.25rem; }
+.fan-breadcrumbs ol { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.375rem 0.5rem; list-style: none; margin: 0; padding: 0; }
+.fan-breadcrumbs li { display: flex; align-items: baseline; gap: 0.5rem; min-width: 0; max-width: 100%; }
+.fan-breadcrumbs button { white-space: normal; overflow-wrap: anywhere; text-align: left; padding: 0; color: var(--tblr-secondary, #667382); }
+.fan-breadcrumbs button:hover { color: var(--tblr-primary, #206bc4); text-decoration: underline; }
+.fan-breadcrumb-separator { color: var(--tblr-secondary, #667382); flex: none; }
+.fan-current-customer { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.625rem; min-width: 0; overflow-wrap: anywhere; }
+.fan-current-customer .page-title { display: block; margin: 0; }
+.fan-chart-container { position: relative; }
+.fan-loading-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: color-mix(in srgb, var(--tblr-card-bg, #fff) 45%, transparent);
+  pointer-events: none;
+}
+.fan-loading-status {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  max-width: 100%;
+  border: 1px solid var(--tblr-border-color, #dce1e7);
+  border-radius: 0.75rem;
+  background: var(--tblr-card-bg, #fff);
+  color: var(--tblr-body-color, #1d273b);
+  box-shadow: 0 6px 24px #0002;
+  font-size: 1rem;
+  font-weight: 600;
+}
+.fan-loading-status .spinner-border { width: 1.5rem; height: 1.5rem; flex-shrink: 0; }
+.fan-floating-controls {
+  position: absolute;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 1;
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.375rem;
+  border: 1px solid var(--tblr-border-color, #dce1e7);
+  border-radius: 0.5rem;
+  background: var(--tblr-card-bg, #fff);
+  box-shadow: 0 3px 12px #0001;
+}
+.fan-floating-controls .btn { min-width: 2.25rem; min-height: 2.25rem; }
+.fan-help { padding-top: 0.5rem; text-align: center; }
+.fan-name-preview {
+  position: absolute;
+  z-index: 2;
+  width: 300px;
+  max-width: calc(100% - 16px);
+  border: 1px solid var(--tblr-border-color, #dce1e7);
+  border-radius: 0.375rem;
+  background: var(--tblr-card-bg, #fff);
+  color: var(--tblr-body-color, #1d273b);
+  box-shadow: 0 4px 16px #0002;
+  overflow-wrap: anywhere;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.fan-preview-summary { padding: 0.65rem 0.85rem; }
+.fan-preview-summary strong, .fan-preview-summary span { display: block; }
+.fan-preview-summary span { font-size: 0.8rem; }
+.fan-name-preview .cardTitle { white-space: normal; min-width: 0; }
+.fan-label { pointer-events: none; }
+.fan-chart {
+  display: block;
+  width: 100%;
+  height: clamp(360px, 70vh, 900px);
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
+}
+.fan-chart:active { cursor: grabbing; }
+.fan-placeholders { pointer-events: none; }
+.fan-placeholders path {
+  fill: var(--tblr-bg-surface-secondary, #f1f3f5);
+  stroke: var(--tblr-card-bg, #fff);
+  stroke-width: 2;
+}
+.fan-node { cursor: pointer; outline: none; }
+.fan-node > path, .fan-parent > rect { stroke: var(--tblr-card-bg, #fff); stroke-width: 2; }
+.fan-node:not(.is-summary):hover > path, .fan-parent:hover > rect { filter: brightness(0.95); }
+.fan-node:focus-visible > path, .fan-parent:focus-visible > rect {
+  stroke: #f59f00;
+  stroke-width: 4;
+  paint-order: fill stroke;
+}
+.fan-node.is-empty > path { fill: var(--tblr-bg-surface-secondary, #f1f5f9); stroke-dasharray: 4 3; }
+.fan-node text { fill: #1d273b; font-size: 11px; font-weight: 600; pointer-events: none; }
+.fan-node .fan-node-meta { font-size: 9px; font-weight: 400; }
+.fan-node .fan-root-label { fill: #fff; }
+.fan-node.is-summary { cursor: default; }
+.fan-node.is-summary text { fill: #496680; }
+.fan-node.is-empty text { fill: var(--tblr-body-color, #667382); }
+@media (max-width: 575px) {
+  .fan-page .page-header .row > .col { flex: 0 0 100%; margin-right: 0 !important; }
+  .fan-page .page-header .row > .col-auto { margin-left: 0 !important; }
+  .fan-chart { height: clamp(360px, 60vh, 600px); }
+  .fan-floating-controls { right: 0.5rem; bottom: 0.5rem; }
+}
