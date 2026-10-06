@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { SendRequest } from "../../hooks/usePost.js";
-import PageHeader, { CardHeader } from "../../components/pageHeader.jsx";
-import AddPayableModal from './payableComponents/addPayableModal.jsx';
-import AutoComplete from '../../components/autocomplete.jsx';
-import DateTimeInput from '../../components/dateTimeInput.jsx';
-import DataLoading from '../../components/dataLoading.jsx';
+import { SendRequest } from "../../../hooks/usePost.js";
+import PageHeader, { CardHeader } from "../../../components/pageHeader.jsx";
+import AddPayableModal from '../payableComponents/addPayableModal.jsx';
+import AutoComplete from '../../../components/autocomplete.jsx';
+import DateTimeInput from '../../../components/dateTimeInput.jsx';
+import DataLoading from '../../../components/dataLoading.jsx';
 
-import PayablesModal2 from './payableComponents/payablesModal2.jsx';
-import PayableSummaryPanel2 from './payableComponents/payableSummaryPanel2.jsx';
-import CustomerPayablePanel2 from './payableComponents/customerPayablePanel2.jsx';
+import PayablesModal2 from './payablesModal2.jsx';
+import PayableSummaryPanel2 from './payableSummaryPanel2.jsx';
+import CustomerPayablePanel2 from './customerPayablePanel2.jsx';
 
 
 const asClass = (v) => String(v ?? '').toUpperCase();

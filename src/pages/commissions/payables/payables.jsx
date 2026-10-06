@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import PageHeader, { CardHeader } from "../../components/pageHeader.jsx";
+import PageHeader, { CardHeader } from "../../../components/pageHeader.jsx";
 import PayablesModal from './payablesModal.jsx';
-import AutoComplete from '../../components/autocomplete.jsx';
-import DateTimeInput from '../../components/dateTimeInput.jsx';
-import AddPayableModal from './payableComponents/addPayableModal.jsx';
-import PayableSummaryPanel from './payableComponents/payableSummaryPanel.jsx';
-import CustomerPayablePanel from './payableComponents/customerPayablePanel.jsx';
-import BonusPayablePanel from './payableComponents/bonusPayablePanel.jsx';
-import DataLoading from '../../components/dataLoading.jsx';
+import AutoComplete from '../../../components/autocomplete.jsx';
+import DateTimeInput from '../../../components/dateTimeInput.jsx';
+import AddPayableModal from '../payableComponents/addPayableModal.jsx';
+import PayableSummaryPanel from './payableSummaryPanel.jsx';
+import CustomerPayablePanel from './customerPayablePanel.jsx';
+import BonusPayablePanel from './bonusPayablePanel.jsx';
+import DataLoading from '../../../components/dataLoading.jsx';
 
 const PaymentHistory = () => {
   const [show, setShow] = useState(false);

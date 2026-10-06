@@ -18,14 +18,14 @@ const GET_PERIOD_DETAILS = gql`
   }
 `;
 
-const PeriodPicker = ({ periodId, setPeriodId, options }) => {
+const PeriodPicker = ({ periodId, setPeriodId, options, disabled = false }) => {
   const currentDate = new Date(Date.now());
   const isoDate = currentDate.toISOString();
   const dateOnly = isoDate.split('T')[0];
 
   const cacheKey = `periodDetails_${dateOnly}`;
 
-  const [opts, setOpts] = useState();
+  const [opts, setOpts] = useState(() => ({ ...options }));
   //const [planIds] = useState(options?.planIds)
   //const [defaultPlanId] = useState(options?.defaultPlan)
   //const [defaultPeriodIndex] = useState(options?.defaultIndex ?? 0);
@@ -66,11 +66,11 @@ const PeriodPicker = ({ periodId, setPeriodId, options }) => {
   });
 
   useEffect(() => {
-    if (localData && (periodId ?? 0) === 0) {
-      const periodCopy = [...activePlan.periods].reverse();
-      const fpId = periodCopy[opts.defaultIndex ?? 0]?.id;
-      if (fpId) {
-        setPeriodId(fpId, false);
+    if (localData && String(periodId ?? 0) === '0') {
+      const periodCopy = [...(activePlan?.periods ?? [])].sort((a, b) => new Date(b.end) - new Date(a.end));
+      const defaultPeriod = periodCopy[opts.defaultIndex ?? 0];
+      if (defaultPeriod) {
+        setPeriodId(defaultPeriod.id, false, defaultPeriod);
       }
     }
 
@@ -83,7 +83,7 @@ const PeriodPicker = ({ periodId, setPeriodId, options }) => {
 
   const findPlanForPeriod = (pId) => {
     for (const plan of localData.compensationPlans) {
-      const matchingPeriod = plan.periods.find(period => parseInt(period.id) === pId);
+      const matchingPeriod = plan.periods.find(period => String(period.id) === String(pId));
       if (matchingPeriod) return plan;
     }
 
@@ -92,7 +92,7 @@ const PeriodPicker = ({ periodId, setPeriodId, options }) => {
 
   const findPeriod = (pId) => {
     for (const plan of localData.compensationPlans) {
-      const matchingPeriod = plan.periods.find(period => parseInt(period.id) === pId);
+      const matchingPeriod = plan.periods.find(period => String(period.id) === String(pId));
       if (matchingPeriod) return matchingPeriod
     }
 
@@ -101,7 +101,7 @@ const PeriodPicker = ({ periodId, setPeriodId, options }) => {
 
   const handleChange = (event) => {
     const value = event.target.value;
-    setPeriodId(value, true);
+    setPeriodId(value, true, findPeriod(value));
   };
 
   const handlePlanChange = (planId) => {
@@ -123,7 +123,7 @@ const PeriodPicker = ({ periodId, setPeriodId, options }) => {
 
   if (opts.tabbedUI) {
     return <>
-      <button type="button" className="btn dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+      <button type="button" className="btn dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" disabled={disabled}>
         {formatDate(activePeriod?.begin, true)} {!opts.hideEnd && <>- {formatDate(activePeriod?.end, true)}</>}
       </button>
 
@@ -133,7 +133,7 @@ const PeriodPicker = ({ periodId, setPeriodId, options }) => {
             <ul className="nav nav-tabs card-header-tabs" data-bs-toggle="tabs" role="tablist">
               {localData.compensationPlans.map((plan) => {
                 return <li key={plan.id} className={`nav-item`} role="presentation">
-                  <a href={`#tabs-profile-${plan.id}`} className={`nav-link ${plan.id == activePlan?.id ? 'active' : ''}`} data-bs-toggle="tab" aria-selected="false" tabIndex="-1" role="tab" onClick={(e) => { e.stopPropagation(); handlePlanChange(plan.id) }}>{plan.name}</a>
+                  <a href={`#tabs-profile-${plan.id}`} className={`nav-link ${plan.id == activePlan?.id ? 'active' : ''}`} data-bs-toggle="tab" aria-selected={plan.id == activePlan?.id} tabIndex="-1" role="tab" onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (!disabled) handlePlanChange(plan.id) }}>{plan.name}</a>
                 </li>
               })}
             </ul>
@@ -141,9 +141,9 @@ const PeriodPicker = ({ periodId, setPeriodId, options }) => {
           <div className="" style={{ maxWidth: "1000px", maxHeight: "500px", overflow: "auto" }}>
             {activePlan && (
               <div key={activePlan.id}>
-                {[...activePlan.periods].reverse().map((period) => {
+                {[...activePlan.periods].sort((a, b) => new Date(b.end) - new Date(a.end)).map((period) => {
                   if (period.status.toLowerCase() === "closed" || !opts.hideOpen) {
-                    return <button key={period.id} className={`dropdown-item ${period.id == periodId ? 'active' : ''}`} onClick={() => setPeriodId(period.id, true)}>
+                    return <button type="button" key={period.id} className={`dropdown-item ${period.id == periodId ? 'active' : ''}`} disabled={disabled} onClick={() => setPeriodId(period.id, true, period)}>
                       <div className="d-block">
                         <div>{formatDate(period.begin, opts.hideTime)}</div>
                         {!opts.hideEnd && <div className="small text-muted">to {formatDate(period.end, opts.hideTime)}</div>}
@@ -159,7 +159,7 @@ const PeriodPicker = ({ periodId, setPeriodId, options }) => {
     </>
   } else {
     return <>
-      <select className="form-select" value={periodId} onChange={handleChange}>
+      <select className="form-select" value={periodId} onChange={handleChange} disabled={disabled}>
         {localData.compensationPlans.length > 1 ? (
           localData.compensationPlans.map((plan) => {
             return (
@@ -177,7 +177,7 @@ const PeriodPicker = ({ periodId, setPeriodId, options }) => {
 };
 
 function getOptions(plan, formatDate, opts) {
-  const periods = [...plan.periods].reverse();
+  const periods = [...plan.periods].sort((a, b) => new Date(b.end) - new Date(a.end));
   return (
     periods &&
     periods.map((period) => {
@@ -195,6 +195,9 @@ export default PeriodPicker;
 
 PeriodPicker.propTypes = {
   periodId: PropTypes.any.isRequired,
+  // Receives (periodId, userInitiated, period); existing two-argument handlers
+  // remain compatible, and callers can use the period's begin/end dates.
   setPeriodId: PropTypes.func.isRequired,
-  options: PropTypes.any
+  options: PropTypes.any,
+  disabled: PropTypes.bool
 };

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import { SendRequest } from "../../hooks/usePost.js";
-import Modal from "../../components/modal.jsx";
+import { SendRequest } from "../../../hooks/usePost.js";
+import Modal from "../../../components/modal.jsx";
 
 const PayablesModal = ({ batchData, showModal, onHide }) => {
   const [processing, setProcessing] = useState(false);

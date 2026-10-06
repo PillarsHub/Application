@@ -68,6 +68,8 @@ const Navigation = () => {
         { url: '/commissions/periods', title: 'Commission Periods', type: "Corporate" },
         { url: '/commissions/payables', title: 'Commission Payables (Legacy)', type: "Corporate" },
         { url: '/commissions/payables2', title: 'Commission Payables', type: "Corporate" },
+        { url: '/commissions/payables3', title: 'Commission Payables (Section Selection)', type: "Corporate" },
+        { url: '/commissions/payables4', title: 'Commission Payables (By Customer)', type: "Corporate" },
         { url: '/commissions/paid', title: 'Commissions Paid', type: "Corporate" },
         { url: '/inventory/products', title: 'Product List', type: "Corporate" },
         { url: '/inventory/categories', title: 'Category List', type: "Corporate" },
