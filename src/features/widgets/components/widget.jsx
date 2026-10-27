@@ -412,7 +412,15 @@ function Content(widget, date, customer, compensationPlans, trees, isPreview, wi
 
   if (widget.type == WidgetTypes.PendingPayouts) {
     var pendingOverrides = widget.panes?.map((p) => ({ title: p.title, display: p.text, show: p.imageUrl.toLowerCase() == 'true' }));
-    return <PendingPayoutsWidget customerId={customer.id} date={date} overrides={pendingOverrides} />
+    return <PendingPayoutsWidget
+      customerId={customer.id}
+      date={date}
+      isPreview={isPreview}
+      overrides={pendingOverrides}
+      showCommissionSummary={widget?.settings?.showCommissionSummary ?? false}
+      showNegativeBalanceMessage={widget?.settings?.showNegativeBalanceMessage ?? false}
+      negativeBalanceMessage={widget?.settings?.negativeBalanceMessage}
+    />
   }
 
   if (widget.type == WidgetTypes.Orders) {

@@ -1,0 +1,33 @@
+.payment-summary-card {
+  container: payment-summary / inline-size;
+}
+
+.payment-summary-layout {
+  display: grid;
+  align-content: start;
+  gap: 1rem;
+}
+
+.payment-summary-overview,
+.payment-summary-merchants {
+  min-width: 0;
+}
+
+.payment-summary-merchants {
+  border-top: 1px solid var(--tblr-border-color);
+  padding-top: 1rem;
+}
+
+@container payment-summary (min-width: 30rem) {
+  .payment-summary-layout-split {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 1.5rem;
+  }
+
+  .payment-summary-merchants {
+    border-top: 0;
+    border-inline-start: 1px solid var(--tblr-border-color);
+    padding-top: 0;
+    padding-inline-start: 1.5rem;
+  }
+}

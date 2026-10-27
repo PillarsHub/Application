@@ -6,6 +6,8 @@ import PageHeader, { CardHeader } from "../../components/pageHeader.jsx";
 import LocalDate from '../../util/LocalDate.jsx';
 import Modal from '../../components/modal.jsx';
 import Avatar from '../../components/avatar';
+import { merchantIdFor, merchantName, summarizePayments } from './paymentHistorySummary.mjs';
+import './paymentHistoryDetail.css';
 
 // ---------- Config ----------
 const PAYMENTS_PAGE_SIZE = 300;
@@ -36,7 +38,12 @@ const GET_PAYMENTS_PAGED = gql`
         status
         statusReason
         totalDetails
-        customer { id fullName profileImage }
+        customer {
+          id
+          fullName
+          profileImage
+          moneyOutMerchant { id name serviceType }
+        }
       }
     }
   }
@@ -123,6 +130,7 @@ const PaymentHistoryDetail = () => {
 	  // search and filters
 	  const [searchText, setSearchText] = useState('');
 	  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [merchantFilter, setMerchantFilter] = useState('ALL');
 
   // expanded rows keyed by composite rowKey
   const [expanded, setExpanded] = useState(() => new Set());
@@ -249,6 +257,17 @@ const PaymentHistoryDetail = () => {
     });
   }, [paymentsRaw]);
 
+  const merchantOptions = useMemo(() => {
+    const merchants = new Map();
+    for (const payment of paymentsRaw) {
+      const id = merchantIdFor(payment);
+      if (!merchants.has(id)) {
+        merchants.set(id, { id, name: merchantName(payment.customer?.moneyOutMerchant) });
+      }
+    }
+    return [...merchants.values()].sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
+  }, [paymentsRaw]);
+
 	  const normalizedSearch = useMemo(() => (searchText || '').trim().toLocaleLowerCase(), [searchText]);
 
 	  const filteredPayments = useMemo(() => {
@@ -257,6 +276,7 @@ const PaymentHistoryDetail = () => {
 	    return sortedPayments.filter(p => {
 	      const matchesStatus = normalizedStatus === 'ALL' || String(p.status || '').toUpperCase() === normalizedStatus;
 	      if (!matchesStatus) return false;
+      if (merchantFilter !== 'ALL' && merchantIdFor(p) !== merchantFilter) return false;
 	      if (!normalizedSearch) return true;
 
 	      const name = (p.customer?.fullName || '').toLocaleLowerCase();
@@ -273,8 +293,14 @@ const PaymentHistoryDetail = () => {
 	        nodeId.includes(normalizedSearch)
 	      );
 	    });
-	  }, [sortedPayments, normalizedSearch, statusFilter]);
+	  }, [sortedPayments, normalizedSearch, statusFilter, merchantFilter]);
 
+  const paymentSummary = useMemo(() => summarizePayments(paymentsRaw), [paymentsRaw]);
+  const hasPendingPayments = paymentSummary.statuses.some(group => group.status === 'PENDING' && group.count > 0);
+  const visibleSummaryStatuses = paymentSummary.statuses.filter(group => (
+    group.status === 'SUCCESS' || group.count > 0 || (group.status === 'FAILURE' && !hasPendingPayments)
+  ));
+  const filteredPaymentTotal = useMemo(() => summarizePayments(filteredPayments).total, [filteredPayments]);
 
 
   // Selection aggregate
@@ -509,67 +535,8 @@ const PaymentHistoryDetail = () => {
   return (
     <PageHeader title="Batch Payment Detail" breadcrumbs={[{ title: 'Commissions Paid', link: `/commissions/paid` }, { title: `Batch ${params.batchId}` }]}>
       <CardHeader>
-        <div className="d-flex align-items-center gap-2">
-
-          <div className="me-2" style={{ minWidth: 280 }}>
-            <div className="input-icon">
-              <span className="input-icon-addon">
-                <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="24" height="24"
-                  viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"
-                  fill="none" strokeLinecap="round" strokeLinejoin="round">
-                  <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                  <path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" />
-                  <path d="M21 21l-6 -6" />
-                </svg>
-              </span>
-
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Search name, customer id, payment id…"
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                aria-label="Search payments"
-              />
-
-              {searchText && (
-                <span
-                  className="input-icon-addon pe-auto cursor-pointer"
-                  role="button"
-                  aria-label="Clear search"
-                  onClick={() => setSearchText('')}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="20" height="20"
-                    viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"
-                    fill="none" strokeLinecap="round" strokeLinejoin="round">
-                    <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-                    <path d="M18 6l-12 12" />
-                    <path d="M6 6l12 12" />
-                  </svg>
-                </span>
-              )}
-	            </div>
-	          </div>
-
-	          <div className="me-2" style={{ minWidth: 190 }}>
-	            <select
-	              className="form-select"
-	              value={statusFilter}
-	              onChange={(e) => setStatusFilter(e.target.value)}
-	              aria-label="Filter payments by status"
-	            >
-	              {PAYMENT_STATUS_OPTIONS.map(option => (
-	                <option key={option.value} value={option.value}>
-	                  {option.label}
-	                </option>
-	              ))}
-	            </select>
-	          </div>
-
-	
-	
-	
-	          {/* Bulk actions (parent-only selection) */}
+        <div className="d-flex flex-wrap align-items-center gap-2">
+          {/* Bulk actions (parent-only selection) */}
           {selectedPaymentIds.size > 0 && <div className="dropdown">
             <button className="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" >
               Bulk actions {selectedPaymentIds.size > 0 ? `(${selectedPaymentIds.size})` : ''}
@@ -630,6 +597,67 @@ const PaymentHistoryDetail = () => {
       </CardHeader>
 
       <div className="container-xl">
+        {(loadingPayments || visibleSummaryStatuses.length > 0) && (
+          <section className="mb-3" aria-label="Payment summary" aria-busy={loadingPayments}>
+            {loadingPayments ? (
+              <div className="d-flex align-items-center gap-2 text-muted" role="status">
+                <span className="spinner-border spinner-border-sm" aria-hidden="true" />
+                Loading payment summary…
+              </div>
+            ) : (
+              <div className="row row-deck row-cards">
+                {visibleSummaryStatuses.map(group => {
+                  const showSubmitted = isProcessedBatch && group.count > 0;
+                  const showMerchantBreakdown = merchantOptions.length > 1 && group.count > 0;
+                  const tone = group.status === 'SUCCESS' ? 'success'
+                    : group.status === 'FAILURE' ? 'danger'
+                    : group.status === 'PENDING' && !showSubmitted ? 'warning' : 'secondary';
+                  const knownStatus = PAYMENT_STATUS_OPTIONS.some(option => option.value === group.status);
+                  return (
+                    <div key={group.status} className={visibleSummaryStatuses.length <= 2
+                      ? 'col-12 col-lg-6'
+                      : 'col-12 col-lg-6 col-xl-4'}>
+                      <div className="card payment-summary-card">
+                        <div className={`card-body p-3 payment-summary-layout${showMerchantBreakdown ? ' payment-summary-layout-split' : ''}`}>
+                          <div className="payment-summary-overview">
+                            <div className={`small fw-semibold text-${tone} mb-2`}>
+                              {knownStatus ? renderStatusBadge(group.status, showSubmitted) : group.status === 'UNKNOWN' ? 'Unknown status' : group.status}
+                            </div>
+                            <div className="h1 mb-1 text-nowrap" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                              {fmtMoney(group.total)}
+                            </div>
+                            <div className="small text-muted">
+                              {group.count === 0 ? 'No payments' : `${fmtNumber(group.count)} ${group.count === 1 ? 'payment' : 'payments'}`}
+                            </div>
+                          </div>
+                          {showMerchantBreakdown && (
+                            <div className="payment-summary-merchants">
+                              <div className="subheader mb-2">By merchant</div>
+                              {group.merchants.map((merchant, index) => (
+                                <div key={merchant.id} className={`py-2 ${index > 0 ? 'border-top' : ''}`}>
+                                  <div className="fw-semibold text-break mb-1">{merchant.name}</div>
+                                  <div className="d-flex flex-wrap align-items-baseline gap-2">
+                                    <span className="fw-semibold text-nowrap" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                                      {fmtMoney(merchant.total)}
+                                    </span>
+                                    <span className="small text-muted">
+                                      {fmtNumber(merchant.count)} {merchant.count === 1 ? 'payment' : 'payments'}
+                                    </span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        )}
+
         <div className="card">
           <div className="card-header">
             <h3 className="card-title">
@@ -641,7 +669,7 @@ const PaymentHistoryDetail = () => {
                   <span className="small text-muted pe-3"><LocalDate dateString={batchCreated} /></span>
                 </>
               )}
-	              {(searchText || statusFilter !== 'ALL') && (
+	              {(searchText || statusFilter !== 'ALL' || merchantFilter !== 'ALL') && (
 	                <span className="small text-muted pe-3">
 	                  Showing <strong>{filteredPayments.length}</strong> of{' '}
 	                  <strong>{sortedPayments.length}</strong>
@@ -654,6 +682,81 @@ const PaymentHistoryDetail = () => {
               {batchMeta.comment}
             </div>
           )}
+
+          <div className="card-body border-bottom">
+            <div className="row g-2" role="search" aria-label="Filter batch payments">
+              <div className="col-12 col-md">
+                <div className="input-icon">
+                  <span className="input-icon-addon">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="24" height="24"
+                      viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"
+                      fill="none" strokeLinecap="round" strokeLinejoin="round">
+                      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                      <path d="M10 10m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" />
+                      <path d="M21 21l-6 -6" />
+                    </svg>
+                  </span>
+
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Search name, customer id, payment id…"
+                    value={searchText}
+                    onChange={(e) => setSearchText(e.target.value)}
+                    aria-label="Search payments"
+                  />
+
+                  {searchText && (
+                    <span
+                      className="input-icon-addon pe-auto cursor-pointer"
+                      role="button"
+                      aria-label="Clear search"
+                      onClick={() => setSearchText('')}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="icon" width="20" height="20"
+                        viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor"
+                        fill="none" strokeLinecap="round" strokeLinejoin="round">
+                        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+                        <path d="M18 6l-12 12" />
+                        <path d="M6 6l12 12" />
+                      </svg>
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="col-12 col-sm-6 col-md-auto" style={{ minWidth: 190 }}>
+                <select
+                  className="form-select"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  aria-label="Filter payments by status"
+                >
+                  {PAYMENT_STATUS_OPTIONS.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="col-12 col-sm-6 col-md-auto" style={{ minWidth: 190 }}>
+                <select
+                  className="form-select"
+                  value={merchantFilter}
+                  onChange={(e) => setMerchantFilter(e.target.value)}
+                  aria-label="Filter payments by merchant"
+                >
+                  <option value="ALL">All merchants</option>
+                  {merchantOptions.map(merchant => (
+                    <option key={merchant.id} value={merchant.id}>
+                      {merchant.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
 
           {loadingPayments ? (
             <div className="py-5 text-center">
@@ -677,6 +780,7 @@ const PaymentHistoryDetail = () => {
                     </th>
                     <th>Customer</th>
                     <th>Customer Id</th>
+                    <th>Merchant</th>
                     <th>Payment Id</th>
                     <th className="text-end">Total Bonus</th>
                     <th>Status</th>
@@ -724,6 +828,7 @@ const PaymentHistoryDetail = () => {
                             </div>
                           </td>
                           <td>{p.customer.id}</td>
+                          <td>{merchantName(p.customer?.moneyOutMerchant)}</td>
                           <td>{p.id}</td>
                           <td className="text-end fw-bold">{totalFormatted}</td>
                           <td>{renderStatusBadge(p.status, isProcessedBatch)}</td>
@@ -744,7 +849,7 @@ const PaymentHistoryDetail = () => {
                         {isOpen && (
                           <tr className="bg-body-tertiary">
                             <td></td>
-                            <td colSpan={8} className="p-0">
+                            <td colSpan={9} className="p-0">
                               <div id={paymentDomId(p)} className="p-3">
                                 {/* If the very first page is loading and there are no items yet */}
                                 {(!dstate || (dstate.items?.length === 0 && dstate.loading)) && (
@@ -845,9 +950,19 @@ const PaymentHistoryDetail = () => {
               </table>
             </div>
           )}
-          <div className="card-footer">
-            <span className="small text-muted me-2">Batch status:</span>
-            {renderBatchStatus(batchMeta.status)}
+          <div className="card-footer d-flex flex-wrap align-items-center gap-3">
+            <div>
+              <span className="small text-muted me-2">Batch status:</span>
+              {renderBatchStatus(batchMeta.status)}
+            </div>
+            {!loadingPayments && (
+              <div className="ms-auto text-end text-nowrap">
+                <span className="small text-muted me-2">Total</span>
+                <span className="h3 mb-0" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  {fmtMoney(filteredPaymentTotal)}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </div>

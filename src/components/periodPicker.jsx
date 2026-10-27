@@ -70,7 +70,7 @@ const PeriodPicker = ({ periodId, setPeriodId, options, disabled = false }) => {
       const periodCopy = [...(activePlan?.periods ?? [])].sort((a, b) => new Date(b.end) - new Date(a.end));
       const defaultPeriod = periodCopy[opts.defaultIndex ?? 0];
       if (defaultPeriod) {
-        setPeriodId(defaultPeriod.id, false, defaultPeriod);
+        setPeriodId(defaultPeriod.id, false, defaultPeriod, activePlan);
       }
     }
 
@@ -101,7 +101,7 @@ const PeriodPicker = ({ periodId, setPeriodId, options, disabled = false }) => {
 
   const handleChange = (event) => {
     const value = event.target.value;
-    setPeriodId(value, true, findPeriod(value));
+    setPeriodId(value, true, findPeriod(value), findPlanForPeriod(value));
   };
 
   const handlePlanChange = (planId) => {
@@ -143,7 +143,7 @@ const PeriodPicker = ({ periodId, setPeriodId, options, disabled = false }) => {
               <div key={activePlan.id}>
                 {[...activePlan.periods].sort((a, b) => new Date(b.end) - new Date(a.end)).map((period) => {
                   if (period.status.toLowerCase() === "closed" || !opts.hideOpen) {
-                    return <button type="button" key={period.id} className={`dropdown-item ${period.id == periodId ? 'active' : ''}`} disabled={disabled} onClick={() => setPeriodId(period.id, true, period)}>
+                    return <button type="button" key={period.id} className={`dropdown-item ${period.id == periodId ? 'active' : ''}`} disabled={disabled} onClick={() => setPeriodId(period.id, true, period, activePlan)}>
                       <div className="d-block">
                         <div>{formatDate(period.begin, opts.hideTime)}</div>
                         {!opts.hideEnd && <div className="small text-muted">to {formatDate(period.end, opts.hideTime)}</div>}
@@ -195,8 +195,8 @@ export default PeriodPicker;
 
 PeriodPicker.propTypes = {
   periodId: PropTypes.any.isRequired,
-  // Receives (periodId, userInitiated, period); existing two-argument handlers
-  // remain compatible, and callers can use the period's begin/end dates.
+  // Receives (periodId, userInitiated, period, compensationPlan).
+  // Existing handlers can continue using just the arguments they need.
   setPeriodId: PropTypes.func.isRequired,
   options: PropTypes.any,
   disabled: PropTypes.bool

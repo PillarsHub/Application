@@ -11,5 +11,8 @@ export default defineConfig({
       customWorkers: [{ label: "graphql", entry: "monaco-graphql/esm/graphql.worker" }],
     }),
   ],
-  server: { port: 3000 },
+  server: {
+    port: 3000,
+    allowedHosts: [".local.com"],
+  },
 });

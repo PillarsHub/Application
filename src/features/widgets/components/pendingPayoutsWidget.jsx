@@ -1,12 +1,45 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import PropTypes from "prop-types";
-import { gql, useLazyQuery } from "@apollo/client";
+import { gql, useApolloClient, useLazyQuery } from "@apollo/client";
 import DataLoading from "../../../components/dataLoading";
 import DataError from "../../../components/dataError";
 import EmptyContent from "../../../components/emptyContent";
 import LocalDate from "../../../util/LocalDate";
+import { describePendingCommission, formatNegativeBalanceMessage, formatPendingDetailAmount, hasPendingDetailPayment, hasPendingPayment, pendingAmount, releasedAmount } from "./pendingCommissionPresentation.mjs";
 
 const PAGE_SIZE = 100;
+
+const createPreviewRows = (date) => {
+  const requestedDate = new Date(date ?? Date.now());
+  const previewDate = Number.isNaN(requestedDate.getTime()) ? new Date() : requestedDate;
+  const year = previewDate.getUTCFullYear();
+  const month = previewDate.getUTCMonth();
+  const periods = [-1, 0].map((offset) => ({
+    id: `preview-${offset + 1}`,
+    begin: new Date(Date.UTC(year, month + offset, 1)).toISOString(),
+    end: new Date(Date.UTC(year, month + offset + 1, 1) - 1).toISOString(),
+  }));
+
+  return [
+    { bonusId: "preview-retail", bonusTitle: "Retail Commission", period: periods[0], amount: 0, released: 175, volume: 0, percent: 0.1 },
+    { bonusId: "preview-team", bonusTitle: "Team Commission", period: periods[0], amount: 0, released: 65, volume: 0, percent: 0.05 },
+    { bonusId: "preview-retail", bonusTitle: "Retail Commission", period: periods[1], amount: 120, released: 0, volume: 1200, percent: 0.1 },
+    { bonusId: "preview-team", bonusTitle: "Team Commission", period: periods[1], amount: 80, released: 0, volume: 1600, percent: 0.05 },
+  ].map((row, index) => {
+    const commissionDate = new Date(new Date(row.period.begin).getTime() + 9 * 86400000).toISOString();
+    return {
+      ...row,
+      nodeId: "EX456",
+      level: 1,
+      commissionDate,
+      source: {
+        externalId: `EX-${1001 + index}`,
+        date: commissionDate,
+        customer: { id: "EX456", fullName: "Example Customer", profileImage: "" },
+      },
+    };
+  });
+};
 
 /** Queries */
 const GET_UNRELEASED_PAGE = gql`
@@ -101,9 +134,16 @@ const sortPendingChildren = (a, b) => {
   return (a.level ?? 0) - (b.level ?? 0);
 };
 
-const PendingPayoutsWidget = ({ date, customerId }) => {
+const PendingPayoutsWidget = ({
+  date,
+  customerId,
+  isPreview = false,
+  showCommissionSummary = false,
+  showNegativeBalanceMessage = false,
+  negativeBalanceMessage,
+}) => {
   const [loadUnreleasedPage] = useLazyQuery(GET_UNRELEASED_PAGE, { fetchPolicy: "no-cache" });
-  const [loadUnreleasedDetails] = useLazyQuery(GET_UNRELEASED_DETAILS, { fetchPolicy: "no-cache" });
+  const client = useApolloClient();
 
   const [unreleasedRows, setUnreleasedRows] = useState([]);
   const [loadingUnreleased, setLoadingUnreleased] = useState(false);
@@ -112,15 +152,20 @@ const PendingPayoutsWidget = ({ date, customerId }) => {
   const [expanded, setExpanded] = useState(() => new Set());
   // cache per group key: { [groupKey]: { items, loading, error } }
   const [detailsByGroup, setDetailsByGroup] = useState({});
+  const detailRequests = useRef(new Set());
 
   /** Page through ALL unreleased once to build groups/totals */
   useEffect(() => {
     let cancelled = false;
+    detailRequests.current = new Set();
+    setLoadingUnreleased(false);
+    setUnreleasedError(null);
+    setUnreleasedRows([]);
+    setDetailsByGroup({});
+    setExpanded(new Set());
+
     const run = async () => {
       setLoadingUnreleased(true);
-      setUnreleasedError(null);
-      setUnreleasedRows([]);
-      setDetailsByGroup({}); // reset cache
 
       try {
         let offset = 0;
@@ -142,9 +187,13 @@ const PendingPayoutsWidget = ({ date, customerId }) => {
         if (!cancelled) setLoadingUnreleased(false);
       }
     };
-    if (customerId && date) run();
-    return () => { cancelled = true; };
-  }, [customerId, date, loadUnreleasedPage]);
+    if (isPreview) setUnreleasedRows(createPreviewRows(date));
+    else if (customerId && date) run();
+    return () => {
+      cancelled = true;
+      detailRequests.current = new Set();
+    };
+  }, [customerId, date, isPreview, loadUnreleasedPage]);
 
   const groups = useMemo(() => {
     if (!unreleasedRows.length) return [];
@@ -175,8 +224,8 @@ const PendingPayoutsWidget = ({ date, customerId }) => {
       }
       const g = map.get(key);
 
-      g.amount += r.amount ?? 0;
-      g.released += r.released ?? 0;
+      g.amount += num(r.amount);
+      g.released += releasedAmount(r);
       g.items.push(r);
 
       // NEW: accumulate volume
@@ -199,57 +248,74 @@ const PendingPayoutsWidget = ({ date, customerId }) => {
     return arr;
   }, [unreleasedRows]);
 
-  const totalAmount = useMemo(
-    () => groups.reduce((t, g) => t + ((g.amount ?? 0) - (g.released ?? 0)), 0),
-    [groups]
-  );
+  const totalAmount = useMemo(() => groups.reduce((total, group) => total + pendingAmount(group), 0), [groups]);
 
-  /** Expand/collapse & lazy-load details ONLY for that group */
-  const onToggleGroup = async (group) => {
-    const open = new Set(expanded);
-    if (open.has(group.key)) {
-      open.delete(group.key);
-      setExpanded(open);
+  // Fetch only the expanded group's details and reuse them when it is reopened.
+  const loadGroupDetails = async (group) => {
+    const requests = detailRequests.current;
+    const cache = detailsByGroup[group.key];
+    if (requests.has(group.key) || (cache && !cache.error)) return;
+    if (isPreview) {
+      setDetailsByGroup((previous) => ({ ...previous, [group.key]: {
+        // Summary percentages are fractions; detail percentages are whole numbers.
+        items: group.items.map((row) => ({ ...row, percent: row.percent * 100 })),
+        loading: false,
+        error: null,
+      } }));
       return;
     }
-    open.add(group.key);
-    setExpanded(open);
+    requests.add(group.key);
+    setDetailsByGroup((previous) => ({ ...previous, [group.key]: { items: [], loading: true, error: null } }));
+    try {
+      const { data } = await client.query({
+        query: GET_UNRELEASED_DETAILS,
+        fetchPolicy: "no-cache",
+        variables: { nodeIds: [customerId], periodIds: [String(group.period?.id)], bonusIds: [String(group.bonusId)] },
+      });
+      if (requests !== detailRequests.current) return;
 
-    if (!detailsByGroup[group.key]) {
-      // fetch details just for this group (period + bonus), then filter by level on the client
-      const periodIds = [String(group.period?.id)].filter(Boolean);
-      const bonusIds = [String(group.bonusId)].filter(Boolean);
-
-      setDetailsByGroup((m) => ({ ...m, [group.key]: { items: [], loading: true, error: null } }));
-      try {
-        const { data } = await loadUnreleasedDetails({
-          variables: { nodeIds: [customerId], periodIds, bonusIds },
-        });
-
-        // flatten results and attach period ctx (begin/end) if needed
-        const flat = [];
-        for (const plan of data?.compensationPlans ?? []) {
-          for (const p of plan.periods ?? []) {
-            const periodCtx = { id: p.id, begin: p.begin, end: p.end, status: p.status };
-            for (const b of p.bonuses ?? []) {
-              for (const d of b.details ?? []) {
-                // filter to this group's level (server returns multiple levels per bonus)
-                if (group.level == null || d.level === group.level) {
-                  flat.push({ ...d, period: periodCtx });
-                }
-              }
+      const flat = [];
+      for (const plan of data?.compensationPlans ?? []) {
+        for (const p of plan.periods ?? []) {
+          const periodCtx = { id: p.id, begin: p.begin, end: p.end, status: p.status };
+          for (const b of p.bonuses ?? []) {
+            for (const d of b.details ?? []) {
+              flat.push({ ...d, bonusId: d.bonusId ?? b.bonusId, period: periodCtx });
             }
           }
         }
-        flat.sort(sortPendingChildren);
-
-        setDetailsByGroup((m) => ({ ...m, [group.key]: { items: flat, loading: false, error: null } }));
-      } catch (e) {
-        setDetailsByGroup((m) => ({ ...m, [group.key]: { items: [], loading: false, error: e } }));
       }
+      setDetailsByGroup((previous) => ({ ...previous, [group.key]: {
+        items: flat.filter((d) => String(d.period.id) === String(group.period?.id)
+          && d.bonusId === group.bonusId && (group.level == null || d.level === group.level)).sort(sortPendingChildren),
+        loading: false,
+        error: null,
+      } }));
+    } catch (e) {
+      if (requests === detailRequests.current) {
+        setDetailsByGroup((previous) => ({ ...previous, [group.key]: { items: [], loading: false, error: e } }));
+      }
+    } finally {
+      requests.delete(group.key);
     }
   };
 
+  const onToggleGroup = (group) => {
+    setExpanded((previous) => {
+      const open = new Set(previous);
+      if (open.has(group.key)) open.delete(group.key);
+      else open.add(group.key);
+      return open;
+    });
+    if (!expanded.has(group.key)) loadGroupDetails(group);
+  };
+
+  const summaryItems = [
+    { label: "Commission earned", amount: null, hint: "New commissions and commission increases" },
+    { label: "Commission reversals", amount: null, hint: "Reversals of commissions" },
+    { label: "Net payment", amount: totalAmount, hint: "Pending commissions minus commission reversals" },
+  ];
+  const showBalanceMessage = showNegativeBalanceMessage && !loadingUnreleased && totalAmount < 0;
   const nothingToShow = !loadingUnreleased && !unreleasedRows.length;
 
   return (
@@ -264,6 +330,21 @@ const PendingPayoutsWidget = ({ date, customerId }) => {
       )}
 
       {!nothingToShow && (
+        <>
+        {(showCommissionSummary || showBalanceMessage) && <div className="card-body border-bottom">
+          {showCommissionSummary && <dl className="row g-3 mb-0" aria-live="polite" aria-busy={loadingUnreleased}>
+            {summaryItems.map((item) => (
+              <div key={item.label} className="col-12 col-md-4">
+                <dt className="text-secondary fw-normal">{item.label}</dt>
+                <dd className={`h3 mb-1 ${!loadingUnreleased && item.amount < 0 ? "text-danger" : ""}`}>
+                  {item.amount == null ? <span aria-label="Not available yet">—</span> : loadingUnreleased ? "Loading…" : currency(item.amount)}
+                </dd>
+                <div className="small text-secondary">{item.hint}</div>
+              </div>
+            ))}
+          </dl>}
+          {showBalanceMessage && <p className={`small text-secondary mb-0 ${showCommissionSummary ? "mt-3" : ""}`}>{formatNegativeBalanceMessage(negativeBalanceMessage, totalAmount)}</p>}
+        </div>}
         <div className="table-responsive">
           <table className="table card-table table-vcenter text-nowrap">
             <thead>
@@ -274,16 +355,19 @@ const PendingPayoutsWidget = ({ date, customerId }) => {
                 <th className="d-none d-md-table-cell">Period</th>
                 <th>Volume</th>
                 <th>Percent</th>
-                <th className="text-end">Amount</th>
-                <th className="text-end">Released</th>
-                <th className="text-end">Amount Due</th>
+                <th className="text-end">Pending payment</th>
               </tr>
             </thead>
             <tbody>
+              {!loadingUnreleased && !groups.some(hasPendingPayment) && (
+                <tr><td colSpan={7} className="text-center text-secondary py-3">No pending payments or adjustments to display.</td></tr>
+              )}
               {groups.map((g) => {
                 const isOpen = expanded.has(g.key);
                 const cache = detailsByGroup[g.key];
+                const visibleDetails = (cache?.items ?? []).filter(hasPendingDetailPayment);
                 const detailsId = `pending-details-${encodeURIComponent(g.key)}`;
+                const groupDue = pendingAmount(g);
 
                 // compute parent-row percent display
                 let percentDisplay = "—";
@@ -292,7 +376,7 @@ const PendingPayoutsWidget = ({ date, customerId }) => {
                     ? fmtPercent(g.percentMin * 100)
                     : `${fmtPercent(g.percentMin * 100)}–${fmtPercent(g.percentMax * 100)}`;
                 }
-                if (g.amount != 0) {
+                if (hasPendingPayment(g)) {
                   return (
                     <React.Fragment key={g.key}>
                       <tr style={{ cursor: "pointer" }} onClick={() => onToggleGroup(g)} tabIndex={0}
@@ -313,7 +397,9 @@ const PendingPayoutsWidget = ({ date, customerId }) => {
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon icon-tabler icons-tabler-outline icon-tabler-caret-down"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M6 10l6 6l6 -6h-12" /></svg>
                           }
                         </td>
-                        <td className="align-middle">{g.bonusTitle}</td>
+                        <td className="align-middle">
+                          <div>{g.bonusTitle}</div>
+                        </td>
                         <td className="d-none d-sm-table-cell align-middle">{g.level ?? "—"}</td>
                         <td className="d-none d-md-table-cell align-middle">
                           {g.period?.begin ? (
@@ -329,22 +415,22 @@ const PendingPayoutsWidget = ({ date, customerId }) => {
                         {/* NEW: Volume & Percent */}
                         <td className="align-middle">{fmtNumber(g.volumeSum)}</td>
                         <td className="align-middle">{percentDisplay}</td>
-                        <td className="text-end align-middle">{currency(g.amount)}</td>
-                        <td className="text-end align-middle">{currency(g.released)}</td>
-                        <td className="text-end align-middle">{currency(g.amount - g.released)}</td>
+                        <td className={`text-end align-middle ${groupDue < 0 ? "text-danger fw-semibold" : ""}`}>{currency(groupDue)}</td>
                       </tr>
 
                       {isOpen && (
                         <tr id={detailsId}>
-                          {/* header now has 8 columns → colSpan=8 */}
                           <td></td>
-                          <td colSpan={8} className="p-0">
+                          <td colSpan={6} className="p-0">
                             <div className="p-2">
                               {!cache && <div className="text-muted small mb-2">Loading details…</div>}
-                              {cache?.error && <DataError error={cache.error} />}
+                              {cache?.error && <>
+                                <DataError error={cache.error} />
+                                <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => loadGroupDetails(g)}>Retry details</button>
+                              </>}
                               {cache?.loading && <DataLoading />}
 
-                              {cache?.items?.length > 0 && (
+                              {visibleDetails.length > 0 && (
                                 <div className="table-responsive">
                                   <table className="table table-sm mb-0">
                                     <thead>
@@ -355,16 +441,17 @@ const PendingPayoutsWidget = ({ date, customerId }) => {
                                         <th>Order Date</th>
                                         <th>Volume</th>
                                         <th>Percent</th>
-                                        <th className="text-end">Amount</th>
-                                        <th className="text-end">Released</th>
-                                        <th className="text-end">Amount Due</th>
+                                        <th>Type</th>
+                                        <th className="text-end">Pending payment</th>
                                       </tr>
                                     </thead>
                                     <tbody>
-                                      {cache.items.map((child, idx) => {
+                                      {visibleDetails.map((child, idx) => {
                                         const rowKey = `${g.key}_${child.period?.id ?? "?"}_${idx}`;
                                         const src = child.source || {};
                                         const buyer = src.customer || {};
+                                        const presentation = describePendingCommission(child);
+                                        const childDue = pendingAmount(child);
                                         return (
                                           <tr key={rowKey}>
                                             <td className="d-none d-md-table-cell">
@@ -379,15 +466,16 @@ const PendingPayoutsWidget = ({ date, customerId }) => {
                                                 </span>
                                               </span>
                                             </td>
-                                            <td>{src.externalId ?
+                                            <td>{isPreview ? src.externalId : src.externalId ?
                                               <a className="text-reset" href={`/customers/${buyer.id}/orders/${src.externalId}`} target="_blank" rel="noreferrer">{src.externalId ?? "—"}</a> : "—"
                                             }</td>
                                             <td>{src.date ? <LocalDate dateString={src.date} hideTime /> : "—"}</td>
                                             <td>{fmtNumber(child.volume)}</td>
                                             <td>{fmtPercent(child.percent)}</td>
-                                            <td className="text-end">{currency(child.amount)}</td>
-                                            <td className="text-end">{currency(child.released)}</td>
-                                            <td className="text-end">{currency(child.amount - child.released)}</td>
+                                            <td>
+                                              <span className="badge bg-secondary-lt text-secondary">{presentation.label}</span>
+                                            </td>
+                                            <td className={`text-end ${childDue < 0 ? "text-danger fw-semibold" : ""}`}>{formatPendingDetailAmount(childDue)}</td>
                                           </tr>
                                         );
                                       })}
@@ -396,8 +484,8 @@ const PendingPayoutsWidget = ({ date, customerId }) => {
                                 </div>
                               )}
 
-                              {cache?.items && cache.items.length === 0 && !cache.loading && !cache.error && (
-                                <div className="text-muted small">No details found for this group.</div>
+                              {cache?.items && visibleDetails.length === 0 && !cache.loading && !cache.error && (
+                                <div className="text-muted small">No pending payments or adjustments to display for this group.</div>
                               )}
                             </div>
                           </td>
@@ -409,14 +497,14 @@ const PendingPayoutsWidget = ({ date, customerId }) => {
               })}
             </tbody>
             <tfoot>
-              {/* header has 8 columns → total row spans 7 + amount */}
               <tr>
-                <td colSpan={8} className="strong">Total Due</td>
-                <td className="strong text-end">{currency(totalAmount)}</td>
+                <td colSpan={6} className="strong">Net pending payment</td>
+                <td className={`strong text-end ${totalAmount < 0 ? "text-danger" : ""}`}>{currency(totalAmount)}</td>
               </tr>
             </tfoot>
           </table>
         </div>
+        </>
       )}
     </>
   );
@@ -425,6 +513,10 @@ const PendingPayoutsWidget = ({ date, customerId }) => {
 PendingPayoutsWidget.propTypes = {
   date: PropTypes.string.isRequired,
   customerId: PropTypes.string.isRequired,
+  isPreview: PropTypes.bool,
+  showCommissionSummary: PropTypes.bool,
+  showNegativeBalanceMessage: PropTypes.bool,
+  negativeBalanceMessage: PropTypes.string,
 };
 
 export default PendingPayoutsWidget;

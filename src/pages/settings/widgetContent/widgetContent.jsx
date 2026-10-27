@@ -13,6 +13,7 @@ import EarningsContent from "./earningsContent.jsx";
 import RecruiterContent from "./recruiterContent.jsx";
 import OrdersContent from "./ordersContent.jsx";
 import PayoutsContent from "./payoutsContent.jsx";
+import PendingPayoutsContent from "./pendingPayoutsContent.jsx";
 
 const WidgetContent = ({ widget, updateWidget, trees, definitions, customerTypes }) => {
 
@@ -37,6 +38,8 @@ const WidgetContent = ({ widget, updateWidget, trees, definitions, customerTypes
       return <EarningsContent widget={widget} updateWidget={updateWidget} />
     case WidgetTypes.Payouts:
       return <PayoutsContent widget={widget} updateWidget={updateWidget} />
+    case WidgetTypes.PendingPayouts:
+      return <PendingPayoutsContent widget={widget} updateWidget={updateWidget} />;
     case WidgetTypes.Orders:
       return <OrdersContent widget={widget} updateWidget={updateWidget} />
     case WidgetTypes.Recruiter:

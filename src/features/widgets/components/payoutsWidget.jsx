@@ -199,7 +199,7 @@ const PaymentsWidget = ({ date, customerId, setCurrentBatch }) => {
                   <td>Payment {pmt.id}</td>
                   <td>{pmt.batchId}</td>
                   <td className="text-center">{pmt.totalDetails ?? 0}</td>
-                  <td className="text-end fw-bold">{currency(pmt.amount)}</td>
+                  <td className={`text-end fw-bold ${pmt.amount < 0 ? "text-danger" : ""}`}>{currency(pmt.amount)}</td>
                 </tr>
 
                 {isOpen && (
@@ -258,7 +258,7 @@ const PaymentsWidget = ({ date, customerId, setCurrentBatch }) => {
                                         <td>{src.externalId ? <LocalDate dateString={src.date} hideTime /> : "—"}</td>
                                         <td>{fmtNumber(b.volume)}</td>
                                         <td>{fmtPercent(b.percent)}</td>
-                                        <td className="text-end">{currency(rel.amount)}</td>
+                                        <td className={`text-end ${rel.amount < 0 ? "text-danger" : ""}`}>{currency(rel.amount)}</td>
                                       </tr>
                                     );
                                   })}
