@@ -5,7 +5,7 @@ import AccountMenu from '../pages/accountMenu.jsx';
 const DataError = ({ title, error, showHeader = false }) => {
   return <div className="page-wrapper page-center" >
 
-    {showHeader && <header className="navbar navbar-expand navbar-light d-print-none">
+    {showHeader && <header className="navbar navbar-expand d-print-none" data-bs-theme="light">
       <div className="container-xl">
         <div className="navbar-nav flex-row order-md-last d-none d-lg-flex">
           <div className="nav-item dropdown ">

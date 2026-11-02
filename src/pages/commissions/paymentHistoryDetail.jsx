@@ -835,7 +835,7 @@ const PaymentHistoryDetail = () => {
                           <td>{batchCreated && <LocalDate dateString={batchCreated} hideTime="true" />}</td>
                           <td>{p.totalDetails ?? 0}</td>
                           <td className="text-end" onClick={(e) => e.stopPropagation()}>
-                            <button className="btn-action btn-icon" aria-expanded={isOpen} aria-controls={paymentDomId(p)} onClick={() => toggleExpand(p)} >
+                            <button type="button" className="btn btn-ghost btn-icon" aria-expanded={isOpen} aria-controls={paymentDomId(p)} onClick={() => toggleExpand(p)} >
                               {!isOpen &&
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon icon-tabler icons-tabler-outline icon-tabler-chevron-down"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M6 9l6 6l6 -6" /></svg>
                               }

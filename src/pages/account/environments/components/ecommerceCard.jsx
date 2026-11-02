@@ -87,7 +87,7 @@ const ECommerceCard = ({ environmentId }) => {
             </dl>
             {reconnect.error && <>
               <div className="alert alert-danger" role="alert">
-                <h4 className="alert-title">Unable to reconnect to e-commerce service</h4>
+                <h4 className="alert-heading">Unable to reconnect to e-commerce service</h4>
                 <div className="text-muted">{reconnect.error}</div>
               </div>
             </>}
@@ -150,7 +150,7 @@ const ECommerceCard = ({ environmentId }) => {
 
         {connect?.error?.general && <>
           <div className="alert alert-danger" role="alert">
-            <h4 className="alert-title">Unable to connect to e-commerce service</h4>
+            <h4 className="alert-heading">Unable to connect to e-commerce service</h4>
             <div className="text-muted">{connect.error.general}</div>
           </div>
         </>}

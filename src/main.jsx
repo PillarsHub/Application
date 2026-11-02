@@ -5,6 +5,9 @@ import { setContext } from '@apollo/client/link/context';
 import  App from './App.jsx';
 import { GetToken } from "./features/authentication/hooks/useToken.jsx"
 import BaseUrl from './hooks/baseUrl';
+import { initializeTabler } from './util/tabler';
+
+initializeTabler();
 
 const httpLink = createHttpLink({
   uri: `${BaseUrl}/graphql`,

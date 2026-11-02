@@ -12,16 +12,17 @@ const Modal = ({ showModal, onHide, size, centered, focus = true, children }) =>
   const [modalId] = useState(() => 'modal_' + generateUUID());
 
   useEffect(() => {
-    let mdl = document.getElementById(modalId);
-    if ((showModal && mdl.style.display !== 'block') || (!showModal && mdl.style.display === 'block')) {
-      let elem = document.getElementById(`${modalId}_btn`);
-      mdl.addEventListener('hidden.bs.modal', function () {
-        onHide();
-      });
+    const mdl = document.getElementById(modalId);
+    const handleHidden = () => onHide();
+    mdl.addEventListener('hidden.bs.modal', handleHidden);
 
+    if ((showModal && mdl.style.display !== 'block') || (!showModal && mdl.style.display === 'block')) {
+      const elem = document.getElementById(`${modalId}_btn`);
       elem.click();
     }
-  }, [showModal, modalId]);
+
+    return () => mdl.removeEventListener('hidden.bs.modal', handleHidden);
+  }, [showModal, modalId, onHide]);
 
   return (
     <>

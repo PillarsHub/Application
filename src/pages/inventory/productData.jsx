@@ -57,7 +57,7 @@ const ProductData = () => {
             <ProductNav productId={params.productId} />
             <div id="success" className="col-md-12" style={{display: "none"}}>
                 <div className="alert alert-success" role="alert">
-                    <h4 className="alert-title">Updated Successfully.</h4>
+                    <h4 className="alert-heading">Updated Successfully.</h4>
                     <div className="text-muted">Your product has been updated.</div>
                 </div>
             </div>

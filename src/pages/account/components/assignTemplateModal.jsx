@@ -74,7 +74,7 @@ const AssignTemplateModal = ({ templateId }) => {
         {environment && environment.status == 0 && (
           <>
             <div className="alert alert-warning" role="alert">
-              <h4 className="alert-title">This environment already has a compensation plan assigned.</h4>
+              <h4 className="alert-heading">This environment already has a compensation plan assigned.</h4>
               <div className="text-muted">Assigning this compensation plan to an environment that already has a plan can cause data to be corrupted.</div>
             </div>
 

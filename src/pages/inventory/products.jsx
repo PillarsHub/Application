@@ -4,7 +4,7 @@ import PageHeader from "../../components/pageHeader";
 import DataLoading from "../../components/dataLoading";
 import Pagination from '../../components/pagination';
 
-var GET_DATA = gql`query($offset: Int!, $first: Int!, $search: String!) {
+var GET_DATA = gql`query($offset: Int!, $first: Int!, $search: String!, $hasSearch: Boolean!) {
   products(offset: $offset, first: $first, search: $search) {
     id
     name
@@ -24,13 +24,15 @@ var GET_DATA = gql`query($offset: Int!, $first: Int!, $search: String!) {
       }
     }
   }
-  totalProducts
+  totalProducts @skip(if: $hasSearch)
 }`;
+
+const PAGE_SIZE = 10;
 
 const Products = () => {
   const [searchText, setSearchText] = useState('');
   const { loading, error, data, variables, refetch } = useQuery(GET_DATA, {
-    variables: { offset: 0, first: 10, search: '' },
+    variables: { offset: 0, first: PAGE_SIZE, search: '', hasSearch: false },
   });
 
   if (loading) return <DataLoading />;
@@ -38,7 +40,26 @@ const Products = () => {
 
   const handleSubmit = async e => {
     e.preventDefault();
-    refetch({ search: searchText, offset: 0 });
+    const search = searchText.trim();
+    const hasSearch = Boolean(search);
+    refetch({
+      search,
+      hasSearch,
+      offset: 0,
+      first: hasSearch ? PAGE_SIZE + 1 : PAGE_SIZE,
+    });
+  }
+
+  const products = data.products ?? [];
+  const hasSearch = variables.hasSearch;
+  const hasNextPage = hasSearch && products.length > PAGE_SIZE;
+  const visibleProducts = hasSearch ? products.slice(0, PAGE_SIZE) : products;
+
+  const handlePageChange = ({ offset }) => {
+    refetch({
+      offset,
+      first: hasSearch ? PAGE_SIZE + 1 : PAGE_SIZE,
+    });
   }
 
   return <PageHeader title="Products">
@@ -68,7 +89,7 @@ const Products = () => {
               </div>
             </div>
             <div className="table-responsive">
-              <table className="table card-table table-vcenter text-nowrap datatable">
+              <table className="table card-table table-vcenter text-nowrap datatable table-ellipsis">
                 <thead>
                   <tr>
                     <th className="text-center w-1"><i className="icon-people"></i></th>
@@ -80,7 +101,7 @@ const Products = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {data.products && data.products.map((item) => {
+                  {visibleProducts.map((item) => {
                     return <tr key={item.id}>
                       <td className="text-center">
                       
@@ -112,7 +133,13 @@ const Products = () => {
               </table>
             </div>
             <div className="card-footer d-flex align-items-center">
-              <Pagination variables={variables} refetch={refetch} total={data.totalProducts} />
+              <Pagination
+                variables={variables}
+                refetch={handlePageChange}
+                total={hasSearch ? -1 : data.totalProducts}
+                hasNextPage={hasSearch ? hasNextPage : undefined}
+                pageSize={PAGE_SIZE}
+              />
             </div>
           </div>
         </div>

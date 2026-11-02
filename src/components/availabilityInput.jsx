@@ -132,6 +132,7 @@ const AvailabilityInput = ({ name, value, resourceName, onChange }) => {
                 </td>
                 <td>
                   {requirement.key == "Rank" && <SelectInput name="value" emptyOption="Select Rank" value={requirement.value} onChange={(n, v) => handleChange(index, n, v)}>
+                    <option value="0">No Rank</option>
                     {allRanks && allRanks.map((value) => {
                       return <option key={value.id} value={value.id}>
                         {value.name}

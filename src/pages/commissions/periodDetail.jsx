@@ -547,22 +547,22 @@ const PeriodDetail = () => {
                   </div>
                   <div className="row">
                     <div className="col-auto d-flex align-items-center pe-2">
-                      <span className="legend me-2 bg-primary"></span>
+                      <span className="legend-dot me-2 bg-primary"></span>
                       <span>12 Periods</span>
                       <span className="d-none d-md-inline d-lg-none d-xxl-inline ms-2 text-muted">0</span>
                     </div>
                     <div className="col-auto d-flex align-items-center px-2">
-                      <span className="legend me-2 bg-info"></span>
+                      <span className="legend-dot me-2 bg-info"></span>
                       <span>6 Periods</span>
                       <span className="d-none d-md-inline d-lg-none d-xxl-inline ms-2 text-muted">0</span>
                     </div>
                     <div className="col-auto d-flex align-items-center px-2">
-                      <span className="legend me-2 bg-success"></span>
+                      <span className="legend-dot me-2 bg-success"></span>
                       <span>New </span>
                       <span className="d-none d-md-inline d-lg-none d-xxl-inline ms-2 text-muted">{period.totalCustomersPaid}</span>
                     </div>
                     <div className="col-auto d-flex align-items-center ps-2">
-                      <span className="legend me-2"></span>
+                      <span className="legend-dot me-2"></span>
                       <span>Unpaid</span>
                       <span className="d-none d-md-inline d-lg-none d-xxl-inline ms-2 text-muted">{period.totalCustomers - period.totalCustomersPaid}</span>
                     </div>

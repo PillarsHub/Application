@@ -181,7 +181,7 @@ const PlacementSuite = ({ nodeId, periodDate, treeId, shows, onHide, handlePlace
     {disclaimerReady && (
       <div className="card-footer">
         <div className="alert alert-warning" role="alert">
-          <h4 className="alert-title">{disclaimer.title}</h4>
+          <h4 className="alert-heading">{disclaimer.title}</h4>
           {hasCustomMovementWarning && (
             <div className="text-muted" style={{ whiteSpace: "pre-line" }} dangerouslySetInnerHTML={{ __html: customMovementWarning }} />
           )}

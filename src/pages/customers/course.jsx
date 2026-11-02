@@ -139,7 +139,7 @@ const Course = () => {
                         const active = chapter.id == progress.currentChapter;
                         const nextChapter = chapter.id > progress.currentChapter;
                         const activeIndex = chapter.id < progress.currentChapter ? (chapter.taskCount - 1) : progress.currentTask;
-                        return <div key={chapter.id} className={`step-item step-counter-item ${active ? 'active' : ''}`}>
+                        return <div key={chapter.id} className={`step-item ${active ? 'active' : ''}`}>
 
                           <a href="#" className="text-body d-block text-decoration-none" data-bs-toggle="collapse" data-bs-target={`#collapse_${chapter.id}`} aria-controls={`collapse_${chapter.id}`} aria-expanded="true">
                             <h3 className="m-0 p-0">{chapter.title}</h3>

@@ -208,7 +208,7 @@ const CustomerTree = () => {
                   The tree structure displayed is from historical data and may not represent the current structure of the tree.
                 </div>
               </div>
-              <a className="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="close"></a>
+              <a className="btn-close" data-bs-theme="dark" data-bs-dismiss="alert" aria-label="close"></a>
             </div>
           </div>
         </>}

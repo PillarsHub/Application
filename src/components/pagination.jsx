@@ -1,9 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 
-const Pagination = ({ variables, refetch, total }) => {
-  const vFirst = variables.first ?? variables.count;
-  const pageSize = vFirst;
+const Pagination = ({ variables, refetch, total, hasNextPage, pageSize: requestedPageSize }) => {
+  const pageSize = requestedPageSize ?? variables.first ?? variables.count;
 
   const currentPage = Math.floor(variables.offset / pageSize) + 1;
 
@@ -39,10 +38,9 @@ const Pagination = ({ variables, refetch, total }) => {
     }
   }
 
-  const showPagination = unknownTotal ? true : lastPage > 1;
-
   const canPrev = currentPage > 1;
-  const canNext = unknownTotal ? true : currentPage < lastPage;
+  const canNext = unknownTotal ? (hasNextPage ?? true) : currentPage < lastPage;
+  const showPagination = unknownTotal ? canPrev || canNext : lastPage > 1;
 
   const onPrev = () => refetch({ offset: variables.offset - pageSize });
   const onNext = () => refetch({ offset: variables.offset + pageSize });
@@ -183,6 +181,8 @@ Pagination.propTypes = {
   variables: PropTypes.object.isRequired,
   refetch: PropTypes.func.isRequired,
   total: PropTypes.number.isRequired,
+  hasNextPage: PropTypes.bool,
+  pageSize: PropTypes.number,
 };
 
 export { Pagination };

@@ -15,7 +15,7 @@ export default function PastDueNotice({ token, notice, className = "mt-3", showP
 
   return (
     <div className={`alert alert-${pastDueNotice.severity} ${className}`} role="alert">
-      <h4 className="alert-title">{pastDueNotice.title}</h4>
+      <h4 className="alert-heading">{pastDueNotice.title}</h4>
       <div>{pastDueNotice.message}</div>
       {showPayButton && (
         <div className="mt-3">

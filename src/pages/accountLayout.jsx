@@ -8,7 +8,7 @@ const AccountLayout = () => {
   const pageId = getPageId(path);
 
   return (<>
-    <header className="navbar navbar-expand-md navbar-dark d-print-none">
+    <header className="navbar navbar-expand-md d-print-none" data-bs-theme="dark">
       <div className="container-xl">
         <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu" aria-controls="navbar-menu" aria-expanded="false" aria-label="Toggle navigation">
           <span className="navbar-toggler-icon"></span>
@@ -28,7 +28,7 @@ const AccountLayout = () => {
 
     <div className="navbar-expand-md">
       <div className="collapse navbar-collapse" id="navbar-menu">
-        <div className="navbar navbar-light">
+        <div className="navbar" data-bs-theme="light">
           <div className="container-xl">
             <ul className="navbar-nav">
               <li className={`nav-item ${activeClass(pageId, 'environments')}`}>

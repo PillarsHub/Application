@@ -2,8 +2,34 @@
   background-color: var(--tblr-card-cap-bg);
 }
 
+/* Tabler clears the last footer row's border, but not its cells' borders. */
+table.card-table tfoot tr:last-child > :is(td, th) {
+  border-bottom: 0;
+}
+
 .card-title {
   text-wrap: balance;
+}
+
+.widget-card .card-title {
+  color: var(--tblr-card-title-color);
+}
+
+.widget-editor {
+  --tblr-card-cap-padding-y: 1rem;
+  --tblr-card-cap-padding-x: 1.5rem;
+  --tblr-card-spacer-y: 1rem;
+  --tblr-card-spacer-x: 1.5rem;
+}
+
+.widget-editor-tabs .card-header-tabs {
+  background: transparent;
+  border-radius: 0;
+}
+
+/* Let the tabs determine the header height, rather than the action button. */
+.widget-editor-tabs .card-actions {
+  margin-block: calc(-1 * var(--tblr-card-cap-padding-y));
 }
 
 .box-shadow {
@@ -40,6 +66,11 @@ input[type=number] {
   -moz-appearance: textfield;
 }
 
+/* Standalone action buttons must not inherit the browser's default border. */
+button.btn-action {
+  border: 0;
+}
+
 @media (max-width: 576px) {
   .btn-sm-icon {
     min-width: calc(var(--tblr-btn-line-height) * var(--tblr-btn-font-size) + var(--tblr-btn-padding-y) * 2 + var(--tblr-btn-border-width) * 2);
@@ -55,12 +86,42 @@ input[type=number] {
 }
 
 @media (min-width: 992px) {
+  .page:has(> .navbar-vertical.navbar-expand-lg) {
+    --tblr-sidebar-width: 15rem;
+  }
+
+  /* A themed top bar must use the same sidebar width as the page. */
+  .navbar-vertical.navbar-expand-lg ~ .navbar {
+    --tblr-sidebar-width: inherit;
+  }
+
+  /* Let the whole sidebar scroll, as it did before the Tabler upgrade. */
+  .navbar-vertical.navbar-expand-lg > .container-fluid {
+    height: auto;
+    min-height: 100%;
+  }
+
   .navbar-vertical.navbar-expand-lg .navbar-brand {
+    justify-content: center;
+    width: 100%;
+    margin-inline: 0;
     padding: 1.25rem 0;
   }
 
+  .navbar-vertical.navbar-expand-lg .navbar-collapse {
+    overflow: visible;
+  }
+
+  .navbar-vertical.navbar-expand-lg .navbar-collapse .navbar-nav {
+    --tblr-sidebar-inset: 0;
+    --tblr-nav-link-font-size: 1rem;
+    --tblr-nav-link-icon-width: 1.25rem;
+  }
+
   .navbar-vertical.navbar-expand-lg .navbar-collapse .navbar-nav .nav-link {
+    min-height: 0;
     padding: .35rem 1.5rem;
+    border-radius: 0;
   }
 
   .navbar-vertical .navbar-nav .nav-item.active {
@@ -72,6 +133,7 @@ input[type=number] {
 
   .navbar-vertical .navbar-nav .nav-item.active .nav-link {
     font-weight: var(--tblr-font-weight-bold);
+    background: transparent;
   }
 
   .navbar-vertical .navbar-nav .dropdown-menu-column .nav-item.active {
@@ -103,7 +165,9 @@ input[type=number] {
 
 .navbar.navbar-vertical.navbar-expand-lg::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.55);
+  border: 0;
   border-radius: 999px;
+  box-shadow: none;
 }
 
 .navbar.navbar-vertical.navbar-expand-lg::-webkit-scrollbar-thumb:hover {
@@ -113,6 +177,20 @@ input[type=number] {
 .theme-navbar .navbar-nav .nav-item .nav-link {
   color: var(--tblr-theme-body-color);
 
+}
+
+.settings-nav {
+  --tblr-card-spacer-x: 1.5rem;
+  --tblr-card-spacer-y: 1rem;
+}
+
+.settings-nav .list-group-transparent {
+  --tblr-list-group-item-padding-x: var(--tblr-card-spacer-x);
+  margin-inline: calc(-1 * var(--tblr-card-spacer-x));
+}
+
+.settings-nav .list-group-item > .icon {
+  --tblr-icon-size: 1.25rem;
 }
 
 .sidebar-header {
@@ -176,12 +254,12 @@ input[type=number] {
   --tblr-btn-color: var(--tblr-github-fg);
   --tblr-btn-bg: var(--tblr-github);
   --tblr-btn-hover-color: var(--tblr-github-fg);
-  --tblr-btn-hover-bg: rgba(var(--tblr-github-rgb), .8);
+  --tblr-btn-hover-bg: color-mix(in oklab, var(--tblr-github) 80%, transparent);
   --tblr-btn-active-color: var(--tblr-github-fg);
-  --tblr-btn-active-bg: rgba(var(--tblr-github-rgb), .8);
+  --tblr-btn-active-bg: color-mix(in oklab, var(--tblr-github) 80%, transparent);
   --tblr-btn-disabled-bg: var(--tblr-github);
   --tblr-btn-disabled-color: var(--tblr-github-fg);
-  --tblr-btn-box-shadow: var(--tblr-shadow-button), var(--tblr-shadow-button-inset)
+  --tblr-btn-box-shadow: var(--tblr-shadow-input);
 }
 
 .btn-website {
@@ -191,12 +269,12 @@ input[type=number] {
   --tblr-btn-color: var(--tblr-vk-fg);
   --tblr-btn-bg: var(--tblr-vk);
   --tblr-btn-hover-color: var(--tblr-vk-fg);
-  --tblr-btn-hover-bg: rgba(var(--tblr-vk-rgb), .8);
+  --tblr-btn-hover-bg: color-mix(in oklab, var(--tblr-vk) 80%, transparent);
   --tblr-btn-active-color: var(--tblr-vk-fg);
-  --tblr-btn-active-bg: rgba(var(--tblr-vk-rgb), .8);
+  --tblr-btn-active-bg: color-mix(in oklab, var(--tblr-vk) 80%, transparent);
   --tblr-btn-disabled-bg: var(--tblr-vk);
   --tblr-btn-disabled-color: var(--tblr-vk-fg);
-  --tblr-btn-box-shadow: var(--tblr-shadow-button), var(--tblr-shadow-button-inset)
+  --tblr-btn-box-shadow: var(--tblr-shadow-input);
 }
 
 .btn-linkedIn {
@@ -206,12 +284,12 @@ input[type=number] {
   --tblr-btn-color: var(--tblr-tabler-fg);
   --tblr-btn-bg: var(--tblr-tabler);
   --tblr-btn-hover-color: var(--tblr-tabler-fg);
-  --tblr-btn-hover-bg: rgba(var(--tblr-tabler-rgb), .8);
+  --tblr-btn-hover-bg: color-mix(in oklab, var(--tblr-tabler) 80%, transparent);
   --tblr-btn-active-color: var(--tblr-tabler-fg);
-  --tblr-btn-active-bg: rgba(var(--tblr-tabler-rgb), .8);
+  --tblr-btn-active-bg: color-mix(in oklab, var(--tblr-tabler) 80%, transparent);
   --tblr-btn-disabled-bg: var(--tblr-tabler);
   --tblr-btn-disabled-color: var(--tblr-tabler-fg);
-  --tblr-btn-box-shadow: var(--tblr-shadow-button), var(--tblr-shadow-button-inset)
+  --tblr-btn-box-shadow: var(--tblr-shadow-input);
 }
 
 .btn-whatsApp {
@@ -226,7 +304,7 @@ input[type=number] {
   --tblr-btn-active-bg: rgba(37, 211, 102, .8);
   --tblr-btn-disabled-bg: var(--tblr-tabler);
   --tblr-btn-disabled-color: var(--tblr-tabler-fg);
-  --tblr-btn-box-shadow: var(--tblr-shadow-button), var(--tblr-shadow-button-inset)
+  --tblr-btn-box-shadow: var(--tblr-shadow-input);
 }
 
 .btn-tikTok {
@@ -236,12 +314,12 @@ input[type=number] {
   --tblr-btn-color: var(--tblr-github-fg);
   --tblr-btn-bg: var(--tblr-github);
   --tblr-btn-hover-color: var(--tblr-github-fg);
-  --tblr-btn-hover-bg: rgba(var(--tblr-github-rgb), .8);
+  --tblr-btn-hover-bg: color-mix(in oklab, var(--tblr-github) 80%, transparent);
   --tblr-btn-active-color: var(--tblr-github-fg);
-  --tblr-btn-active-bg: rgba(var(--tblr-github-rgb), .8);
+  --tblr-btn-active-bg: color-mix(in oklab, var(--tblr-github) 80%, transparent);
   --tblr-btn-disabled-bg: var(--tblr-github);
   --tblr-btn-disabled-color: var(--tblr-github-fg);
-  --tblr-btn-box-shadow: var(--tblr-shadow-button), var(--tblr-shadow-button-inset)
+  --tblr-btn-box-shadow: var(--tblr-shadow-input);
 }
 
 .drag-devider {
@@ -359,6 +437,15 @@ input[type=number] {
   border: 1px solid var(--tblr-gray-300);
 }
 
+/* Course tasks use dots inside the numbered chapter list. */
+.steps-counter .steps:not(.steps-counter) > .step-item {
+  counter-increment: none;
+}
+
+.steps-counter .steps:not(.steps-counter) > .step-item::before {
+  content: "";
+}
+
 .customer-menu-side {
   margin: 0.5rem 0.3rem 0.5rem 0.5rem;
   border: 0;
@@ -452,7 +539,7 @@ input[type=number] {
 
 /* Ensure nested area stays white (optional but usually best visually) */
 .table-hover>tbody>tr.no-hover>* {
-  background-color: rgba(var(--tblr-gray-100-rgb), var(--tblr-bg-opacity)) !important
+  background-color: var(--tblr-gray-100) !important;
 }
 
 

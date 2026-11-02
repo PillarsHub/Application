@@ -32,16 +32,17 @@ const HtmlFrame = ({ htmlContent, cssContent, data, onQueryVariablesChange }) =>
   }, [htmlContent, cssContent]);
 
   const fullHtml = `
-    <html>
+    <!doctype html>
+    <html lang="en" data-bs-theme="light">
       <head>
         <meta charset="UTF-8" />
         <title>Pillars</title>
         <!-- CSS files -->
-        <link href="/css/tabler.min.css" rel="stylesheet" asp-append-version="true" />
-        <link href="/css/tabler-flags.min.css" rel="stylesheet" asp-append-version="true" />
-        <link href="/css/tabler-payments.min.css" rel="stylesheet" asp-append-version="true" />
-        <link href="/css/tabler-vendors.min.css" rel="stylesheet" asp-append-version="true" />
-        <link href="/css/site.css" rel="stylesheet" asp-append-version="true" />
+        <link href="/vendor/tabler/css/tabler.min.css?v=1.7.3" rel="stylesheet" />
+        <link href="/vendor/tabler/css/tabler-flags.min.css?v=1.7.3" rel="stylesheet" />
+        <link href="/vendor/tabler/css/tabler-payments.min.css?v=1.7.3" rel="stylesheet" />
+        <link href="/vendor/tabler/css/tabler-vendors.min.css?v=1.7.3" rel="stylesheet" />
+        <link href="/css/site.css" rel="stylesheet" />
         <style>${cssContent}</style>
         <style>
             html, body {

@@ -343,9 +343,9 @@ const EditWidget = () => {
       <div className="row">
         <div className="col-md-6 col-lg-8">
 
-          <div className="card">
+          <div className="card widget-editor">
             <div className="">
-              <div className="card-header bg-light">
+              <div className="card-header bg-light widget-editor-tabs">
                 <ul className="nav nav-tabs card-header-tabs" data-bs-toggle="tabs" role="tablist">
                   <li className="nav-item" role="presentation">
                     <a href="#tabs-home-7" className="nav-link active" data-bs-toggle="tab" aria-selected="true" role="tab">Content</a>

@@ -143,6 +143,7 @@ const Widget = ({ widget, customer, compensationPlans, trees, isPreview = false,
     "--tblr-card-title-color": (widget?.headerTextColor ?? 'var(--ph-widget-header-text, #1d273b)'),
     "--tblr-card-title-gb": (widget?.headerColor ?? 'var(--ph-widget-header-bg, #ffffff)'),
     "--tblr-border-color": (widget?.borderColor ?? 'var(--ph-widget-border, #e6e7e9)'),
+    "--tblr-card-border-color": (widget?.borderColor ?? 'var(--ph-widget-border, #e6e7e9)'),
   };
 
   var msStyle = widget?.headerAlignment == 'center' || widget?.headerAlignment == "right" ? "ms-auto" : '';
@@ -205,7 +206,7 @@ const Widget = ({ widget, customer, compensationPlans, trees, isPreview = false,
   };
 
 
-  return <div style={{ display: "contents" }} className={widgetId}><div className={`card h-100 ${isPreview ? '' : ''}`} style={inlineStyle}>
+  return <div style={{ display: "contents" }} className={widgetId}><div className={`card widget-card h-100 ${isPreview ? '' : ''}`} style={inlineStyle}>
     {(widget.title || widget.showDatePicker) && <div className="card-header" style={{ backgroundColor: (widget?.headerColor ?? 'var(--ph-widget-header-bg, #ffffff)') }}>
       <h3 className={`card-title ${msStyle} ${meStyle}`}>{widget.title}</h3>
       {widget.showDatePicker && !supressQuery && widget.type != WidgetTypes.Earnings && <>

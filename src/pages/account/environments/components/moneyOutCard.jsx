@@ -368,7 +368,7 @@ const MoneyOutCard = ({ environmentId }) => {
 
         {connect?.error?.general && <>
           <div className="alert alert-danger" role="alert">
-            <h4 className="alert-title">Unable to {connect.loadError ? 'load' : 'save'} merchant</h4>
+            <h4 className="alert-heading">Unable to {connect.loadError ? 'load' : 'save'} merchant</h4>
             <div className="text-muted">{connect.error.general}</div>
             {connect.loadError && <button type="button" className="btn btn-outline-danger btn-sm mt-2" onClick={() => handleEdit({ id: connect.id })}>Retry</button>}
           </div>

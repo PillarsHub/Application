@@ -105,7 +105,7 @@ const PayablesModal = ({ batchData, showModal, validation, onHide }) => {
 
         {invalid && (
           <div className="alert alert-warning mb-0" role="alert">
-            <div className="alert-title">Payments included that are below the minimum threshold</div>
+            <div className="alert-heading">Payments included that are below the minimum threshold</div>
             <div className="text-muted">
               One or more customers will receive a payment amount that is below the minimum threshold.
             </div>
@@ -114,7 +114,7 @@ const PayablesModal = ({ batchData, showModal, validation, onHide }) => {
 
         {error && (
           <div className="alert alert-danger mb-0" role="alert">
-            <div className="alert-title">Unable to create batch</div>
+            <div className="alert-heading">Unable to create batch</div>
             <div className="text-muted">
               The batch could not be created. Please try again.
             </div>

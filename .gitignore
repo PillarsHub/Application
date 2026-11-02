@@ -7,10 +7,14 @@
 
 # testing
 /coverage
+/.build-verify/
 
 # production
 /build
 /dist
+
+# Tabler distribution assets, generated from the pinned npm package
+/public/vendor/tabler/
 
 # misc
 .DS_Store

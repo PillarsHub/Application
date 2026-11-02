@@ -101,7 +101,7 @@ const HtmlContent = ({ widget, updateWidget }) => {
                 <TextInput name="title" value={widget.panes ? widget.panes[0]?.title : ''} onChange={handleChange} />
               </div>
               <div className="alert alert-info" role="alert">
-                <h4 className="alert-title">Api calls are made from the client&apos;s brower and not from Pillar&apos;s server</h4>
+                <h4 className="alert-heading">Api calls are made from the client&apos;s brower and not from Pillar&apos;s server</h4>
                 <div className="text-muted">Plase make sure no sensitive information is included in the URL.</div>
               </div>
             </>

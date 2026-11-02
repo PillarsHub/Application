@@ -202,7 +202,6 @@ const Theme = () => {
   const inlineStyle = {
     "--tblr-navbar-bg": (item?.headerColor ?? '#1d273b'),
     '--tblr-navbar-border-color': (item?.headerColor ?? '#243049'),
-    '--tblr-icon-color': (item?.headerTextColor ?? '#ffffff'),
     '--tblr-nav-link-font-size': "1rem",
     "--tblr-nav-link-font-weight": "400",
     "--tblr-theme-body-color": (item?.headerTextColor ?? '#ffffff')
@@ -229,7 +228,7 @@ const Theme = () => {
             <div className="mb-3 row">
               <label className="col-3 col-form-label text-secondary">Header Logo</label>
               <div className="col">
-                <header className="navbar navbar-expand-md navbar-dark theme-navbar" style={inlineStyle}>
+                <header className="navbar navbar-expand-md theme-navbar" data-bs-theme="light" style={inlineStyle}>
                   <div className="container-xl">
                     <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu" aria-controls="navbar-menu" aria-expanded="false" aria-label="Toggle navigation">
                       <span className="navbar-toggler-icon"></span>
@@ -239,7 +238,7 @@ const Theme = () => {
                     </h1>
                     <div className="collapse navbar-collapse" id="navbar-menu">
                       <div className="d-flex flex-column flex-md-row flex-fill align-items-stretch align-items-md-center">
-                        <ul className="navbar-nav">
+                        <ul className="navbar-nav" style={{ '--tblr-nav-link-icon-color': 'currentColor', '--tblr-nav-link-hover-icon-color': 'currentColor' }}>
                           <li className="nav-item">
                             <a className="nav-link" href="/thisIsJustForDisplay" onClick={(e) => e.preventDefault()}>
                               <span className="nav-link-icon d-md-none d-lg-inline-block">

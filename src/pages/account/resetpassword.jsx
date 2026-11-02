@@ -107,7 +107,7 @@ const ResetPassword = () => {
 
             <div id="passwordFail" className="alert alert-danger alert-dismissible d-none" role="alert">
               
-                  <h4 className="alert-title">Unable to update password</h4>
+                  <h4 className="alert-heading">Unable to update password</h4>
                   <div className="text-muted">The token you are using is not valid. This could be because it has expired.  Please <a href="/account/forgotPassword">request</a> a new token and try again.</div>
               <a className="btn-close" data-bs-dismiss="alert" aria-label="close"></a>
             </div>

@@ -68,9 +68,8 @@ const Layout = () => {
   const handleNavItemClick = () => {
     const navbarCollapse = document.querySelector('.navbar-collapse');
 
-    if (navbarCollapse.classList.contains('show')) {
-      // Use Bootstrap's collapse methods to handle the animation
-      const collapseInstance = new window.bootstrap.Collapse(navbarCollapse, {
+    if (navbarCollapse?.classList.contains('show')) {
+      const collapseInstance = window.tabler.Collapse.getOrCreateInstance(navbarCollapse, {
         toggle: false,
       });
       collapseInstance.hide();
@@ -109,7 +108,7 @@ const Layout = () => {
       </div>
     </aside>
 
-    <header className="navbar navbar-expand navbar-light d-print-none">
+    <header className="navbar navbar-expand d-print-none" data-bs-theme="light">
       <div className="container-xl">
         <div className="navbar-nav flex-row order-md-last d-none d-lg-flex">
           <div className="nav-item dropdown ">

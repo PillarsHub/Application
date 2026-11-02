@@ -6,7 +6,7 @@ const ProductNav = ({ productId }) => {
   return <div className="mb-2">
     <div className="navbar-expand-md">
       <div className="collapse navbar-collapse" id="navbar-menu">
-        <div className="navbar navbar-light">
+        <div className="navbar" data-bs-theme="light">
           <div className="container-xl">
             <ul className="navbar-nav">
               <li className="nav-item">

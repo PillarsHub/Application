@@ -21,10 +21,7 @@ const CustomerNav = ({ itemClick, customerId }) => {
     if (dropdown) {
       const dropdownMenu = dropdown.querySelector('.dropdown-menu');
       if (dropdownMenu && dropdownMenu.classList.contains('show')) {
-        // Use Bootstrap's Dropdown API to hide it
-        const dropdownInstance = window.bootstrap.Dropdown.getInstance(
-          dropdown.querySelector('[data-bs-toggle="dropdown"]')
-        ) || new window.bootstrap.Dropdown(
+        const dropdownInstance = window.tabler.Dropdown.getOrCreateInstance(
           dropdown.querySelector('[data-bs-toggle="dropdown"]')
         );
         dropdownInstance.hide();

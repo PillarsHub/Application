@@ -185,7 +185,7 @@ const Periods = () => {
                           <td>
                             <div className="btn-list flex-nowrap">
                               <div className="dropdown">
-                                <button className="btn-action" data-bs-toggle="dropdown" aria-expanded="false">
+                                <button className="btn btn-ghost-secondary btn-icon" data-bs-toggle="dropdown" aria-expanded="false">
                                   <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-menu-2" width="40" height="40" viewBox="0 0 24 24" strokeWidth="1" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M4 6l16 0"></path><path d="M4 12l16 0"></path><path d="M4 18l16 0"></path></svg>
                                 </button>
                                 <div className="dropdown-menu dropdown-menu-end">
