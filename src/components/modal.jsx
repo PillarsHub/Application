@@ -8,21 +8,28 @@ const generateUUID = () => {
   return uuidv4().replace(/-/g, "_");
 };
 
-const Modal = ({ showModal, onHide, size, centered, focus = true, children }) => {
+const Modal = ({ showModal, onHide, size, centered, focus = true, dismissible = true, children }) => {
   const [modalId] = useState(() => 'modal_' + generateUUID());
 
   useEffect(() => {
     const mdl = document.getElementById(modalId);
     const handleHidden = () => onHide();
+    const handleHide = (event) => {
+      if (!dismissible) event.preventDefault();
+    };
     mdl.addEventListener('hidden.bs.modal', handleHidden);
+    mdl.addEventListener('hide.bs.modal', handleHide);
 
     if ((showModal && mdl.style.display !== 'block') || (!showModal && mdl.style.display === 'block')) {
       const elem = document.getElementById(`${modalId}_btn`);
       elem.click();
     }
 
-    return () => mdl.removeEventListener('hidden.bs.modal', handleHidden);
-  }, [showModal, modalId, onHide]);
+    return () => {
+      mdl.removeEventListener('hidden.bs.modal', handleHidden);
+      mdl.removeEventListener('hide.bs.modal', handleHide);
+    };
+  }, [showModal, modalId, onHide, dismissible]);
 
   return (
     <>
@@ -45,6 +52,7 @@ Modal.propTypes = {
   size: PropTypes.string,
   centered: PropTypes.string,
   focus: PropTypes.bool,
+  dismissible: PropTypes.bool,
   children: PropTypes.any.isRequired,
 };
 

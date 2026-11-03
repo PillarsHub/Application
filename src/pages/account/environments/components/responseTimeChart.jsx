@@ -2,44 +2,11 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import Chart from "react-apexcharts";
 
-const ResponseTimeChart = ({ data }) => {
-
-  const oneDayAgo = new Date();
-  oneDayAgo.setDate(oneDayAgo.getDate() - 1);
-
-  const groupedArray = data?.filter(item => new Date(item.date) >= oneDayAgo).reduce((acc, currentItem) => {
-    const existingItem = acc.find(item => item.date === currentItem.date);
-  
-    if (existingItem) {
-      // If the date already exists, update the sum and count
-      existingItem.sumResponseTime += currentItem.averageResponseTime;
-      existingItem.count += 1;
-    } else {
-      // If the date doesn't exist, add a new entry to the accumulator
-      acc.push({
-        sumResponseTime: currentItem.averageResponseTime,
-        count: 1,
-        date: currentItem.date,
-      });
-    }
-  
-    return acc;
-  }, []) ?? [];
-
-  // Sort the array by date from earliest to newest
-  groupedArray.sort((a, b) => new Date(a.date) - new Date(b.date));
-  
-  // Calculate the average response time for each date
-  const averageResponseTimes = groupedArray.map(item => ([new Date(item.date).getTime(), Math.round(item.sumResponseTime / item.count) ]));
-  const labels = groupedArray.map(item => (item.date));
-
-  const aa = false;
-  if (aa) return <>{JSON.stringify(labels)}</>
-
+const ResponseTimeChart = ({ data, startDate }) => {
   var options = {
     series: [{
       name: 'Response Time',
-      data: averageResponseTimes
+      data
     }],
     chart: {
       id: 'area-datetime',
@@ -62,7 +29,7 @@ const ResponseTimeChart = ({ data }) => {
     },
     xaxis: {
       type: 'datetime',
-      min: oneDayAgo,
+      min: startDate,
       labels: {
         show: false,
         padding: 0,
@@ -107,7 +74,6 @@ const ResponseTimeChart = ({ data }) => {
       },
       strokeDashArray: 4,
     },
-    labels: labels,
     colors: ["#206bc4"],
     fill: {
       type: 'gradient',
@@ -126,8 +92,9 @@ const ResponseTimeChart = ({ data }) => {
   </>
 }
 
-export default ResponseTimeChart;
+export default React.memo(ResponseTimeChart);
 
 ResponseTimeChart.propTypes = {
-  data: PropTypes.any.isRequired,
+  data: PropTypes.array.isRequired,
+  startDate: PropTypes.number.isRequired,
 }

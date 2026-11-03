@@ -7,49 +7,21 @@ import DataLoading from '../../../components/dataLoading.jsx';
 import DataError from '../../../components/dataError';
 import ResponseTimeChart from './components/responseTimeChart.jsx';
 import DailyCountChart from './components/dailyCountChart.jsx';
+import useEnvironmentStats from './useEnvironmentStats';
+
+const StatsLoading = () => <span className="text-muted" role="status">Loading statistics...</span>;
 
 const EnvironmentList = () => {
-  const today = new Date();
-  const beginningOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-  const tenDaysAgo = new Date();
-  tenDaysAgo.setDate(tenDaysAgo.getDate() - 31);
-  const startDate = beginningOfMonth > tenDaysAgo ? beginningOfMonth : tenDaysAgo;
-
   const { token, setToken } = useToken();
   const [loginError, setLoginError] = React.useState('');
   const { loading, error, data, refetch } = useFetch("/api/v1/Environments", {});
-  const { error: statsError, data: statsData } = useFetch("/api/v1/Logs/stats", { date: startDate.toISOString() });
+  const { loading: statsLoading, error: statsError, data: statsData, refetch: refetchStats } = useEnvironmentStats();
+  const statsByEnvironment = React.useMemo(() => new Map(
+    statsData?.environments.map(item => [String(item.environmentId), item])
+  ), [statsData]);
 
   if (loading) return <DataLoading />;
   if (error) return <DataError error={error} />;
-  if (statsError) return <DataError error={statsError} />;
-
-  const groupedArray = statsData?.filter(item => new Date(item.date) >= beginningOfMonth).reduce((acc, currentItem) => {
-    const existingItem = acc.find(item => item.environmentId === currentItem.environmentId);
-
-    if (existingItem) {
-      // If the date already exists, update the sum and count
-      existingItem.sumResponseTime += currentItem.averageResponseTime;
-      existingItem.count += 1;
-      existingItem.callCount += currentItem.callCount;
-    } else {
-      // If the date doesn't exist, add a new entry to the accumulator
-      acc.push({
-        sumResponseTime: currentItem.averageResponseTime,
-        count: 1,
-        callCount: currentItem.callCount,
-        environmentId: currentItem.environmentId,
-      });
-    }
-
-    return acc;
-  }, []) ?? [];
-
-  const averageResponseTimes = groupedArray.map(item => ({
-    averageResponseTime: Math.round(item.sumResponseTime / item.count),
-    environmentId: item.environmentId,
-    callCount: item.callCount
-  }));
 
   const handleLogin = (environmentId) => {
     setLoginError('');
@@ -71,8 +43,8 @@ const EnvironmentList = () => {
     })
   }
 
-  const subTotal = 50000;
-  const totalRequests = averageResponseTimes.reduce((sum, item) => sum + item.callCount, 0);
+  const subTotal = 500000;
+  const totalRequests = statsData?.totalRequests ?? 0;
   const percentage = totalRequests > 0 ? (totalRequests / subTotal * 100) : 0;
 
   return <>
@@ -86,6 +58,9 @@ const EnvironmentList = () => {
       </CardHeader>
       <div className="page-body">
         <div className="container-xl">
+          {statsError && <div className="alert alert-warning" role="alert">
+            {statsError} <button type="button" className="btn btn-sm btn-outline-secondary ms-2" onClick={refetchStats}>Retry statistics</button>
+          </div>}
           {loginError && (
             <div className="alert alert-danger alert-dismissible" role="alert">
               <div className="d-flex">
@@ -116,12 +91,12 @@ const EnvironmentList = () => {
                   <tbody>
                     {data && data.map((env) => {
                       const isReady = env.status == 0;
-                      const stat = averageResponseTimes.find(x => x.environmentId == env.id);
+                      const stat = statsByEnvironment.get(String(env.id));
 
                       return <tr key={env.id}>
                         <td>{env.name}</td>
-                        <td>{stat?.averageResponseTime ?? 0} ms</td>
-                        <td>{stat?.callCount ?? 0}</td>
+                        <td>{statsLoading ? '-' : statsError ? 'Unavailable' : `${stat?.averageResponseTime ?? 0} ms`}</td>
+                        <td>{statsLoading ? '-' : statsError ? 'Unavailable' : stat?.callCount ?? 0}</td>
                         <td>
                           {isReady ?
                             <><span className="badge bg-success me-1"></span> Ready </> :
@@ -183,16 +158,16 @@ const EnvironmentList = () => {
                       </div>
                     </div>
                     <div className="h1 mb-3">
-                      {totalRequests}
+                      {statsLoading ? <StatsLoading /> : statsError ? 'Unavailable' : totalRequests}
                     </div>
                     <div className="d-flex mb-2">
                       <div>Subscription Usage</div>
                     </div>
-                    <div className="progress progress-sm">
-                      <div className="progress-bar bg-green" style={{ width: `${percentage}%` }} role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                    {statsData && <div className="progress progress-sm">
+                      <div className="progress-bar bg-green" style={{ width: `${percentage}%` }} role="progressbar" aria-valuenow={percentage} aria-valuemin="0" aria-valuemax="100">
                         <span className="visually-hidden">{percentage.toFixed(2)}% Complete</span>
                       </div>
-                    </div>
+                    </div>}
                   </div>
                 </div>
 
@@ -201,7 +176,7 @@ const EnvironmentList = () => {
                 <div className="card">
                   <div className="card-body">
                     <h3 className="card-title">Average Response Time</h3>
-                    <ResponseTimeChart data={statsData} />
+                    {statsLoading ? <StatsLoading /> : statsData && <ResponseTimeChart data={statsData.responseTimes} startDate={statsData.responseTimeStart} />}
                   </div>
                 </div>
               </div>
@@ -211,7 +186,7 @@ const EnvironmentList = () => {
               <div className="card">
                 <div className="card-body">
                   <h3 className="card-title">Requests per day</h3>
-                  <DailyCountChart data={statsData} />
+                  {statsLoading ? <StatsLoading /> : statsData && <DailyCountChart data={statsData.dailyCounts} />}
                 </div>
               </div>
             </div>

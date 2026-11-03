@@ -8,6 +8,7 @@ import ECommerceCard from './components/ecommerceCard.jsx';
 import MoneyOutCard from './components/moneyOutCard.jsx';
 import AccessTokens from './components/accessTokens.jsx';
 import EditEnvironmentModal from './components/editEnvironmentModal.jsx';
+import WebHookSubscriptions from './components/webHookSubscriptions.jsx';
 
 
 const EnvironementDetail = () => {
@@ -20,7 +21,6 @@ const EnvironementDetail = () => {
   tenDaysAgo.setDate(tenDaysAgo.getDate() - 11);
   const startDate = beginningOfMonth > tenDaysAgo ? beginningOfMonth : tenDaysAgo;
   const { error: statsError, data: statsData } = useFetch("/api/v1/Logs/stats", { environmentId: params.id, date: startDate.toISOString() });
-  const { data: subscriptions } = useFetch(`/api/v1/WebHooks/${params.id}/Subscriptions`);
 
   if (error) return `Error! ${error}`;
   if (statsError) return `Error! ${statsError}`;
@@ -67,40 +67,7 @@ const EnvironementDetail = () => {
             </div>
 
             <div className="col-md-12">
-              <div className="card">
-                <div className="card-header">
-                  <h3 className="card-title">Web Hook Subscriptions</h3>
-                </div>
-                <table className="table card-table table-vcenter text-nowrap datatable table-ellipsis" style={{ maxHeight: "250px" }}>
-                  <thead>
-                    <tr>
-                      <th>Id</th>
-                      <th>Topic</th>
-                      <th>SubTopic</th>
-                      <th className="w-50">Url</th>
-                      <th className="w-1"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {subscriptions && subscriptions.map((subscription) => {
-                      return <tr key={subscription.id}>
-                        <td>
-                          <a href={`/environments/270`}>{subscription.id}</a>
-                        </td>
-                        <td>
-                          <a>{subscription.topic}</a></td>
-                        <td>
-                          <a>{subscription.subTopic}</a>
-                        </td>
-                        <td> {subscription.url}</td>
-                        <td>
-                          <a className="btn btn-default" href={`/account/environments/${params.id}/webhooklogs/${subscription.id}`}>View</a>
-                        </td>
-                      </tr>
-                    })}
-                  </tbody>
-                </table>
-              </div>
+              <WebHookSubscriptions key={params.id} environmentId={params.id} />
             </div>
 
           </div>
