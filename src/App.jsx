@@ -51,6 +51,7 @@ const AppLoading = ({ title }) => <DataLoading title={title} />;
 
 // Direct render pages (auth guards)
 const Login = safeLazy(() => import("./pages/account/login.jsx"));
+const CreateAccount = safeLazy(() => import("./pages/account/createAccount.jsx"));
 const EnvironmentLogin = safeLazy(() => import("./pages/account/environmentLogin.jsx"));
 const ForgotPassword = safeLazy(() => import("./pages/account/forgotPassword.jsx"));
 const ResetPassword = safeLazy(() => import("./pages/account/resetpassword.jsx"));
@@ -202,11 +203,18 @@ const router = createBrowserRouter([
 ]);
 
 function App() {
-  const { token, setToken, clearToken, initializing } = useToken();
+  const { token, setToken, clearToken, initializing, requiresEnvironmentSelection } = useToken();
   const path = window.location.pathname.toLowerCase();
   const isEnvironmentDetailPath = /^\/account(?:\/|$)/.test(path);
 
   // Auth redirects handled before router
+  if (path.replace(/\/$/, "") === "/account/createaccount") {
+    return (
+      <Suspense fallback={<AppLoading title="Loading account creation" />}>
+        <CreateAccount />
+      </Suspense>
+    );
+  }
   if (path === "/account/forgotpassword") {
     return (
       <Suspense fallback={<AppLoading title="Loading password recovery" />}>
@@ -233,7 +241,7 @@ function App() {
       </Suspense>
     );
   }
-  if (!token.environmentId) {
+  if (!token.environmentId || requiresEnvironmentSelection) {
     if (isEnvironmentDetailPath) {
       return (
         <TokenProvider clearToken={clearToken}>

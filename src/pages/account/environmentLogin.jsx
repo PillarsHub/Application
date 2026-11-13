@@ -1,15 +1,25 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import PropTypes from 'prop-types';
 import { Get, useFetch } from '../../hooks/useFetch.js'
 import useToken from '../../features/authentication/hooks/useToken.jsx';
 import SelectInput from '../../components/selectInput.jsx';
 import PastDueNotice, { usePastDueNotice } from './pastDueNotice.jsx';
+import DataLoading from '../../components/dataLoading.jsx';
+import DataError from '../../components/dataError.jsx';
  
 export default function EnvironmentLogin({ setToken, clearToken }) {
   const { token } = useToken();
-  const { data } = useFetch(`/Authentication/token/${token.token}/Environments`);
+  const { data, loading, error } = useFetch('/api/v1/Environments');
   const [environmentId, setEnvironmentId] = useState();
   const { notice: pastDueNotice } = usePastDueNotice(token, { showAfterDays: 3 });
+  const readyEnvironments = Array.isArray(data) ? data.filter(env => env.status === 0) : [];
+  const noEnvironments = Array.isArray(data) && readyEnvironments.length === 0;
+
+  useEffect(() => {
+    if (!loading && !error && noEnvironments) {
+      window.location.replace('/account');
+    }
+  }, [loading, error, noEnvironments]);
 
   const handleChange = (name, value) => {
     setEnvironmentId(value);
@@ -23,6 +33,11 @@ export default function EnvironmentLogin({ setToken, clearToken }) {
 
     if (pastDueNotice?.blockEnvironmentLogin) {
       errorElement.innerHTML = 'Environment access is currently disabled because your invoice is past due. Use Manage Account to update billing.';
+      return;
+    }
+
+    if (!readyEnvironments.some(env => String(env.id) === String(environmentId))) {
+      errorElement.textContent = 'Select an environment to continue.';
       return;
     }
 
@@ -47,7 +62,11 @@ export default function EnvironmentLogin({ setToken, clearToken }) {
     location = "/";
   }
 
-  let showList = data?.length < 7;
+  let showList = readyEnvironments.length < 7;
+
+  if (loading) return <DataLoading title="Loading environments" />;
+  if (error) return <DataError error={error} />;
+  if (noEnvironments) return <DataLoading title="Opening account management" />;
 
   return (
     <div className="page-wrapper page-center" >
@@ -60,13 +79,13 @@ export default function EnvironmentLogin({ setToken, clearToken }) {
               <img src={`/images/logo-dark.png`} alt="Pillars" style={{ maxWidth: '300px', maxHeight: '65px' }} />
             </div>
             <h2 className="h2 text-center mb-4">Select Environment</h2>
-            <p>There is more than one environment associated with this account. Please select the environment you would like to connect to.</p>
+            <p>Select the environment you would like to connect to.</p>
             <PastDueNotice token={token} notice={pastDueNotice} showAfterDays={3} />
             <div className="text-danger"></div>
             <div className="mb-3">
               <div className="form-selectgroup form-selectgroup-boxes d-flex flex-column">
-                {showList && <FullList data={data} onChange={handleChange} disabled={pastDueNotice?.blockEnvironmentLogin} />}
-                {!showList && <DropDownList data={data} handleChange={handleChange} environmentId={environmentId} disabled={pastDueNotice?.blockEnvironmentLogin} />}
+                {showList && <FullList data={readyEnvironments} onChange={handleChange} disabled={pastDueNotice?.blockEnvironmentLogin} />}
+                {!showList && <DropDownList data={readyEnvironments} handleChange={handleChange} environmentId={environmentId} disabled={pastDueNotice?.blockEnvironmentLogin} />}
               </div>
               <span id="loginError" className="text-danger"></span>
             </div>

@@ -34,7 +34,8 @@ export default function Login({ setToken }) {
     const url = `/Authentication?username=${encodedUsername}&password=${encodedPassword}${envQueryString}`;
 
     Get(url, (response) => {
-      setToken(response);
+      // Account sign-in requires a choice even when the API selects the only environment.
+      setToken({ ...response, requiresEnvironmentSelection: !theme?.environmentId && !response.scope });
     }, (text, error) => {
       if (error === 401) {
         setLoginError('Incorrect username or password');
@@ -105,18 +106,19 @@ export default function Login({ setToken }) {
                 />
                 {errors.password && <div className="invalid-feedback">{errors.password}</div>}
               </div>
-              <div className="mb-2">
-                <label className="form-check">
-                  <span className="form-label-description">
-                    <a href="/account/forgotPassword">Forgot password</a>
-                  </span>
-                </label>
+              <div className="mb-2 text-end">
+                <a href="/account/forgotPassword" className="small">Forgot password</a>
               </div>
               {loginError && <div className="text-danger mb-2">{loginError}</div>}
               <div className="form-footer">
                 <button type="submit" className="btn btn-primary w-100">Sign in</button>
               </div>
             </form>
+            {theme && !theme.init && !theme.environmentId && (
+              <div className="text-center text-muted mt-3">
+                Don&apos;t have an account? <a href="/account/createAccount">Create account</a>
+              </div>
+            )}
           </div>
         </div>
       </div>

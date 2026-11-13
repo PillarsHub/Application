@@ -80,6 +80,7 @@ export default function useToken() {
     setToken: saveToken,
     clearToken: clearToken,
     initializing,
+    requiresEnvironmentSelection: Boolean(GetUser()?.requiresEnvironmentSelection),
     token
   }
 }
@@ -156,6 +157,7 @@ function GetUser() {
         //Update the new token
         Get(`/Authentication/refresh/${userToken.authToken.token}?environmentId=${userToken.authToken.environmentId}`, (response) => {
           response.SSO = userToken?.SSO ?? false;
+          response.requiresEnvironmentSelection = userToken?.requiresEnvironmentSelection ?? false;
           SaveUser(response);
         }, () => {
           ClearUser();
