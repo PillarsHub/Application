@@ -7,6 +7,7 @@ import DataError from "../../../components/dataError.jsx";
 import LocalDate from "../../../util/LocalDate";
 import Pagination from "../../../components/pagination.jsx";
 import EmptyContent from "../../../components/emptyContent.jsx";
+import { orderDetailUrl } from '../orderPage.mjs';
 
 var GET_DATA = gql`query ($offset: Int!, $first: Int!, $nodeIds: [String]!) {
   customers(idList: $nodeIds) {
@@ -44,7 +45,7 @@ var GET_DATA = gql`query ($offset: Int!, $first: Int!, $nodeIds: [String]!) {
   }
 }`;
 
-const OrdersWidget = ({ customer, useExternalId }) => {
+const OrdersWidget = ({ customer, widget, useExternalId }) => {
   const { loading, error, data, variables, refetch } = useQuery(GET_DATA, {
     variables: { offset: 0, first: 10, nodeIds: [customer?.id] },
   });
@@ -117,7 +118,7 @@ const OrdersWidget = ({ customer, useExternalId }) => {
             return <tr key={order.id} className={show ? '' : 'text-muted'}>
               <td>
                 <span className="text-muted">
-                  <a className="text-reset" href={`/customers/${customer.id}/Orders/${order.id}`}>
+                  <a className="text-reset" href={orderDetailUrl(customer.id, order.id, widget?.settings?.orderDetailPageId)}>
                     {!useExternalId && <>{order.id}</>}
                     {useExternalId && <>{order.externalIds || order.id}</>}
                   </a>
@@ -159,7 +160,7 @@ export default OrdersWidget;
 
 OrdersWidget.propTypes = {
   customer: PropTypes.object.isRequired,
-  widget: PropTypes.object.isRequired,
+  widget: PropTypes.object,
   useExternalId: PropTypes.bool.isRequired
 }
 

@@ -4,7 +4,7 @@ import { useQuery, gql } from "@apollo/client";
 import { SendRequest } from "../../hooks/usePost.js";
 import PageHeader from "../../components/pageHeader.jsx";
 import useWidget from "../../features/widgets/hooks/useWidget.js"
-import { WidgetTypes } from "../../features/widgets/hooks/useWidgets.jsx";
+import { WidgetTypes, widgetTypeLabel } from "../../features/widgets/hooks/useWidgets.jsx";
 import Widget from "../../features/widgets/components/widget.jsx"
 import TextInput from '../../components/textInput.jsx';
 import ColorInput from '../../components/colorInput.jsx';
@@ -19,6 +19,9 @@ import SaveButton from "../../components/saveButton.jsx";
 import Modal from "../../components/modal.jsx";
 import { useTheme } from "../../hooks/useTheme.js";
 import Switch from "../../components/switch.jsx";
+import { isPageHeaderBackgroundTransparent } from '../../features/widgets/pageHeader.mjs';
+import { useFetch } from '../../hooks/useFetch.js';
+import { isOrderWidget, widgetTypesForPage } from '../../features/widgets/orderPage.mjs';
 
 var GET_PREVIEW_DATA = gql`query ($nodeIds: [String]!, $periodDate: Date!) {
   customers(idList: $nodeIds) {
@@ -175,7 +178,8 @@ const normalizeWidgetColorsForSave = (widget, defaults) => {
     const currentKey = current?.toLowerCase();
     const defaultKey = defaultValue?.toLowerCase();
 
-    next[field] = current === null || currentKey === defaultKey ? null : current;
+    const preserveHeaderBackground = widget.type === WidgetTypes.PageHeader && (field === 'headerColor' || field === 'backgroundColor');
+    next[field] = current === null || (!preserveHeaderBackground && currentKey === defaultKey) ? null : current;
   });
 
   return next;
@@ -206,6 +210,7 @@ const parseImportWidget = (rawValue, currentWidgetId) => {
 const EditWidget = () => {
   let params = useParams()
   const { theme } = useTheme();
+  const { data: page } = useFetch(params.pageId ? `/api/v1/dashboards/${params.pageId}` : null);
   const defaultWidgetColors = getDefaultWidgetColors(theme);
 
   const [previewId, setPreviewId] = useState();
@@ -244,6 +249,18 @@ const EditWidget = () => {
   const handleChange = (name, value) => {
     setItem((v) => ({ ...v, [name]: value }));
   }
+
+  const handlePageHeaderTransparency = (name, value) => {
+    setItem(current => {
+      const next = { ...current, settings: { ...current.settings, [name]: value } };
+      // With no saved background colors, use the colors displayed in the pickers.
+      if (!value && isPageHeaderBackgroundTransparent({ headerColor: current.headerColor, backgroundColor: current.backgroundColor })) {
+        next.headerColor = defaultWidgetColors.headerColor;
+        next.backgroundColor = defaultWidgetColors.backgroundColor;
+      }
+      return next;
+    });
+  };
 
   const handleSave = () => {
     setSaveSettings({ status: 1 });
@@ -322,7 +339,8 @@ const EditWidget = () => {
     }
   }
 
-  const isPreview = previewId == null || previewId == undefined;
+  const isPreview = isOrderWidget(item?.type) || item?.type === WidgetTypes.PageHeader || previewId == null || previewId == undefined;
+  const transparentPageHeader = item?.type === WidgetTypes.PageHeader && isPageHeaderBackgroundTransparent(item);
   var breadcrumbs = [{ title: `Widgets`, link: `/settings/widgets` }, { title: "Edit Widget" }];
   if (params.pageId) {
     let pageLink = params.pageId;
@@ -370,8 +388,8 @@ const EditWidget = () => {
                       <div className="col-md-4 col-lg-2 mb-3">
                         <label className="form-label">Widget Type</label>
                         <select className="form-select" name="type" value={item?.type ?? ''} onChange={(e) => handleChange(e.target.name, e.target.value)} >
-                          {WidgetTypes && Object.keys(WidgetTypes).map((key) => {
-                            return <option key={key} value={WidgetTypes[key]}>{key}</option>
+                          {(params.pageId ? widgetTypesForPage(WidgetTypes, page ?? { id: params.pageId }) : Object.keys(WidgetTypes)).map((key) => {
+                            return <option key={key} value={WidgetTypes[key]}>{widgetTypeLabel(key)}</option>
                           })}
                         </select>
                       </div>
@@ -384,10 +402,10 @@ const EditWidget = () => {
                         <TextInput name="description" value={item?.description ?? ''} rows={1} onChange={handleChange} placeholder="Short Description of what this widget is about" />
                       </div> */}
 
-                      <div className="col-8 mb-3">
+                      {item?.type !== WidgetTypes.PageHeader && <div className="col-8 mb-3">
                         <label className="form-label">Header Title</label>
                         <TextInput name="title" value={item?.title ?? ''} onChange={handleChange} />
-                      </div>
+                      </div>}
 
 
                       <div className="col-2 mb-3">
@@ -395,20 +413,20 @@ const EditWidget = () => {
                         <RadioInput name="headerAlignment" value={item?.headerAlignment} onChange={handleChange} />
                       </div>
 
-                      <div className="col-3 mb-3">
+                      <fieldset className="col-3 mb-3" disabled={transparentPageHeader}>
                         <label className="form-label">Header Background Color</label>
                         <ColorInput name="headerColor" value={item?.headerColor} defaultValue={defaultWidgetColors.headerColor} onChange={handleChange} />
-                      </div>
+                      </fieldset>
 
                       <div className="col-3 mb-3">
                         <label className="form-label">Header Text Color</label>
                         <ColorInput name="headerTextColor" value={item?.headerTextColor} defaultValue={defaultWidgetColors.headerTextColor} onChange={handleChange} />
                       </div>
 
-                      <div className="col-3 mb-3">
+                      <fieldset className="col-3 mb-3" disabled={transparentPageHeader}>
                         <label className="form-label">Card Background Color</label>
                         <ColorInput name="backgroundColor" value={item?.backgroundColor} defaultValue={defaultWidgetColors.backgroundColor} onChange={handleChange} />
-                      </div>
+                      </fieldset>
                       <div className="col-3 mb-3">
                         <label className="form-label">Card Text Color</label>
                         <ColorInput name="textColor" value={item?.textColor} defaultValue={defaultWidgetColors.textColor} onChange={handleChange} />
@@ -417,9 +435,12 @@ const EditWidget = () => {
                         <label className="form-label">Card Border Color</label>
                         <ColorInput name="borderColor" value={item?.borderColor} defaultValue={defaultWidgetColors.borderColor} onChange={handleChange} />
                       </div>
+                      {item?.type === WidgetTypes.PageHeader && <div className="col-12 mb-3">
+                        <Switch name="transparentBackground" title="Transparent Background" value={transparentPageHeader} onChange={handlePageHeaderTransparency} />
+                      </div>}
                     </div>
 
-                    <WidgetContent widget={item} updateWidget={setItem} trees={data.trees} definitions={data.compensationPlans} customerTypes={data.customerTypes} />
+                    <WidgetContent widget={item} updateWidget={setItem} trees={data.trees} definitions={data.compensationPlans} customerTypes={data.customerTypes} page={page ?? (params.pageId ? { id: params.pageId } : undefined)} />
 
                   </div>
                   <div className="tab-pane" id="tabs-requirements-7" role="tabpanel">
@@ -449,14 +470,14 @@ const EditWidget = () => {
             <div className="card-header">
               <h4 className="card-title">Widget Preview</h4>
             </div>
-            <div className="card-header">
+            {!isOrderWidget(item?.type) && <div className="card-header">
               <div className="w-100">
                 <AutoComplete name="customerId" value={previewId} placeholder="Widget preview customer" onChange={handlePreviewChange} allowNull={true} showClear={true} />
               </div>
-            </div>
+            </div>}
             <div className="p-2">
               <div className={`col-${previewSize}`}>
-                {item && <Widget widget={item} trees={previewData?.trees ?? data?.trees} customer={previewData?.customer} compensationPlans={previewData?.compensationPlans} isPreview={isPreview} date={date} />}
+                {item && <Widget widget={item} trees={previewData?.trees ?? data?.trees} customer={previewData?.customer} compensationPlans={previewData?.compensationPlans} isPreview={isPreview} date={date} page={page ?? (params.pageId ? { id: params.pageId } : undefined)} />}
               </div>
             </div>
           </div>

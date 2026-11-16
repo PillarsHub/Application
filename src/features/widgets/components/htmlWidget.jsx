@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import PropTypes from 'prop-types';
 import Mustache from 'mustache';
 import parse from 'html-react-parser';
+import { parse as parseGraphQL, Kind } from 'graphql';
 import { SendRequest } from '../../../hooks/usePost.js';
 import HtmlFrame from "./htmlFrame.jsx";
 import Pagination from "../../../components/pagination.jsx";
@@ -48,7 +49,7 @@ function stripDocumentOnlyTags(htmlContent) {
 }
 
 
-const HtmlWidget = ({ html, customer, widget, date, periodId, isPreview }) => {
+const HtmlWidget = ({ html, customer, widget, date, periodId, isPreview, orderId, order }) => {
   var [data, setData] = useState({});
   var [query, setQuery] = useState({});
   var [output, setOutput] = useState('<div>Loading</div>');
@@ -65,10 +66,24 @@ const HtmlWidget = ({ html, customer, widget, date, periodId, isPreview }) => {
 
     return {
       customerId: customer.id,
+      orderId,
       periodId: periodId,
       date: date,
       ...defaults,
       ...runtimeVariables
+    };
+  };
+
+  const buildTemplateContext = () => {
+    const queryParameters = buildGraphQLVariables();
+    return {
+      customer,
+      customerId: customer.id,
+      orderId,
+      order,
+      authorizationCode: authCode,
+      queryParameters,
+      data: { ...data, queryParameters }
     };
   };
 
@@ -109,10 +124,10 @@ const HtmlWidget = ({ html, customer, widget, date, periodId, isPreview }) => {
   useEffect(() => {
     if (query && query.query) {
       if (query.method == "api") {
-        var url = Mustache.render(query.query, { customer: customer, authorizationCode: authCode, data: data });
+        var url = Mustache.render(query.query, buildTemplateContext());
         try {
           SendRequest('GET', url, {}, (data) => {
-            setData({...data, queryParameters: isLikelyGraphQLQuery(query?.query) ? buildGraphQLVariables() : {}});
+            setData({ ...data, queryParameters: buildGraphQLVariables() });
           }, (error, code) => {
             setData({ error: `${code} - ${error}` });
           });
@@ -131,7 +146,7 @@ const HtmlWidget = ({ html, customer, widget, date, periodId, isPreview }) => {
               setTotalItems(total);
             }
 
-            setData({...r.data, queryParameters: isLikelyGraphQLQuery(query.query) ? buildGraphQLVariables() : {}});
+            setData({ ...r.data, queryParameters: graphQLVariables });
           }
         }, (error, code) => {
           setData({ error: `${code} - ${error}` });
@@ -140,18 +155,18 @@ const HtmlWidget = ({ html, customer, widget, date, periodId, isPreview }) => {
     } else {
       setData({});
     }
-  }, [query, customer?.id, pagingData, runtimeVariables, date, periodId])
+  }, [query, customer?.id, pagingData, runtimeVariables, date, periodId, orderId])
 
   useEffect(() => {
     if (html) {
       try {
-        var renderedHTML = Mustache.render(html, { customer: customer, authorizationCode: authCode, data: data });
+        var renderedHTML = Mustache.render(html, buildTemplateContext());
         setOutput(renderedHTML);
       } catch {
         //doNothing
       }
     }
-  }, [html, data, customer, authCode])
+  }, [html, data, customer, authCode, orderId, order, date, periodId, pagingData, runtimeVariables])
 
   const refetch = (pageData) => {
     setPagingData(prev => ({
@@ -185,7 +200,7 @@ const HtmlWidget = ({ html, customer, widget, date, periodId, isPreview }) => {
       <HtmlFrame
         htmlContent={output}
         cssContent={widget.css}
-        data={{ customer: clone, authorizationCode: authCode, data: data, queryParameters: data.queryParameters }}
+        data={{ ...buildTemplateContext(), customer: clone }}
         onQueryVariablesChange={handleQueryVariablesChange}
       />
       {pagingData.enabled && (
@@ -220,25 +235,21 @@ const HtmlWidget = ({ html, customer, widget, date, periodId, isPreview }) => {
 
 function isLikelyGraphQLQuery(query) {
   if (typeof query !== 'string') return false;
-
-  // Remove leading comments and empty lines
-  const cleaned = query
-    .split('\n')
-    .filter(line => !line.trim().startsWith('#') && line.trim() !== '')
-    .join('\n')
-    .trim();
-
-  // Basic checks: must start with a GraphQL keyword or opening brace, and contain at least one closing brace
-  const startsWithKeyword = /^(query|mutation|subscription|fragment)?\s*[{(]/.test(cleaned);
-  const hasBraces = /{[^}]*}/.test(cleaned);
-
-  return startsWithKeyword && hasBraces;
+  try {
+    return parseGraphQL(query).definitions.some(definition => definition.kind === Kind.OPERATION_DEFINITION);
+  } catch {
+    return false;
+  }
 }
 
 
 export default HtmlWidget;
 
 HtmlWidget.propTypes = {
+  orderId: PropTypes.string,
+  order: PropTypes.object,
+  date: PropTypes.string,
+  periodId: PropTypes.number,
   html: PropTypes.string.isRequired,
   customer: PropTypes.object.isRequired,
   widget: PropTypes.object.isRequired,

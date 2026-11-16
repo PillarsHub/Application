@@ -2,11 +2,13 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import parse from 'html-react-parser';
 import { GetScope } from "../../features/authentication/hooks/useToken.jsx"
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
+import { resolvePageUrl } from '../../features/widgets/orderPage.mjs';
 import DataError from '../../components/dataError.jsx';
 import useMenu from '../../hooks/useMenu.js';
 
 const CustomerNav = ({ itemClick, customerId }) => {
+  const { orderId } = useParams();
   const queryParams = new URLSearchParams(window.location.search);
   const periodId = queryParams.get("periodId");
   const { data, loading, error } = useMenu(customerId);
@@ -41,6 +43,7 @@ const CustomerNav = ({ itemClick, customerId }) => {
     let currentHeader = null;
 
     items.forEach(item => {
+      if (item.url && !resolvePageUrl(item.url, customerId, orderId)) return;
       if (item.status.toLowerCase() == 'enabled' || item.status.toLowerCase() == 'corporate') {
         if (!item.url) {
           currentHeader = { ...item, subItems: [] };
@@ -64,7 +67,7 @@ const CustomerNav = ({ itemClick, customerId }) => {
     <ul className="navbar-nav justify-content-evenly me-auto">
       {menu?.items && organizeItems(menu.items).map((menu) => {
         let visible = menu.status != 'Disabled';
-        var url = menu?.url?.replace('{customerId}', customerId);
+        var url = resolvePageUrl(menu?.url, customerId, orderId);
         let activeClass = (location.pathname == url) ? 'active' : '';
 
         if (visible) {
@@ -86,7 +89,7 @@ const CustomerNav = ({ itemClick, customerId }) => {
               </a>
               <div className="dropdown-menu dropdown-menu-end">
                 {menu?.subItems && menu?.subItems.map((child) => {
-                  var childUrl = child?.url?.replace('{customerId}', customerId);
+                  var childUrl = resolvePageUrl(child?.url, customerId, orderId);
                   return <Link key={child.title} className="dropdown-item" to={`${childUrl}${periodId ? '?periodId=' + periodId : ''}`} onClick={handleClick} >
                     <span className="dropdown-item-icon">{child.icon && parse(child.icon)}</span>
                     {child.title}

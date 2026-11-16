@@ -1,6 +1,8 @@
 import React from "react";
 import PropTypes from 'prop-types';
 import { WidgetTypes } from "../../../features/widgets/hooks/useWidgets.jsx";
+import OrderDetailContent from './orderDetailContent.jsx';
+import PageHeaderContent from './pageHeaderContent.jsx';
 import ProfileContent from "./profileContent.jsx";
 import RankContent from "./rankContent.jsx";
 import UplineContent from "./uplineContent.jsx";
@@ -15,9 +17,16 @@ import OrdersContent from "./ordersContent.jsx";
 import PayoutsContent from "./payoutsContent.jsx";
 import PendingPayoutsContent from "./pendingPayoutsContent.jsx";
 
-const WidgetContent = ({ widget, updateWidget, trees, definitions, customerTypes }) => {
+const WidgetContent = ({ widget, updateWidget, trees, definitions, customerTypes, page }) => {
 
   switch (widget?.type) {
+    case WidgetTypes.PageHeader:
+      return <PageHeaderContent widget={widget} updateWidget={updateWidget} page={page} />;
+    case WidgetTypes.OrderSummary:
+    case WidgetTypes.OrderPayments:
+    case WidgetTypes.OrderInvoice:
+    case WidgetTypes.OrderCommissions:
+      return <OrderDetailContent widget={widget} updateWidget={updateWidget} />;
     case WidgetTypes.Profile:
       return <ProfileContent widget={widget} updateWidget={updateWidget} />;
     case WidgetTypes.Rank:
@@ -56,5 +65,6 @@ WidgetContent.propTypes = {
   updateWidget: PropTypes.func.isRequired,
   trees: PropTypes.any.isRequired,
   definitions: PropTypes.any.isRequired,
-  customerTypes: PropTypes.any.isRequired
+  customerTypes: PropTypes.any.isRequired,
+  page: PropTypes.object
 }

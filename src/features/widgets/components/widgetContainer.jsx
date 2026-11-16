@@ -4,7 +4,10 @@ import { useQuery, gql } from "@apollo/client";
 import { useFetch } from "../../../hooks/useFetch.js";
 import DataLoading from '../../../components/dataLoading.jsx';
 import DataError from '../../../components/dataError.jsx';
-import Widget from './widget.jsx';
+import WidgetLayout from './widgetLayout.jsx';
+import useOrderDetails from '../hooks/useOrderDetails.js';
+import { ORDER_DETAIL_PAGE_ID, defaultOrderPage, defaultOrderWidgets } from '../orderPage.mjs';
+import EmptyContent from '../../../components/emptyContent.jsx';
 
 var GET_CUSTOMER = gql`query ($nodeIds: [String]!, $customerId: String, $periodDate: Date!) {
   customers(idList: $nodeIds) {
@@ -151,14 +154,15 @@ var GET_WIDGETS = gql`query {
   }
 }`;
 
-const WidgetContainer = forwardRef(({ customerId, dashboardId, periodId, onLoad, onEmpty }, ref) => {
+const WidgetContainer = forwardRef(({ customerId, orderId, dashboardId, periodId, onLoad, onEmpty }, ref) => {
+  const orderResult = useOrderDetails(customerId, orderId);
   const [periodDate, setPeriodDate] = useState(new Date().toISOString());
   const { data: dashboard, loading: dbLoading, error: dbError } = useFetch(`/api/v1/dashboards/${dashboardId}`, {}, { isEmpty: true });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState();
   const [data, setData] = useState();
 
-  const { refetch } = useQuery((customerId ?? '' != '') ? GET_CUSTOMER : GET_WIDGETS, {
+  const { refetch } = useQuery(customerId ? GET_CUSTOMER : GET_WIDGETS, {
     variables: { nodeIds: [customerId], customerId: customerId, periodDate: periodDate },
     skip: true, // Initially skip the query
   });
@@ -167,11 +171,12 @@ const WidgetContainer = forwardRef(({ customerId, dashboardId, periodId, onLoad,
     if (dashboard) {
       doRefresh();
     }
-  }, [dashboard, periodDate])
+  }, [dashboard, periodDate, customerId])
 
   useImperativeHandle(ref, () => ({
     refreshData: () => {
       doRefresh();
+      if (orderId) orderResult.refetch();
     }
   }));
 
@@ -185,7 +190,7 @@ const WidgetContainer = forwardRef(({ customerId, dashboardId, periodId, onLoad,
       .then((result) => {
         setLoading(false);
         if (onLoad) onLoad(result.data);
-        if (dashboard.isEmpty) {
+        if (dashboard.isEmpty && dashboardId !== ORDER_DETAIL_PAGE_ID) {
           if (onEmpty) onEmpty(result.data);
         } else {
           setData(result.data);
@@ -198,7 +203,9 @@ const WidgetContainer = forwardRef(({ customerId, dashboardId, periodId, onLoad,
       });
   }
 
-  if (loading || dbLoading) return <DataLoading />;
+  if (loading || dbLoading || (orderId && orderResult.loading)) return <DataLoading />;
+  if (orderId && orderResult.error) return <DataError error={orderResult.error} />;
+  if (orderId && !orderResult.context.order) return <EmptyContent title="Order not found" text="This order is not available for the selected customer." />;
   if (dbError) return <DataError error={dbError} />;
   if (error) return <DataError error={error} />;
 
@@ -206,40 +213,16 @@ const WidgetContainer = forwardRef(({ customerId, dashboardId, periodId, onLoad,
   let trees = data?.trees;
 
   let compensationPlans = data?.compensationPlans;
-  let widgets = data?.widgets;
+  const useDefault = dashboard?.isEmpty && dashboardId === ORDER_DETAIL_PAGE_ID;
+  const layout = useDefault ? defaultOrderPage() : dashboard;
+  const widgets = useDefault ? defaultOrderWidgets : data?.widgets;
 
   if (!data) return <></>;
   return <>
-    <div className="row row-deck row-cards">
-      {dashboard && dashboard?.children && dashboard.children.map((card) => {
-        return buildCard(card, widgets, customer, compensationPlans, trees, periodDate, handleDateChange, periodId);
-      })}
-    </div>
+    <WidgetLayout widgets={widgets} customer={customer} compensationPlans={compensationPlans} trees={trees} date={periodDate} setDate={handleDateChange} periodId={periodId} orderContext={orderId ? orderResult.context : undefined} page={layout}>{layout?.children}</WidgetLayout>
   </>
 });
 
-function buildCard(card, widgets, customer, compensationPlans, trees, date, onDateChange, periodId) {
-  if ((card?.widgetId || card?.children) && widgets !== undefined) {
-    let widget = widgets.find((w) => w.id === (card?.widgetId ?? ''));
-    if (widget?.state == 1) return <></>
-    if (!widget && (!card.children || card.children.length == 0)) return <></>
-
-    return <div key={card?.id} className={`col-sm-12 col-lg-${card?.columns > 6 ? '12' : '6'} col-xl-${card?.columns}`}>
-      {card?.widgetId && widget && <Widget key={card?.widgetId} widget={widget} customer={customer} compensationPlans={compensationPlans} trees={trees} date={date} setDate={onDateChange} periodId={periodId} />}
-      {card.children && card.children.length > 0 && <>
-        <div className="card card-borderless card-transparent">
-          <div className="row row-cards row-deck">
-            {card.children.map((c) => {
-              return buildCard(c, widgets, customer, compensationPlans, trees, date, onDateChange, periodId);
-            })}
-          </div>
-        </div>
-      </>}
-    </div>
-  } else {
-    return <>AAA -- {JSON.stringify(card)} -- {JSON.stringify(widgets)}</>
-  }
-}
 
 export default WidgetContainer
 
@@ -247,7 +230,8 @@ WidgetContainer.displayName = 'WidgetContainer';
 
 WidgetContainer.propTypes = {
   dashboardId: PropTypes.string.isRequired,
-  customerId: PropTypes.string.isRequired,
+  customerId: PropTypes.string,
+  orderId: PropTypes.string,
   periodId: PropTypes.number,
   onLoad: PropTypes.func,
   onEmpty: PropTypes.func

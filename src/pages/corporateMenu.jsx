@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
-import { useLocation, NavLink } from "react-router-dom";
+import { useLocation, useParams, NavLink } from "react-router-dom";
+import { resolvePageUrl } from '../features/widgets/orderPage.mjs';
 import { useFetch } from "../hooks/useFetch";
 import parse from 'html-react-parser';
 import DataError from '../components/dataError';
@@ -9,6 +10,7 @@ import Avatar from '../components/avatar';
 
 const CorporateMenu = ({ itemClick, customerId, showCustomer }) => {
   const location = useLocation();
+  const { orderId } = useParams();
   const prevIdRef = useRef(customerId);
   const [customerMenu, setCustomerMenu] = useState([]);
   const { data, loading, error } = useFetch('/api/v1/Menus');
@@ -54,7 +56,8 @@ const CorporateMenu = ({ itemClick, customerId, showCustomer }) => {
 
             {subMenu?.items && subMenu.items.map((sMenu) => {
               let visible = sMenu.status.toLowerCase() == 'enabled' || sMenu.status.toLowerCase() == 'corporate'
-              var url = sMenu?.url?.replace('{customerId}', customerId);
+              var url = resolvePageUrl(sMenu?.url, customerId, orderId);
+              if (sMenu?.url && !url) return null;
               let activeClass = (location.pathname == url) ? 'active' : '';
 
               if (visible) {

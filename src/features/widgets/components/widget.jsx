@@ -5,6 +5,14 @@ import { useQuery, gql } from "@apollo/client";
 import { WidgetTypes } from "../hooks/useWidgets";
 import { ToLocalDate } from "../../../util/LocalDate";
 
+import OrderSummaryWidget from './orderSummaryWidget.jsx';
+import OrderPaymentsWidget from './orderPaymentsWidget.jsx';
+import OrderInvoiceWidget from './orderInvoiceWidget.jsx';
+import OrderCommissionsWidget from './orderCommissionsWidget.jsx';
+import PageHeaderWidget from './pageHeaderWidget.jsx';
+import { isPageHeaderBackgroundTransparent } from '../pageHeader.mjs';
+import { isOrderPage, isOrderWidget, orderPermissions, orderWidgetTypes, previewOrderContext, supportsPageHeader } from '../orderPage.mjs';
+import { GetScope } from '../../authentication/hooks/useToken.jsx';
 import Avatar from '../../../components/avatar.jsx';
 import Calendar from '../../../components/calendar.jsx';
 import RankAdvance from '../../../components/rankAdvance.jsx';
@@ -102,7 +110,7 @@ const generateUUID = () => {
   }
 };
 
-const Widget = ({ widget, customer, compensationPlans, trees, isPreview = false, date, setDate, periodId, supressQuery = false }) => {
+const Widget = ({ widget, customer, compensationPlans, trees, isPreview = false, date, setDate, periodId, supressQuery = false, orderContext, page }) => {
   const [wDate, setWDate] = useState(date);
   const [loading, setLoading] = useState(false);
   const [sCustomer, setSCustomer] = useState(customer);
@@ -111,30 +119,26 @@ const Widget = ({ widget, customer, compensationPlans, trees, isPreview = false,
 
   const [widgetId] = useState(() => 'wd_' + generateUUID());
 
-  if (!supressQuery) {
-    const { refetch } = useQuery(GET_CUSTOMER, {
-      variables: { nodeIds: [customer?.id], periodDate: date },
-      skip: true, // Initially skip the query
-    });
+  const { refetch } = useQuery(GET_CUSTOMER, {
+    variables: { nodeIds: [customer?.id], periodDate: date },
+    skip: true, // Initially skip the query
+  });
 
-    useEffect(() => {
-      if (wDate != date && !isPreview) {
-        setLoading(true);
-        refetch({ nodeIds: [customer.id], periodDate: wDate })
-          .then((result) => {
-            setLoading(false);
-            setSCustomer(result.data?.customers[0]);
-            setSCompPlan(result.data?.compensationPlans);
-          })
-          .catch((error) => {
-            setLoading(false);
-            console.error('Refetch error:', error);
-          });
-      }
-    }, [wDate]);
-  }
-
-  if (widget == undefined) return <EmptyContent title="Widget not found" text="Please check your widget library to verify it has been configured correctly." />;
+  useEffect(() => {
+    if (!supressQuery && wDate != date && !isPreview && customer?.id) {
+      setLoading(true);
+      refetch({ nodeIds: [customer.id], periodDate: wDate })
+        .then((result) => {
+          setLoading(false);
+          setSCustomer(result.data?.customers[0]);
+          setSCompPlan(result.data?.compensationPlans);
+        })
+        .catch((error) => {
+          setLoading(false);
+          console.error('Refetch error:', error);
+        });
+    }
+  }, [wDate]);
 
   const inlineStyle = {
     "--tblr-bg-surface": (widget?.backgroundColor ?? 'var(--ph-widget-bg, #ffffff)'),
@@ -206,8 +210,26 @@ const Widget = ({ widget, customer, compensationPlans, trees, isPreview = false,
   };
 
 
-  return <div style={{ display: "contents" }} className={widgetId}><div className={`card widget-card h-100 ${isPreview ? '' : ''}`} style={inlineStyle}>
-    {(widget.title || widget.showDatePicker) && <div className="card-header" style={{ backgroundColor: (widget?.headerColor ?? 'var(--ph-widget-header-bg, #ffffff)') }}>
+  if (!widget) return <EmptyContent title="Widget not found" text="Please check your widget library to verify it has been configured correctly." />;
+  if (widget.type === WidgetTypes.PageHeader) {
+    if (!isPreview && !supportsPageHeader(page)) return null;
+    const headerCustomer = customer ?? (isPreview ? { id: previewOrderContext.customerId, fullName: previewOrderContext.customer.fullName } : undefined);
+    const headerOrderId = isPreview && isOrderPage(page) ? previewOrderContext.orderId : orderContext?.orderId;
+    return <div className={`${widgetId} page-header-widget w-100`} style={{ ...inlineStyle, color: 'var(--tblr-card-color)', backgroundColor: isPageHeaderBackgroundTransparent(widget) ? 'transparent' : widget.backgroundColor ?? 'transparent' }}>
+      <style dangerouslySetInnerHTML={styleTag} />
+      <PageHeaderWidget widget={widget} customer={headerCustomer} orderId={headerOrderId} page={page} />
+    </div>;
+  }
+  const context = isPreview ? previewOrderContext : orderContext;
+  if (widget.type === orderWidgetTypes.OrderCommissions && !isPreview &&
+    !orderPermissions(GetScope(), context?.customerId).canViewCommissions) return null;
+  if (widget.type === orderWidgetTypes.OrderPayments && !isPreview &&
+    (!orderPermissions(GetScope(), context?.customerId).canViewPayments || !context?.order?.payments?.length)) return null;
+
+  return <div style={{ display: "contents" }} className={widgetId}>
+    <style dangerouslySetInnerHTML={styleTag} />
+    <div className={`card widget-card h-100 ${isPreview ? '' : ''}`} style={inlineStyle}>
+    {widget.type !== WidgetTypes.OrderSummary && widget.type !== WidgetTypes.OrderPayments && (widget.title || widget.showDatePicker) && <div className="card-header" style={{ backgroundColor: (widget?.headerColor ?? 'var(--ph-widget-header-bg, #ffffff)') }}>
       <h3 className={`card-title ${msStyle} ${meStyle}`}>{widget.title}</h3>
       {widget.showDatePicker && !supressQuery && widget.type != WidgetTypes.Earnings && <>
         <div className="card-actions">
@@ -231,12 +253,19 @@ const Widget = ({ widget, customer, compensationPlans, trees, isPreview = false,
       </>}
 
     </div>}
-    <style dangerouslySetInnerHTML={styleTag} />
-    {Content(widget, wDate, sCustomer, sCompPlan, trees, isPreview, widgetValues, loading)}
+    {Content(widget, wDate, sCustomer, sCompPlan, trees, isPreview, widgetValues, loading, context)}
   </div></div>
 }
 
-function Content(widget, date, customer, compensationPlans, trees, isPreview, widgetValues, loading) {
+function Content(widget, date, customer, compensationPlans, trees, isPreview, widgetValues, loading, orderContext) {
+  if (isOrderWidget(widget.type)) {
+    if (!orderContext?.order) return <EmptyContent title="Order required" text="Add this widget to an Order page to display the selected order." />;
+    const props = { context: orderContext, widget, isPreview };
+    if (widget.type === orderWidgetTypes.OrderSummary) return <OrderSummaryWidget {...props} />;
+    if (widget.type === orderWidgetTypes.OrderPayments) return <OrderPaymentsWidget {...props} />;
+    if (widget.type === orderWidgetTypes.OrderCommissions) return <OrderCommissionsWidget {...props} />;
+    return <OrderInvoiceWidget {...props} />;
+  }
   if (!compensationPlans) {
     const periodBegin = new Date().toISOString().split('.')[0] + 'Z';
     compensationPlans = [{
@@ -396,7 +425,7 @@ function Content(widget, date, customer, compensationPlans, trees, isPreview, wi
 
   if (widget.type == WidgetTypes.Html) {
     const html = widget.panes ? widget.panes[0]?.text : '';
-    return <HtmlWidget html={html} customer={customer} widget={widget} date={date} periodId={widgetValues?.periodId} isPreview={isPreview} />
+    return <HtmlWidget orderId={orderContext?.orderId} order={orderContext?.order} html={html} customer={customer} widget={widget} date={date} periodId={widgetValues?.periodId} isPreview={isPreview} />
   }
 
   if (widget.type == WidgetTypes.Earnings) {
@@ -449,5 +478,7 @@ Widget.propTypes = {
   date: PropTypes.string.isRequired,
   setDate: PropTypes.func.isRequired,
   supressQuery: PropTypes.bool,
+  orderContext: PropTypes.object,
+  page: PropTypes.object,
   periodId: PropTypes.number
 }

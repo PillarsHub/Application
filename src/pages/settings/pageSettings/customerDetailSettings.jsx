@@ -5,13 +5,15 @@ import { closestCenter, DndContext, DragOverlay, PointerSensor, useSensor } from
 import { SortableContext, rectSwappingStrategy } from '@dnd-kit/sortable';
 import PageHeader, { CardHeader } from "../../../components/pageHeader.jsx";
 import Modal from "../../../components/modal.jsx"
-import useWidgets, { WidgetTypes } from "../../../features/widgets/hooks/useWidgets.jsx";
+import useWidgets, { WidgetTypes, widgetTypeLabel } from "../../../features/widgets/hooks/useWidgets.jsx";
 import { useFetch } from "../../../hooks/useFetch.js";
 import { SendRequest } from "../../../hooks/usePost.js";
 import DataLoading from "../../../components/dataLoading.jsx";
 import DataError from "../../../components/dataError.jsx";
 import SortGridItem from '../sortGridItem.jsx';
 import EmptyContent from "../../../components/emptyContent.jsx";
+import WidgetLayout from '../../../features/widgets/components/widgetLayout.jsx';
+import { ORDER_DETAIL_PAGE_ID, defaultOrderPage, defaultOrderWidgets, widgetTypesForPage } from '../../../features/widgets/orderPage.mjs';
 
 var GET_TREES = gql`query {
   trees
@@ -32,7 +34,7 @@ const CustomerDetailSettings = () => {
   const containerRef = useRef(null);
   const [activeIndex, setActiveIndex] = useState(null);
 
-  const { data, loading, error } = useFetch(`/api/v1/dashboards/${initId}`, {}, { id: initId, children: [] });
+  const { data, loading, error, refetch: refetchDashboard } = useFetch(`/api/v1/dashboards/${initId}`, {}, initId === ORDER_DETAIL_PAGE_ID ? { ...defaultOrderPage(), isDefault: true } : { id: initId, children: [] });
   const { widgets, loading: wLoading, error: wError, refetch, CreateWidget, DeleteWidget, PublishWidget } = useWidgets();
   const [dashboardMeta, setDashboardMeta] = useState();
   const [showDel, setShowDel] = useState(false);
@@ -41,11 +43,38 @@ const CustomerDetailSettings = () => {
   const { data: treeData } = useQuery(GET_TREES, { variables: {} });
 
   const [items, setItems] = useState();
+  const [initializing, setInitializing] = useState(false);
+  const [initializeError, setInitializeError] = useState();
+
+  const initializeOrderPage = async () => {
+    setInitializing(true);
+    setInitializeError();
+    const request = (method, url, payload) => new Promise((resolve, reject) => SendRequest(method, url, payload, resolve, message => reject(new Error(String(message)))));
+    try {
+      const ids = [];
+      for (const definition of defaultOrderWidgets) {
+        const payload = { ...definition };
+        delete payload.id;
+        const created = await request('POST', '/api/v1/Widgets', payload);
+        if (!created?.id) throw new Error('The widget could not be created.');
+        ids.push(created.id);
+      }
+      const page = defaultOrderPage(ids);
+      await request('PUT', `/api/v1/dashboards/${ORDER_DETAIL_PAGE_ID}`, page);
+      initialRender.current = true;
+      refetch();
+      refetchDashboard();
+    } catch (error) {
+      setInitializeError(error.message);
+    } finally {
+      setInitializing(false);
+    }
+  };
 
   useEffect(() => {
     if (data) {
       setDashboardMeta({ id: data.id, name: data.name, type: data.type, description: data.description });
-      setItems(data.children);
+      setItems(data.children ?? []);
     }
   }, [data]);
 
@@ -64,7 +93,7 @@ const CustomerDetailSettings = () => {
   }
 
   useEffect(() => {
-    if (items && !initialRender.current) {
+    if (items && !initialRender.current && !data?.isDefault) {
       handleSave();
     }
 
@@ -78,6 +107,15 @@ const CustomerDetailSettings = () => {
   if (loading) return <DataLoading />
   if (wLoading) return <DataLoading />
   if (!dashboardMeta) return <DataLoading />
+
+  if (data?.isDefault) return <PageHeader title="Order Details Settings" breadcrumbs={[{ title: 'Pages', link: '/settings/pages' }, { title: 'Edit Page' }]}>
+    <CardHeader><button className="btn btn-primary" disabled={initializing} onClick={initializeOrderPage}>{initializing ? 'Creating layout...' : 'Customize Order Details'}</button></CardHeader>
+    <div className="container-xl">
+      <p className="text-muted">This is the default order layout. Choose Customize Order Details to rearrange, resize, and edit its widgets.</p>
+      {initializeError && <div className="alert alert-danger" role="alert">{initializeError}</div>}
+      <WidgetLayout widgets={defaultOrderWidgets} isPreview={true}>{defaultOrderPage().children}</WidgetLayout>
+    </div>
+  </PageHeader>;
 
   const handlePublish = (id, publish) => {
     var item = findId(items, id).item;
@@ -149,7 +187,7 @@ const CustomerDetailSettings = () => {
       CreateWidget(current.widgetType, (w) => {
         setItems((items) => {
           const newItems = [...items];
-          const newItem = { id: crypto.randomUUID(), widgetId: w?.id, state: 1, columns: (current?.id ? 12 : 6), children: [] }
+          const newItem = { id: crypto.randomUUID(), widgetId: w?.id, state: 1, columns: (current.widgetType === WidgetTypes.PageHeader || current?.id ? 12 : 6), children: [] }
 
           if (current?.id) {
             const activeItem = findItemAndParent(newItems, current.id);
@@ -175,7 +213,7 @@ const CustomerDetailSettings = () => {
     const { active, over } = event;
     setActiveIndex(null);
 
-    if (active.id !== over.id) {
+    if (over && active.id !== over.id) {
       setItems((items) => {
         const newItems = [...items];
         const activeItem = findItemAndParent(newItems, active.id);
@@ -228,6 +266,7 @@ const CustomerDetailSettings = () => {
   let pageName = capitalizeFirstLetter((dashboardMeta?.name ?? '') == '' ? dashboardMeta?.id : dashboardMeta?.name);
   if (dashboardMeta.id == 'CSDB') pageName = "Customer Detail";
   if (dashboardMeta.id == 'PDB') pageName = "Dashboard";
+  if (dashboardMeta.id === ORDER_DETAIL_PAGE_ID) pageName = 'Order Details';
 
   return <>
     <PageHeader title={`${pageName} Settings`} postTitle={dashboardMeta?.description} breadcrumbs={[{ title: `Pages`, link: `/settings/pages` }, { title: "Edit Page" }]}>
@@ -244,10 +283,10 @@ const CustomerDetailSettings = () => {
         {widgets && items && <>
           <div ref={containerRef}>
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-              <SortableContext items={items.map((item) => item.title)} strategy={rectSwappingStrategy}>
+              <SortableContext items={items.map((item) => item.id)} strategy={rectSwappingStrategy}>
                 <div className="row row-cards row-deck mb-3">
                   {items && items.map((item, itemIndex) => {
-                    return <SortGridItem key={item.id} id={item.id} col={item.columns} item={item} pageId={dashboardMeta.id} widgets={widgets} trees={treeData?.trees} onAdd={handleAddShow} onResize={handleResize} onDelete={handleDelShow} onPublish={handlePublish} styles={activeIndex === itemIndex ? { opacity: 0 } : {}} />
+                    return <SortGridItem key={item.id} id={item.id} col={item.columns} item={item} pageId={dashboardMeta.id} page={dashboardMeta} widgets={widgets} trees={treeData?.trees} onAdd={handleAddShow} onResize={handleResize} onDelete={handleDelShow} onPublish={handlePublish} styles={activeIndex === itemIndex ? { opacity: 0 } : {}} />
                   })}
                 </div>
               </SortableContext>
@@ -255,7 +294,7 @@ const CustomerDetailSettings = () => {
               <DragOverlay>
                 {activeIndex != null ? (
                   <div className="col-12" style={{ position: 'absolute', left: 0, top: 0, zIndex: 1000 }}>
-                    <SortGridItem col={12} item={items[activeIndex]} widgets={widgets} trees={treeData?.trees} />
+                    <SortGridItem col={12} item={items[activeIndex]} page={dashboardMeta} widgets={widgets} trees={treeData?.trees} />
                   </div>
                 ) : null}
               </DragOverlay>
@@ -277,8 +316,8 @@ const CustomerDetailSettings = () => {
               <label className="form-label">Widget</label>
               <select className="form-select" name="widgetType" value={current?.widgetType ?? ''} onChange={(e) => handleActiveEdit(e.target.name, e.target.value)}>
                 <option value="">Container</option>
-                {WidgetTypes && Object.keys(WidgetTypes).map((key) => {
-                  return <option key={key} value={WidgetTypes[key]}>{key}</option>
+                {widgetTypesForPage(WidgetTypes, dashboardMeta).map((key) => {
+                  return <option key={key} value={WidgetTypes[key]}>{widgetTypeLabel(key)}</option>
                 })}
               </select>
             </div>

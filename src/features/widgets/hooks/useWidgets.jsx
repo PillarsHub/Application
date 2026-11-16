@@ -1,3 +1,4 @@
+import { orderWidgetTypes, PAGE_HEADER_WIDGET_TYPE } from '../orderPage.mjs';
 import { useState, useEffect } from "react";
 import { useFetch } from "../../../hooks/useFetch";
 import { SendRequest } from "../../../hooks/usePost";
@@ -16,6 +17,12 @@ export default function useWidgets() {
 
   const handleCreateWidget = (widgetType, onSucces) => {
     var widget = { type: widgetType, state: 1 };
+    if (widgetType === orderWidgetTypes.OrderCommissions) {
+      widget = { ...widget, name: 'Order Commissions', title: 'Commissions', corporate: true };
+    }
+    if (widgetType === PAGE_HEADER_WIDGET_TYPE) {
+      widget = { ...widget, name: 'Page header', title: '', settings: { showCustomerName: true, showBreadcrumbs: true, transparentBackground: true } };
+    }
     SendRequest("POST", `/api/v1/Widgets`, widget, (r) => {
       setWidgets(w => [...w, r]);
       onSucces(r);
@@ -67,6 +74,8 @@ export default function useWidgets() {
 }
 
 const WidgetTypes = {
+  PageHeader: PAGE_HEADER_WIDGET_TYPE,
+  ...orderWidgetTypes,
   Profile: "profile",
   Rank: "rank",
   Upline: "upline",
@@ -83,4 +92,6 @@ const WidgetTypes = {
   //Report: "report"
 }
 
-export { WidgetTypes }
+const widgetTypeLabel = key => key === 'PageHeader' ? 'Page header' : key;
+
+export { WidgetTypes, widgetTypeLabel }

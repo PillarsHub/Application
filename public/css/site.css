@@ -15,6 +15,22 @@ table.card-table tfoot tr:last-child > :is(td, th) {
   color: var(--tblr-card-title-color);
 }
 
+.page-header-widget .page-title {
+  color: var(--tblr-card-title-color);
+}
+
+/* Keep the order header divider inside borderless layout containers. */
+.widget-card > .order-summary-header,
+.widget-card > .order-payments-header {
+  border-bottom-color: var(--tblr-card-border-color);
+  border-start-start-radius: var(--tblr-card-inner-border-radius);
+  border-start-end-radius: var(--tblr-card-inner-border-radius);
+}
+
+.order-payments-accordion .accordion-header {
+  font-size: var(--tblr-body-font-size);
+}
+
 .widget-editor {
   --tblr-card-cap-padding-y: 1rem;
   --tblr-card-cap-padding-x: 1.5rem;

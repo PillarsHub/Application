@@ -3,7 +3,8 @@ import { useQuery, gql } from "@apollo/client";
 import { useParams } from "react-router-dom"
 import PageHeader, { CardHeader } from "../../../components/pageHeader";
 import Modal from "../../../components/modal"
-import useWidgets, { WidgetTypes } from "../../../features/widgets/hooks/useWidgets";
+import useWidgets, { WidgetTypes, widgetTypeLabel } from "../../../features/widgets/hooks/useWidgets";
+import { widgetTypesForPage } from '../../../features/widgets/orderPage.mjs';
 import { useFetch } from "../../../hooks/useFetch";
 import { SendRequest } from "../../../hooks/usePost";
 import DataLoading from "../../../components/dataLoading";
@@ -367,8 +368,8 @@ const TreeSettings = () => {
             <div className="mb-3">
               <label className="form-label">Widget Type</label>
               <SelectInput name="widgetId" value={current?.widgetId ?? ''} emptyOption="-- Select Type --" onChange={handleActiveEdit}>
-                {WidgetTypes && Object.keys(WidgetTypes).map((key) => {
-                  return <option key={key} value={WidgetTypes[key]}>{key}</option>
+                {widgetTypesForPage(WidgetTypes, { type: 'System', id: `tree_${params.treeId}` }).map((key) => {
+                  return <option key={key} value={WidgetTypes[key]}>{widgetTypeLabel(key)}</option>
                 })}
               </SelectInput>
             </div>

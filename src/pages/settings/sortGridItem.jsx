@@ -5,7 +5,7 @@ import PropTypes from 'prop-types';
 import Widget from '../../features/widgets/components/widget.jsx';
 import EmptyContent from '../../components/emptyContent.jsx';
 
-const SortGridItem = ({ id, col, item, widgets, trees, pageId, onAdd, onResize, onDelete, onPublish }) => {
+const SortGridItem = ({ id, col, item, widgets, trees, pageId, page, onAdd, onResize, onDelete, onPublish }) => {
   const { attributes, listeners, setNodeRef, isDragging, transform, transition, isOver } = useSortable({ id });
 
   const doTransofrm = false;
@@ -91,7 +91,7 @@ const SortGridItem = ({ id, col, item, widgets, trees, pageId, onAdd, onResize, 
             </div>
           </div>
         </div>
-        {item?.widgetId && <Widget widget={widget} isPreview={true} trees={trees} />}
+        {item?.widgetId && <Widget widget={widget} isPreview={true} trees={trees} page={page} />}
         {!item?.widgetId && item?.children.length == 0 && <>
           <div className="card m-0 p-1 card-borderless card-transparent">
             <div className="row row-cards row-deck">
@@ -103,7 +103,7 @@ const SortGridItem = ({ id, col, item, widgets, trees, pageId, onAdd, onResize, 
           <div className="card m-0 p-1 card-borderless card-transparent">
             <div className="row row-cards row-deck">
               {item.children.map((child) => {
-                return <SortGridItem key={child.id} id={child.id} col={child.columns} item={child} widgets={widgets} trees={trees} onAdd={onAdd} onResize={onResize} onDelete={onDelete} onPublish={onPublish} />
+                return <SortGridItem key={child.id} id={child.id} col={child.columns} item={child} pageId={pageId} page={page} widgets={widgets} trees={trees} onAdd={onAdd} onResize={onResize} onDelete={onDelete} onPublish={onPublish} />
               })}
             </div>
           </div>
@@ -120,6 +120,7 @@ SortGridItem.propTypes = {
   widgets: PropTypes.arrayOf(PropTypes.object).isRequired,
   trees: PropTypes.any.isRequired,
   pageId: PropTypes.string,
+  page: PropTypes.object,
   onAdd: PropTypes.func.isRequired,
   onResize: PropTypes.func.isRequired,
   onDelete: PropTypes.func.isRequired,

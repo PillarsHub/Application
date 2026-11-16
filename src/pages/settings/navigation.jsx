@@ -1,3 +1,4 @@
+import { customPageUrl } from '../../features/widgets/orderPage.mjs';
 import React, { useRef, useEffect, useState } from "react";
 import parse from 'html-react-parser';
 import { useFetch } from "../../hooks/useFetch.js";
@@ -93,8 +94,7 @@ const Navigation = () => {
       const merged = internalPages
         .map(a => ({ url: a.url, title: a.title, type: a.type }))
         .concat(dashboards.filter(b => b.type !== 'System').map(b => {
-          var urlBase = b.type == "Customer" ? `/customers/{customerId}` : '/page';
-          return ({ url: `${urlBase}/${b.id}`, title: b.name, type: b.type })
+          return ({ url: customPageUrl(b), title: b.name, type: b.type })
         }));
 
       setPages(merged);
@@ -335,7 +335,7 @@ const Navigation = () => {
                   <label className="form-label">Destination Page</label>
                   <SelectInput name="url" value={activeLink?.url} errorText={dialogError?.url} onChange={handleChage}>
                     <option disabled selected value=""> -- Select a page -- </option>
-                    {pages.filter(p => p.type == menuType).map((page) => {
+                    {pages.filter(p => p.type == menuType || (menuType === 'Customer' && p.type === 'Order')).map((page) => {
                       return <option key={page} value={page.url}>{page.title}</option>
                     })}
                   </SelectInput>

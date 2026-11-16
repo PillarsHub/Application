@@ -1,12 +1,14 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import parse from 'html-react-parser';
-import { useLocation, NavLink } from "react-router-dom";
+import { useLocation, useParams, NavLink } from "react-router-dom";
+import { resolvePageUrl } from '../features/widgets/orderPage.mjs';
 import { useFetch } from "../hooks/useFetch";
 import DataError from '../components/dataError';
 
 const BackOfficeMenu = ({ itemClick, customerId }) => {
   const location = useLocation();
+  const { orderId } = useParams();
   const { data, loading, error } = useFetch('/api/v1/Menus');
 
   if (loading) return <></>
@@ -19,7 +21,8 @@ const BackOfficeMenu = ({ itemClick, customerId }) => {
 
       {menu?.items && menu.items.map((menu) => {
         let visible = menu.status == 'Enabled' || menu.status == 'Customer';
-        var url = menu?.url?.replace('{customerId}', customerId);
+        var url = resolvePageUrl(menu?.url, customerId, orderId);
+        if (menu?.url && !url) return null;
         let activeClass = (location.pathname == url) ? 'active' : '';
 
         if (visible) {

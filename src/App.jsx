@@ -179,6 +179,7 @@ const router = createBrowserRouter([
       { path: "orders", lazy: lazyRoute(() => import("./pages/customers/customerOrders.jsx")) },
       { path: "autoships", lazy: lazyRoute(() => import("./pages/customers/autoships.jsx")) },
       { path: "orders/:orderId", lazy: lazyRoute(() => import("./pages/customers/orderDetail.jsx")) },
+      { path: "orders/:orderId/pages/:pageId", lazy: lazyRoute(() => import("./pages/customers/orderDetail.jsx")) },
       { path: "orders/:orderId/edit", lazy: lazyRoute(() => import("./pages/customers/editOrder.jsx")) },
       { path: "shop", lazy: lazyRoute(() => import("./pages/customers/shop.jsx")) },
       { path: "checkout", lazy: lazyRoute(() => import("./pages/customers/checkout.jsx")) },
