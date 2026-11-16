@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams } from "react-router-dom";
-import { useQuery, gql } from "@apollo/client";
+import { ApolloProvider, useApolloClient, useQuery, gql } from "@apollo/client";
 import { useFetch } from "../../hooks/useFetch";
 import PageHeader, { CardHeader } from '../../components/pageHeader.jsx';
 import TreeSideCard from './treeComponents/treeSideCard.jsx';
@@ -47,6 +47,7 @@ const GET_DATA = gql`
 
 const CustomerTree = () => {
   const params = useParams();
+  const client = useApolloClient();
   const [placement, setPlacement] = useState();
   const [activeId, setActiveId] = useState();
   //const [periodDate, setPeriodDate] = useState(new Date().toISOString());
@@ -131,7 +132,8 @@ const CustomerTree = () => {
           let widget = node.customer?.widgets?.find((w) => w.id === card?.widgetId);
           if (node.customer && card && !widget && (!card.children || card.children.length == 0)) return null;
 
-          return <TreeNode node={node} dashboard={dashboard} trees={data?.trees} date={effectiveDate} />;
+          // Static tree templates render outside the page's React context.
+          return <ApolloProvider client={client}><TreeNode node={node} dashboard={dashboard} trees={data?.trees} date={effectiveDate} /></ApolloProvider>;
         },
         function renderLoading(id) {
           return <LoadingNode node={id} />;
@@ -159,7 +161,7 @@ const CustomerTree = () => {
         treeApiRef.current = null;
       }
     };
-  }, [data, params.customerId, params.treeId, pickerDate, dashboard, loading, dbLoading]);
+  }, [client, data, params.customerId, params.treeId, pickerDate, dashboard, loading, dbLoading]);
 
   if (loading || dbLoading) return <DataLoading />;
   if (error) return <DataError error={error} />;
