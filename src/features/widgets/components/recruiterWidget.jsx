@@ -1,3 +1,4 @@
+import useWidgetText from '../hooks/useWidgetText.js';
 import React, { useEffect, useState } from "react";
 import PropTypes from 'prop-types';
 import { useQuery, gql } from "@apollo/client";
@@ -28,6 +29,7 @@ var GET_DATA = gql`query ($customerId: String, $treeId: ID!, $enrolledTypes: [De
 
 
 function RecruiterWidget({ customerId, treeId, columnTitle, maxRows, timePeriod, recruiterTypes, enrolledTypes, compact, showPercent, isPreview }) {
+  const { widgetText } = useWidgetText();
   const [data, setData] = useState();
   const [error, setError] = useState();
   const [loading, setLoading] = useState();
@@ -60,15 +62,15 @@ function RecruiterWidget({ customerId, treeId, columnTitle, maxRows, timePeriod,
   if (error) return <DataError error={error} />
   if (loading) return <DataLoading />
 
-  if (data?.length == 0) return <EmptyContent title="No Recent Recruiters" text="Looks like no one has recruited recently. Encourage your team to invite new members and watch the growth happen!" />
+  if (data?.length == 0) return <EmptyContent title={widgetText("No Recent Recruiters")} text={widgetText("Looks like no one has recruited recently. Encourage your team to invite new members and watch the growth happen!")} />
 
   return <>
     <div className={containerClass}>
       <table className={tableClass}>
         <thead>
           <tr >
-            <th>{(columnTitle ?? '') != '' ? columnTitle : "Customer Name"}</th>
-            <th className="text-end w-25">Enrolled</th>
+            <th>{(columnTitle ?? '') != '' ? columnTitle : widgetText("Customer Name")}</th>
+            <th className="text-end w-25">{widgetText("Enrolled")}</th>
           </tr>
         </thead>
         <tbody>
@@ -79,8 +81,8 @@ function RecruiterWidget({ customerId, treeId, columnTitle, maxRows, timePeriod,
               <td>
                 <div className="progressbg">
                   {showPercent && <div className="progress progressbg-progress">
-                    <div className="progress-bar bg-primary-lt" style={{ width: `${percent}%` }} role="progressbar" aria-valuenow={percent} aria-valuemin="0" aria-valuemax="100" aria-label="82.54% Complete">
-                      <span className="visually-hidden">{percent}% Complete</span>
+                    <div className="progress-bar bg-primary-lt" style={{ width: `${percent}%` }} role="progressbar" aria-valuenow={percent} aria-valuemin="0" aria-valuemax="100" aria-label={widgetText("{percent}% Complete", { percent })}>
+                      <span className="visually-hidden">{widgetText("{percent}% Complete", { percent })}</span>
                     </div>
                   </div>}
                   <div className="progressbg-text">{row.name}</div>

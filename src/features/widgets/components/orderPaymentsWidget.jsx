@@ -1,3 +1,4 @@
+import useWidgetText from '../hooks/useWidgetText.js';
 import React, { useId } from 'react';
 import PropTypes from 'prop-types';
 import { GetScope } from '../../authentication/hooks/useToken.jsx';
@@ -5,6 +6,7 @@ import { orderPermissions, orderTotals } from '../orderPage.mjs';
 import LocalDate from '../../../util/LocalDate.jsx';
 
 export default function OrderPaymentsWidget({ context, widget, isPreview }) {
+  const { widgetText } = useWidgetText();
   const accordionId = `order-payments-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const { order, customerId } = context;
   if (!isPreview && !orderPermissions(GetScope(), customerId).canViewPayments) return null;
@@ -17,12 +19,12 @@ export default function OrderPaymentsWidget({ context, widget, isPreview }) {
     {(widget.title || showTotal) && <div className="card-header order-payments-header flex-wrap gap-3" style={{ backgroundColor: widget.headerColor ?? 'var(--ph-widget-header-bg, #ffffff)', color: 'var(--tblr-card-title-color)' }}>
       {widget.title && <h3 className={`card-title text-break ${titleAlignment}`}>{widget.title}</h3>}
       {showTotal && <div className="ms-auto text-end lh-sm flex-shrink-0">
-        <span className="d-block small opacity-75 mb-1">Total Paid</span>
+        <span className="d-block small opacity-75 mb-1">{widgetText("Total Paid")}</span>
         <strong className="d-block fw-medium" style={{ fontVariantNumeric: 'tabular-nums' }}>{money(orderTotals(order).totalPaid)}</strong>
       </div>}
     </div>}
     <div className="card-body">
-      {!order.payments?.length && <p className="text-muted mb-0">No payments on this order.</p>}
+      {!order.payments?.length && <p className="text-muted mb-0">{widgetText("No payments on this order.")}</p>}
       <div className="accordion order-payments-accordion" id={accordionId}>
         {(order.payments ?? []).map((payment, index) => {
           const id = `${accordionId}-${index}`;
@@ -38,7 +40,7 @@ export default function OrderPaymentsWidget({ context, widget, isPreview }) {
             </h2>
             <div id={id} className={`accordion-collapse collapse ${expanded ? 'show' : ''}`} aria-labelledby={`${id}-heading`} data-bs-parent={`#${accordionId}`}>
               <div className="accordion-body"><dl className="row mb-0">
-                {fields.filter(([field]) => payment[field]).map(([field, label]) => <React.Fragment key={field}><dt className="col-5">{label}</dt><dd className="col-7 text-end text-break">{payment[field]}</dd></React.Fragment>)}
+                {fields.filter(([field]) => payment[field]).map(([field, label]) => <React.Fragment key={field}><dt className="col-5">{widgetText(label)}</dt><dd className="col-7 text-end text-break">{payment[field]}</dd></React.Fragment>)}
               </dl></div>
             </div>
           </div>;

@@ -13,7 +13,7 @@ export const treeCardCustomerFields = (dateVariable = '$date') => `
   widgets {
     id name title description type showDatePicker
     headerColor headerTextColor headerAlignment
-    backgroundColor textColor borderColor css settings
+    backgroundColor textColor borderColor css settings translations
     panes { imageUrl title text description values { text value } }
   }
 `;

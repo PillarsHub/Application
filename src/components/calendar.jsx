@@ -1,3 +1,4 @@
+import useWidgetText from '../features/widgets/hooks/useWidgetText.js';
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { Get } from '../hooks/useFetch';
@@ -8,6 +9,7 @@ import "./calendar.css";
 
 
 const Calendar = ({ name }) => {
+  const { widgetText, language } = useWidgetText();
   const currentDate = new Date(Date.now());
   const [show, setShow] = useState(false);
   const [selectedDate, setDate] = useState(currentDate);
@@ -74,7 +76,7 @@ const Calendar = ({ name }) => {
     <div className="calendar" name={name}>
       <div className="front">
         <div className="current-date">
-          <h1>{months[selectedDate.getMonth()]} {selectedDate.getFullYear()}</h1>
+          <h1>{widgetText(months[selectedDate.getMonth()])} {selectedDate.getFullYear()}</h1>
           <div className="btn-group">
             <button className="btn btn-link text-reset btn-icon" onClick={handleLast}>
               <svg xmlns="http://www.w3.org/2000/svg" className="icon icon-tabler icon-tabler-chevron-left" width="24" height="24" viewBox="0 0 24 24" strokeWidth="1" stroke="currentColor" fill="none" strokeLinecap="round" strokeLinejoin="round">
@@ -94,13 +96,13 @@ const Calendar = ({ name }) => {
         <div className="current-month">
           <div className="week-days">
             <div>
-              <span>Su</span>
-              <span>Mo</span>
-              <span>Tu</span>
-              <span>We</span>
-              <span>Th</span>
-              <span>Fr</span>
-              <span>Sa</span>
+              <span>{widgetText("Su")}</span>
+              <span>{widgetText("Mo")}</span>
+              <span>{widgetText("Tu")}</span>
+              <span>{widgetText("We")}</span>
+              <span>{widgetText("Th")}</span>
+              <span>{widgetText("Fr")}</span>
+              <span>{widgetText("Sa")}</span>
             </div>
           </div>
 
@@ -122,7 +124,7 @@ const Calendar = ({ name }) => {
     </div>
 
     <Modal showModal={show} size="md" centered="true" onHide={handleCloseModal}>
-      <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label={widgetText("Close")}></button>
       {selectedEvents && selectedEvents.map((e) => {
 
         const eventStart = new Date(e.date);
@@ -141,24 +143,24 @@ const Calendar = ({ name }) => {
             <dd className="col-11 mb-3">
               <div>
                 {sameDay && <>
-                  {e.date.toLocaleDateString(undefined, optionsL1)}
+                  {e.date.toLocaleDateString(language, optionsL1)}
                 </>}
                 {!sameDay && <>
-                  {e.date.toLocaleDateString(undefined, optionsL3)} @ {e.end && e.date.toLocaleTimeString(undefined, optionsL2)} 
+                  {e.date.toLocaleDateString(language, optionsL3)} @ {e.end && e.date.toLocaleTimeString(language, optionsL2)}
                   {e.end && ' - '}
-                  {e.end.toLocaleDateString(undefined, optionsL3)} @ {e.end && e.end.toLocaleTimeString(undefined, optionsL2)}
+                  {e.end.toLocaleDateString(language, optionsL3)} @ {e.end && e.end.toLocaleTimeString(language, optionsL2)}
                 </>}
               </div>
               <div>
                 {sameDay && <>
-                  {!e.end && 'All Day'}
-                  {e.end && e.date.toLocaleTimeString(undefined, optionsL2)}
+                  {!e.end && widgetText('All Day')}
+                  {e.end && e.date.toLocaleTimeString(language, optionsL2)}
                   {e.end && ' - '}
-                  {e.end && e.end.toLocaleTimeString(undefined, optionsL2)}
+                  {e.end && e.end.toLocaleTimeString(language, optionsL2)}
                 </>}
               </div>
               <div>
-                {e.date.toLocaleDateString(undefined, { day: '2-digit', timeZoneName: 'long' }).slice(4)}
+                {e.date.toLocaleDateString(language, { day: '2-digit', timeZoneName: 'long' }).slice(4)}
               </div>
             </dd>
             {e.address1 && <>

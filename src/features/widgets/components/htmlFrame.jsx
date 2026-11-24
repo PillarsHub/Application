@@ -10,7 +10,7 @@ const generateUUID = () => {
   }
 };
 
-const HtmlFrame = ({ htmlContent, cssContent, data, onQueryVariablesChange }) => {
+const HtmlFrame = ({ htmlContent, cssContent, data, onQueryVariablesChange, language = 'en' }) => {
   const iframeRef = useRef(null);
   const [frameId] = useState(() => 'frame_' + generateUUID());
   const [iframeHeight, setIframeHeight] = useState("150px"); // Default height
@@ -29,11 +29,11 @@ const HtmlFrame = ({ htmlContent, cssContent, data, onQueryVariablesChange }) =>
 
   useEffect(() => {
     setContentVersion(prev => prev + 1);
-  }, [htmlContent, cssContent]);
+  }, [htmlContent, cssContent, language]);
 
   const fullHtml = `
     <!doctype html>
-    <html lang="en" data-bs-theme="light">
+    <html lang="${language}" data-bs-theme="light">
       <head>
         <meta charset="UTF-8" />
         <title>Pillars</title>
@@ -169,6 +169,7 @@ const HtmlFrame = ({ htmlContent, cssContent, data, onQueryVariablesChange }) =>
           window.addEventListener('message', function (event) {
             if (event.data && event.data.type === 'initJavaObject' && event.data.incomingFrameId === '${frameId}') {
               window.myInjectedObject = event.data.payload;
+              window.widgetContext = event.data.payload;
 
               if (typeof onDataReady === 'function' && window.myInjectedObject != null) {
                 onDataReady(window.myInjectedObject);
@@ -242,11 +243,12 @@ const HtmlFrame = ({ htmlContent, cssContent, data, onQueryVariablesChange }) =>
   );
 };
 
-export default HtmlFrame;
+export default React.memo(HtmlFrame);
 
 HtmlFrame.propTypes = {
   htmlContent: PropTypes.string.isRequired,
   cssContent: PropTypes.string.isRequired,
   data: PropTypes.any.isRequired,
-  onQueryVariablesChange: PropTypes.func
+  onQueryVariablesChange: PropTypes.func,
+  language: PropTypes.string
 };

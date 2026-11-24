@@ -1,11 +1,13 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import useWidgetText from '../features/widgets/hooks/useWidgetText.js';
 
 const EmptyContent = ({ title, text, buttonText = '', href = '', onClick }) => {
+  const { widgetText } = useWidgetText();
   return <div className="empty">
-    <p className="empty-title">{title ?? 'Content not found'}</p>
+    <p className="empty-title">{title ?? widgetText('Content not found')}</p>
     <p className="empty-subtitle text-muted">
-      {text ?? 'The content requested cannot be found.'}
+      {text ?? widgetText('The content requested cannot be found.')}
     </p>
     {buttonText && <div className="empty-action">
       {href && <a href={href} className="btn btn-primary">

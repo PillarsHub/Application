@@ -69,6 +69,7 @@ let GET_CUSTOMER = `query ($nodeIds: [String]!, $periodDate: Date!) {
       borderColor
       css
       settings
+      translations
       panes {
         imageUrl
         title

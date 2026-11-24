@@ -1,3 +1,4 @@
+import useWidgetText from '../hooks/useWidgetText.js';
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import PropTypes from "prop-types";
 import { gql, useApolloClient, useLazyQuery } from "@apollo/client";
@@ -142,6 +143,7 @@ const PendingPayoutsWidget = ({
   showNegativeBalanceMessage = false,
   negativeBalanceMessage,
 }) => {
+  const { widgetText } = useWidgetText();
   const [loadUnreleasedPage] = useLazyQuery(GET_UNRELEASED_PAGE, { fetchPolicy: "no-cache" });
   const client = useApolloClient();
 
@@ -311,9 +313,9 @@ const PendingPayoutsWidget = ({
   };
 
   const summaryItems = [
-    { label: "Commission earned", amount: null, hint: "New commissions and commission increases" },
-    { label: "Commission reversals", amount: null, hint: "Reversals of commissions" },
-    { label: "Net payment", amount: totalAmount, hint: "Pending commissions minus commission reversals" },
+    { label: widgetText("Commission earned"), amount: null, hint: widgetText("New commissions and commission increases") },
+    { label: widgetText("Commission reversals"), amount: null, hint: widgetText("Reversals of commissions") },
+    { label: widgetText("Net payment"), amount: totalAmount, hint: widgetText("Pending commissions minus commission reversals") },
   ];
   const showBalanceMessage = showNegativeBalanceMessage && !loadingUnreleased && totalAmount < 0;
   const nothingToShow = !loadingUnreleased && !unreleasedRows.length;
@@ -325,7 +327,7 @@ const PendingPayoutsWidget = ({
 
       {nothingToShow && (
         <div className="card-body pt-2">
-          <EmptyContent title="No pending items" text="No unreleased items were found for this period." />
+          <EmptyContent title={widgetText("No pending items")} text={widgetText("No unreleased items were found for this period.")} />
         </div>
       )}
 
@@ -337,7 +339,7 @@ const PendingPayoutsWidget = ({
               <div key={item.label} className="col-12 col-md-4">
                 <dt className="text-secondary fw-normal">{item.label}</dt>
                 <dd className={`h3 mb-1 ${!loadingUnreleased && item.amount < 0 ? "text-danger" : ""}`}>
-                  {item.amount == null ? <span aria-label="Not available yet">—</span> : loadingUnreleased ? "Loading…" : currency(item.amount)}
+                  {item.amount == null ? <span aria-label={widgetText("Not available yet")}>—</span> : loadingUnreleased ? widgetText("Loading…") : currency(item.amount)}
                 </dd>
                 <div className="small text-secondary">{item.hint}</div>
               </div>
@@ -350,17 +352,17 @@ const PendingPayoutsWidget = ({
             <thead>
               <tr>
                 <th className="w-1"></th>
-                <th>Bonus</th>
-                <th className="d-none d-sm-table-cell">Level</th>
-                <th className="d-none d-md-table-cell">Period</th>
-                <th>Volume</th>
-                <th>Percent</th>
-                <th className="text-end">Pending payment</th>
+                <th>{widgetText("Bonus")}</th>
+                <th className="d-none d-sm-table-cell">{widgetText("Level")}</th>
+                <th className="d-none d-md-table-cell">{widgetText("Period")}</th>
+                <th>{widgetText("Volume")}</th>
+                <th>{widgetText("Percent")}</th>
+                <th className="text-end">{widgetText("Pending payment")}</th>
               </tr>
             </thead>
             <tbody>
               {!loadingUnreleased && !groups.some(hasPendingPayment) && (
-                <tr><td colSpan={7} className="text-center text-secondary py-3">No pending payments or adjustments to display.</td></tr>
+                <tr><td colSpan={7} className="text-center text-secondary py-3">{widgetText("No pending payments or adjustments to display.")}</td></tr>
               )}
               {groups.map((g) => {
                 const isOpen = expanded.has(g.key);
@@ -423,10 +425,10 @@ const PendingPayoutsWidget = ({
                           <td></td>
                           <td colSpan={6} className="p-0">
                             <div className="p-2">
-                              {!cache && <div className="text-muted small mb-2">Loading details…</div>}
+                              {!cache && <div className="text-muted small mb-2">{widgetText("Loading details…")}</div>}
                               {cache?.error && <>
                                 <DataError error={cache.error} />
-                                <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => loadGroupDetails(g)}>Retry details</button>
+                                <button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => loadGroupDetails(g)}>{widgetText("Retry details")}</button>
                               </>}
                               {cache?.loading && <DataLoading />}
 
@@ -435,14 +437,14 @@ const PendingPayoutsWidget = ({
                                   <table className="table table-sm mb-0">
                                     <thead>
                                       <tr>
-                                        <th className="d-none d-md-table-cell">Commission Date</th>
-                                        <th>Order Customer</th>
-                                        <th>Order Number</th>
-                                        <th>Order Date</th>
-                                        <th>Volume</th>
-                                        <th>Percent</th>
-                                        <th>Type</th>
-                                        <th className="text-end">Pending payment</th>
+                                        <th className="d-none d-md-table-cell">{widgetText("Commission Date")}</th>
+                                        <th>{widgetText("Order Customer")}</th>
+                                        <th>{widgetText("Order Number")}</th>
+                                        <th>{widgetText("Order Date")}</th>
+                                        <th>{widgetText("Volume")}</th>
+                                        <th>{widgetText("Percent")}</th>
+                                        <th>{widgetText("Type")}</th>
+                                        <th className="text-end">{widgetText("Pending payment")}</th>
                                       </tr>
                                     </thead>
                                     <tbody>
@@ -450,7 +452,7 @@ const PendingPayoutsWidget = ({
                                         const rowKey = `${g.key}_${child.period?.id ?? "?"}_${idx}`;
                                         const src = child.source || {};
                                         const buyer = src.customer || {};
-                                        const presentation = describePendingCommission(child);
+                                        const presentation = describePendingCommission(child, widgetText);
                                         const childDue = pendingAmount(child);
                                         return (
                                           <tr key={rowKey}>
@@ -485,7 +487,7 @@ const PendingPayoutsWidget = ({
                               )}
 
                               {cache?.items && visibleDetails.length === 0 && !cache.loading && !cache.error && (
-                                <div className="text-muted small">No pending payments or adjustments to display for this group.</div>
+                                <div className="text-muted small">{widgetText("No pending payments or adjustments to display for this group.")}</div>
                               )}
                             </div>
                           </td>
@@ -498,7 +500,7 @@ const PendingPayoutsWidget = ({
             </tbody>
             <tfoot>
               <tr>
-                <td colSpan={6} className="strong">Net pending payment</td>
+                <td colSpan={6} className="strong">{widgetText("Net pending payment")}</td>
                 <td className={`strong text-end ${totalAmount < 0 ? "text-danger" : ""}`}>{currency(totalAmount)}</td>
               </tr>
             </tfoot>

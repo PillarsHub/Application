@@ -1,3 +1,4 @@
+import useWidgetText from '../features/widgets/hooks/useWidgetText.js';
 import React from 'react';
 import PropTypes from 'prop-types';
 import { useQuery, gql } from "@apollo/client";
@@ -40,10 +41,13 @@ var GET_DATA = gql`query ($nodeIds: [String]!, $period: BigInt!) {
 }`;
 
 const EarningsTable = ({ customerId, periodId, overrides }) => {
-  if (periodId == 0) return <></>;
+  const { widgetText } = useWidgetText();
   const { data, loading, error } = useQuery(GET_DATA, {
-    variables: { nodeIds: [customerId], period: parseInt(periodId) },
+    variables: { nodeIds: [customerId], period: parseInt(periodId) || 0 },
+    skip: !periodId || Number(periodId) === 0,
   });
+
+  if (!periodId || Number(periodId) === 0) return <></>;
 
   if (loading) return <DataLoading />;
   if (error) return <DataError error={error} />
@@ -63,20 +67,20 @@ const EarningsTable = ({ customerId, periodId, overrides }) => {
 
   return <>
     {!hasBonuses && <>
-      <EmptyContent title='Bonuses not found' text="No bonuses found for the selected period" />
+      <EmptyContent title={widgetText("Bonuses not found")} text={widgetText("No bonuses found for the selected period")} />
     </>}
     {hasBonuses && <div className="table-responsive">
       <table className="table card-table table-vcenter text-nowrap datatable">
         <thead>
           <tr>
-            <th>Date</th>
-            <th>Bonus Name</th>
-            <th>Level</th>
-            <th>Volume</th>
-            <th>Percent</th>
-            <th>Amount</th>
-            <th>Released</th>
-            <th>Rank</th>
+            <th>{widgetText("Date")}</th>
+            <th>{widgetText("Bonus Name")}</th>
+            <th>{widgetText("Level")}</th>
+            <th>{widgetText("Volume")}</th>
+            <th>{widgetText("Percent")}</th>
+            <th>{widgetText("Amount")}</th>
+            <th>{widgetText("Released")}</th>
+            <th>{widgetText("Rank")}</th>
           </tr>
         </thead>
         <tbody>
@@ -119,7 +123,7 @@ const EarningsTable = ({ customerId, periodId, overrides }) => {
 
             return (
               <tr className="table-light">
-                <td className="strong">Total</td>
+                <td className="strong">{widgetText("Total")}</td>
                 <td></td>
                 <td></td>
                 <td className="strong">{Math.round(totalVolume * 1000) / 1000}</td>

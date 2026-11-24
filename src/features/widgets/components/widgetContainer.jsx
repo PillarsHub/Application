@@ -110,6 +110,7 @@ var GET_CUSTOMER = gql`query ($nodeIds: [String]!, $customerId: String, $periodD
     textColor
     borderColor
     settings
+    translations
     css
     panes {
       imageUrl
@@ -140,6 +141,7 @@ var GET_WIDGETS = gql`query {
     textColor
     borderColor
     settings
+    translations
     css
     panes {
       imageUrl

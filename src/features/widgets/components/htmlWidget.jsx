@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import PropTypes from 'prop-types';
 import Mustache from 'mustache';
 import parse from 'html-react-parser';
@@ -6,6 +6,7 @@ import { parse as parseGraphQL, Kind } from 'graphql';
 import { SendRequest } from '../../../hooks/usePost.js';
 import HtmlFrame from "./htmlFrame.jsx";
 import Pagination from "../../../components/pagination.jsx";
+import useWidgetTranslations from '../hooks/useWidgetTranslations.js';
 
 function getValueByPath(obj, path) {
   if (!obj || !path) return undefined;
@@ -49,7 +50,8 @@ function stripDocumentOnlyTags(htmlContent) {
 }
 
 
-const HtmlWidget = ({ html, customer, widget, date, periodId, isPreview, orderId, order }) => {
+const HtmlWidget = ({ html, customer, widget, date, periodId, isPreview, orderId, order, language: requestedLanguage }) => {
+  const { i18n, language } = useWidgetTranslations(widget?.translations, requestedLanguage);
   var [data, setData] = useState({});
   var [query, setQuery] = useState({});
   var [output, setOutput] = useState('<div>Loading</div>');
@@ -59,7 +61,7 @@ const HtmlWidget = ({ html, customer, widget, date, periodId, isPreview, orderId
   var [totalItemsPath, setTotalItemsPath] = useState();
   var [runtimeVariables, setRuntimeVariables] = useState({});
 
-  const buildGraphQLVariables = () => {
+  const buildGraphQLVariables = useCallback(() => {
     const defaults = pagingData.enabled
       ? { offset: pagingData.offset, count: pagingData.first }
       : { offset: 0, count: 15 };
@@ -72,9 +74,9 @@ const HtmlWidget = ({ html, customer, widget, date, periodId, isPreview, orderId
       ...defaults,
       ...runtimeVariables
     };
-  };
+  }, [customer.id, orderId, periodId, date, pagingData, runtimeVariables]);
 
-  const buildTemplateContext = () => {
+  const buildTemplateContext = useCallback(() => {
     const queryParameters = buildGraphQLVariables();
     return {
       customer,
@@ -82,44 +84,41 @@ const HtmlWidget = ({ html, customer, widget, date, periodId, isPreview, orderId
       orderId,
       order,
       authorizationCode: authCode,
+      i18n,
+      language,
       queryParameters,
       data: { ...data, queryParameters }
     };
-  };
+  }, [buildGraphQLVariables, customer, orderId, order, authCode, i18n, language, data]);
+
+  const pane = widget?.panes?.[0];
+  const usePagination = widget?.settings?.usePagination;
+  const totalPath = widget?.settings?.totalPath;
+  const useAuthorizationCode = widget?.settings?.useAuthorizationCode;
 
   useEffect(() => {
-    if (widget) {
-      let pane = widget.panes ? widget.panes[0] : {};
-      if ((pane.title?.trim() ?? '') != '') {
-        if (pane.title != query.query) {
-          setQuery({ method: pane.imageUrl?.toLowerCase(), query: pane.title });
-          setRuntimeVariables({});
-        }
-      }
+    setQuery({ method: pane?.imageUrl?.toLowerCase(), query: pane?.title ?? '' });
+    setRuntimeVariables({});
+  }, [pane?.title, pane?.imageUrl]);
 
-      var usePagination = widget?.settings?.['usePagination'];
-      if (usePagination) {
-        setPagingData({ enabled: true, offset: 0, first: 10 });
-        setTotalItemsPath(widget?.settings?.['totalPath']); //"customers/nodes/totalNodes")
-      } else {
-        setPagingData({ enabled: false, offset: 0, first: 50 });
-      }
+  useEffect(() => {
+    setPagingData(usePagination ? { enabled: true, offset: 0, first: 10 } : { enabled: false, offset: 0, first: 50 });
+  }, [usePagination]);
 
-      var useAuthCode = widget?.settings?.['useAuthorizationCode'];
-      if (useAuthCode) {
-        if (isPreview) {
-          setAuthCode('PREVIEW_ONLY_AUTH_TOKEN_DO_NOT_USE_FOR_REAL_AUTH')
-        } else {
-          const encodedUsername = encodeURIComponent(customer.emailAddress);
-          SendRequest('GET', `/Authentication/GetAuthorizationCode?username=${encodedUsername}`, {}, (data) => {
-            setAuthCode(data.token)
-          }, () => {
-            setAuthCode('');
-          });
-        }
-      }
+  useEffect(() => { setTotalItemsPath(totalPath); }, [totalPath]);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!useAuthorizationCode) setAuthCode('');
+    else if (isPreview) setAuthCode('PREVIEW_ONLY_AUTH_TOKEN_DO_NOT_USE_FOR_REAL_AUTH');
+    else {
+      const encodedUsername = encodeURIComponent(customer.emailAddress);
+      SendRequest('GET', `/Authentication/GetAuthorizationCode?username=${encodedUsername}`, {}, data => {
+        if (!cancelled) setAuthCode(data.token);
+      }, () => { if (!cancelled) setAuthCode(''); });
     }
-  }, [widget])
+    return () => { cancelled = true; };
+  }, [useAuthorizationCode, isPreview, customer.emailAddress]);
 
   useEffect(() => {
     if (query && query.query) {
@@ -137,7 +136,7 @@ const HtmlWidget = ({ html, customer, widget, date, periodId, isPreview, orderId
       } else if (isLikelyGraphQLQuery(query.query)) {
         const graphQLVariables = buildGraphQLVariables();
         var ttt = { query: query.query, variables: graphQLVariables };
-        SendRequest('POST', 'https://api.pillarshub.com/graphql', ttt, (r) => {
+        SendRequest('POST', '/graphql', ttt, (r) => {
           if (r.errors) {
             setData({ error: JSON.stringify(r.errors) });
           } else {
@@ -155,7 +154,7 @@ const HtmlWidget = ({ html, customer, widget, date, periodId, isPreview, orderId
     } else {
       setData({});
     }
-  }, [query, customer?.id, pagingData, runtimeVariables, date, periodId, orderId])
+  }, [query, customer?.id, pagingData, runtimeVariables, date, periodId, orderId, totalItemsPath])
 
   useEffect(() => {
     if (html) {
@@ -165,8 +164,10 @@ const HtmlWidget = ({ html, customer, widget, date, periodId, isPreview, orderId
       } catch {
         //doNothing
       }
+    } else {
+      setOutput('');
     }
-  }, [html, data, customer, authCode, orderId, order, date, periodId, pagingData, runtimeVariables])
+  }, [html, buildTemplateContext])
 
   const refetch = (pageData) => {
     setPagingData(prev => ({
@@ -191,16 +192,31 @@ const HtmlWidget = ({ html, customer, widget, date, periodId, isPreview, orderId
 
   var useIframe = widget?.settings?.['useIframe'];
 
-  if (useIframe) {
-    var clone = { ...customer, widgets: [], cards: [] };
+  const frameData = useMemo(() => {
+    const clone = { ...customer };
     delete clone.widgets;
     delete clone.cards;
     delete clone.__typename;
+    return { ...buildTemplateContext(), customer: clone };
+  }, [customer, buildTemplateContext]);
+
+  const renderedOutput = useMemo(() => {
+    if (useIframe) return null;
+    try {
+      return <>{parse(stripDocumentOnlyTags(output))}</>;
+    } catch (error) {
+      console.error('Error parsing or rendering output:', error);
+      return <p>Error parsing or rendering output</p>;
+    }
+  }, [output, useIframe]);
+
+  if (useIframe) {
     return <>
       <HtmlFrame
+        language={language}
         htmlContent={output}
         cssContent={widget.css}
-        data={{ ...buildTemplateContext(), customer: clone }}
+        data={frameData}
         onQueryVariablesChange={handleQueryVariablesChange}
       />
       {pagingData.enabled && (
@@ -210,18 +226,6 @@ const HtmlWidget = ({ html, customer, widget, date, periodId, isPreview, orderId
       )}
     </>
   } else {
-    let renderedOutput = null;
-
-    try {
-      // Attempt to parse and render output
-      renderedOutput = <>{parse(stripDocumentOnlyTags(output))}</>;
-    } catch (error) {
-      // Handle parsing or rendering error
-      console.error('Error parsing or rendering output:', error);
-      // Provide a fallback or error message
-      renderedOutput = <p>Error parsing or rendering output</p>;
-    }
-
     return (<>
       {renderedOutput}
       {pagingData.enabled && (
@@ -253,5 +257,6 @@ HtmlWidget.propTypes = {
   html: PropTypes.string.isRequired,
   customer: PropTypes.object.isRequired,
   widget: PropTypes.object.isRequired,
-  isPreview: PropTypes.bool.isRequired
+  isPreview: PropTypes.bool.isRequired,
+  language: PropTypes.string
 }

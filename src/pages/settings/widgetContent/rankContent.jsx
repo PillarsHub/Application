@@ -237,10 +237,13 @@ const RankContent = ({ widget, definitions, updateWidget }) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {editItem?.values && editItem.values.map((value) => {
+                  {editItem?.values && editItem.values.map((value, valueIndex) => {
                     return <tr key={value.value}>
                       <td>{value.value}</td>
-                      <td>{value.text}</td>
+                      <td><input className="form-control" aria-label={`Display text for ${value.value}`} value={value.text ?? ''} onChange={event => {
+                        const text = event.target.value;
+                        setEditItem(current => ({ ...current, values: current.values.map((entry, index) => index === valueIndex ? { ...entry, text } : entry) }));
+                      }} /></td>
                     </tr>
                   })}
                 </tbody>

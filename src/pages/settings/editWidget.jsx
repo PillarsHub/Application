@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom"
 import { useQuery, gql } from "@apollo/client";
 import { SendRequest } from "../../hooks/usePost.js";
@@ -22,6 +22,9 @@ import Switch from "../../components/switch.jsx";
 import { isPageHeaderBackgroundTransparent } from '../../features/widgets/pageHeader.mjs';
 import { useFetch } from '../../hooks/useFetch.js';
 import { isOrderWidget, widgetTypesForPage } from '../../features/widgets/orderPage.mjs';
+import WidgetLanguages from './widgetContent/widgetLanguages.jsx';
+import WidgetLabels from './widgetContent/widgetLabels.jsx';
+import { normalizeTranslations, widgetLanguageLabel } from '../../features/widgets/translations.mjs';
 
 var GET_PREVIEW_DATA = gql`query ($nodeIds: [String]!, $periodDate: Date!) {
   customers(idList: $nodeIds) {
@@ -132,6 +135,10 @@ var GET_DATA = gql`query {
     id
     name
   }
+  languages {
+    iso2
+    name
+  }
 }`
 
 const THEME_COLOR_WIDGET_HEADER = "widgetHeaderColor";
@@ -219,11 +226,21 @@ const EditWidget = () => {
   const [saveSettings, setSaveSettings] = useState();
   const [previewSize] = useState(12);
   const [item, setItem] = useState();
+  const [translationLanguage, setTranslationLanguage] = useState('en');
+  const [previewLanguage, setPreviewLanguage] = useState('en');
   const [showSourceModal, setShowSourceModal] = useState(false);
   const [sourceJson, setSourceJson] = useState("");
   const [sourceError, setSourceError] = useState();
   const [copyState, setCopyState] = useState();
   const [date] = useState(new Date().toISOString());
+  const handleChange = useCallback((name, value) => {
+    setItem(current => ({ ...current, [name]: value }));
+  }, []);
+  const handleTranslationLanguageChange = useCallback(language => {
+    setTranslationLanguage(language);
+    setPreviewLanguage(language);
+  }, []);
+  const handleTranslationsChange = useCallback(value => handleChange('translations', value), [handleChange]);
   const { widget, error } = useWidget(params.widgetId);
   const { data, loading, error: dataError } = useQuery(GET_DATA, {
     variables: {},
@@ -245,10 +262,6 @@ const EditWidget = () => {
   if (error) return `Error! ${error}`;
   if (dataError) return <DataError error={dataError} />
   if (loading) return <DataLoading />
-
-  const handleChange = (name, value) => {
-    setItem((v) => ({ ...v, [name]: value }));
-  }
 
   const handlePageHeaderTransparency = (name, value) => {
     setItem(current => {
@@ -374,6 +387,9 @@ const EditWidget = () => {
                   <li className="nav-item" role="presentation">
                     <a href="#tabs-advanced-7" className="nav-link" data-bs-toggle="tab" aria-selected="false" role="tab" tabIndex="-1">CSS Overrides</a>
                   </li>
+                  <li className="nav-item" role="presentation">
+                    <a href="#tabs-languages-7" className="nav-link" data-bs-toggle="tab" aria-selected="false" role="tab" tabIndex="-1">Translations</a>
+                  </li>
                 </ul>
                 <div className="card-actions">
                   <button type="button" className="btn btn-sm btn-ghost-secondary" onClick={handleOpenSourceModal}>
@@ -441,6 +457,7 @@ const EditWidget = () => {
                     </div>
 
                     <WidgetContent widget={item} updateWidget={setItem} trees={data.trees} definitions={data.compensationPlans} customerTypes={data.customerTypes} page={page ?? (params.pageId ? { id: params.pageId } : undefined)} />
+                    <WidgetLabels type={item?.type} labels={item?.settings?.labels} updateWidget={setItem} />
 
                   </div>
                   <div className="tab-pane" id="tabs-requirements-7" role="tabpanel">
@@ -451,6 +468,9 @@ const EditWidget = () => {
                     <div className="col-12 mb-3">
                       <CssEditor name="css" value={item?.css} onChange={handleChange} />
                     </div>
+                  </div>
+                  <div className="tab-pane" id="tabs-languages-7" role="tabpanel">
+                    <WidgetLanguages translations={item?.translations} languages={data.languages ?? []} language={translationLanguage} onLanguageChange={handleTranslationLanguageChange} onChange={handleTranslationsChange} />
                   </div>
                 </div>
               </div>
@@ -470,6 +490,15 @@ const EditWidget = () => {
             <div className="card-header">
               <h4 className="card-title">Widget Preview</h4>
             </div>
+            <div className="card-header">
+              <div className="w-100">
+                <label className="form-label" htmlFor="widget-preview-language">Preview language</label>
+                <select id="widget-preview-language" className="form-select" value={previewLanguage} onChange={event => setPreviewLanguage(event.target.value)}>
+                  <option value="">Automatic (browser language)</option>
+                  {[...new Set(['en', ...Object.keys(normalizeTranslations(item?.translations)), previewLanguage])].filter(Boolean).map(tag => <option key={tag} value={tag}>{widgetLanguageLabel(tag, data.languages ?? [])}</option>)}
+                </select>
+              </div>
+            </div>
             {!isOrderWidget(item?.type) && <div className="card-header">
               <div className="w-100">
                 <AutoComplete name="customerId" value={previewId} placeholder="Widget preview customer" onChange={handlePreviewChange} allowNull={true} showClear={true} />
@@ -477,7 +506,7 @@ const EditWidget = () => {
             </div>}
             <div className="p-2">
               <div className={`col-${previewSize}`}>
-                {item && <Widget widget={item} trees={previewData?.trees ?? data?.trees} customer={previewData?.customer} compensationPlans={previewData?.compensationPlans} isPreview={isPreview} date={date} page={page ?? (params.pageId ? { id: params.pageId } : undefined)} />}
+                {item && <Widget widget={item} language={previewLanguage} trees={previewData?.trees ?? data?.trees} customer={previewData?.customer} compensationPlans={previewData?.compensationPlans} isPreview={isPreview} date={date} page={page ?? (params.pageId ? { id: params.pageId } : undefined)} />}
               </div>
             </div>
           </div>

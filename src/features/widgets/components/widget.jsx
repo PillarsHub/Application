@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import PropTypes from 'prop-types';
 import { v4 as uuidv4 } from 'uuid'; // Using uuid library for fallback
 import { useQuery, gql } from "@apollo/client";
@@ -33,6 +33,9 @@ import CardWidget from "./cardWidget.jsx";
 import CarouselWidget from "./carouselWidget.jsx";
 import PayoutsWidget from "./payoutsWidget.jsx";
 import PendingPayoutsWidget from "./pendingPayoutsWidget.jsx";
+import useWidgetTranslations from '../hooks/useWidgetTranslations.js';
+import { createWidgetText, localizeWidget } from '../widgetText.mjs';
+import useWidgetText, { WidgetTextContext } from '../hooks/useWidgetText.js';
 
 var GET_CUSTOMER = gql`query ($nodeIds: [String]!, $periodDate: Date!) {
   customers(idList: $nodeIds) {
@@ -110,7 +113,44 @@ const generateUUID = () => {
   }
 };
 
-const Widget = ({ widget, customer, compensationPlans, trees, isPreview = false, date, setDate, periodId, supressQuery = false, orderContext, page }) => {
+const previewCompensationPlans = [{
+  period: {
+    begin: new Date().toISOString(), rankAdvance: [{
+      nodeId: 'EX456', rankId: 10, rankName: 'Example Rank', requirements: [{
+        conditions: [
+          { valueId: 'Personal Volume', value: 17, required: 20 },
+          { valueId: 'Group Volume', value: 90, required: 200 },
+          { valueId: 'Team Volume', value: 1250, required: 1250 }
+        ]
+      }]
+    }]
+  }
+}];
+
+const previewCustomer = {
+  id: 'EX456', fullName: 'Example Customer', profileImage: '', customerType: { name: 'Customer' }, status: { name: 'Active', statusClass: 'Active' },
+  emailAddress: 'example@pillarshub.com', language: 'en',
+  phoneNumbers: [{ type: 'Mobile', number: '(555) 555-5555' }, { type: 'Work', number: '(333) 333-3333' }],
+  addresses: [{ type: 'Shipping', line1: '', line2: '', line3: '', city: '', stateCode: '', zip: '', countryCode: '' }],
+  cards: [{ values: [{ valueName: 'Example', valueId: 'Ex', value: '22' }, { valueName: 'Rank', valueId: 'Rank', value: '10' }, { valueName: 'High Rank', valueId: 'HighRank', value: '10' }] }]
+};
+const previewSocialMedia = SocialMediaPlatforms.map(platform => ({ name: platform.name, value: 'preview' }));
+
+const Widget = props => {
+  const { i18n, language } = useWidgetTranslations(props.widget?.translations, props.language);
+  const { title, settings } = props.widget ?? {};
+  // Some editors update pane arrays in place, so a new widget must resolve its text again.
+  const displayWidget = useMemo(() => localizeWidget(props.widget, i18n), [props.widget, i18n]);
+  const labels = settings?.labels;
+  const textContext = useMemo(() => ({ widgetText: createWidgetText({ settings: { labels } }, i18n), language, sourceTitle: title }), [labels, title, i18n, language]);
+  return <WidgetTextContext.Provider value={textContext}>
+    <WidgetView {...props} widget={displayWidget} originalWidget={props.widget} />
+  </WidgetTextContext.Provider>;
+};
+
+const WidgetView = ({ widget, originalWidget, customer, compensationPlans, trees, isPreview = false, date, setDate, periodId, supressQuery = false, orderContext, page, language }) => {
+  const { widgetText } = useWidgetText();
+  const title = widget?.title;
   const [wDate, setWDate] = useState(date);
   const [loading, setLoading] = useState(false);
   const [sCustomer, setSCustomer] = useState(customer);
@@ -118,6 +158,12 @@ const Widget = ({ widget, customer, compensationPlans, trees, isPreview = false,
   const [widgetValues, setWidgetValues] = useState(date);
 
   const [widgetId] = useState(() => 'wd_' + generateUUID());
+
+  const contentCustomer = useMemo(() => {
+    const source = sCustomer ?? previewCustomer;
+    return isPreview ? { ...source, socialMedia: previewSocialMedia } : source;
+  }, [sCustomer, isPreview]);
+  const contentTrees = useMemo(() => isPreview ? trees?.map(tree => ({ ...tree, nodes: [{ upline: { fullName: 'Example Customer' } }] })) : trees, [trees, isPreview]);
 
   const { refetch } = useQuery(GET_CUSTOMER, {
     variables: { nodeIds: [customer?.id], periodDate: date },
@@ -176,7 +222,7 @@ const Widget = ({ widget, customer, compensationPlans, trees, isPreview = false,
         setWidgetValues();
       }
     }
-  }, [widget])
+  }, [originalWidget?.type, originalWidget?.showDatePicker, originalWidget?.settings, supressQuery])
 
   useEffect(() => {
     setSCompPlan(compensationPlans);
@@ -229,8 +275,8 @@ const Widget = ({ widget, customer, compensationPlans, trees, isPreview = false,
   return <div style={{ display: "contents" }} className={widgetId}>
     <style dangerouslySetInnerHTML={styleTag} />
     <div className={`card widget-card h-100 ${isPreview ? '' : ''}`} style={inlineStyle}>
-    {widget.type !== WidgetTypes.OrderSummary && widget.type !== WidgetTypes.OrderPayments && (widget.title || widget.showDatePicker) && <div className="card-header" style={{ backgroundColor: (widget?.headerColor ?? 'var(--ph-widget-header-bg, #ffffff)') }}>
-      <h3 className={`card-title ${msStyle} ${meStyle}`}>{widget.title}</h3>
+    {widget.type !== WidgetTypes.OrderSummary && widget.type !== WidgetTypes.OrderPayments && (title || widget.showDatePicker) && <div className="card-header" style={{ backgroundColor: (widget?.headerColor ?? 'var(--ph-widget-header-bg, #ffffff)') }}>
+      <h3 className={`card-title ${msStyle} ${meStyle}`}>{title}</h3>
       {widget.showDatePicker && !supressQuery && widget.type != WidgetTypes.Earnings && <>
         <div className="card-actions">
           <PeriodDatePicker name="date" value={wDate} onChange={handleDateChange} />
@@ -253,53 +299,21 @@ const Widget = ({ widget, customer, compensationPlans, trees, isPreview = false,
       </>}
 
     </div>}
-    {Content(widget, wDate, sCustomer, sCompPlan, trees, isPreview, widgetValues, loading, context)}
+    {Content(widget.type === WidgetTypes.Html ? originalWidget : widget, wDate, contentCustomer, sCompPlan, contentTrees, isPreview, widgetValues, loading, context, language, widgetText)}
   </div></div>
 }
 
-function Content(widget, date, customer, compensationPlans, trees, isPreview, widgetValues, loading, orderContext) {
+function Content(widget, date, customer, compensationPlans, trees, isPreview, widgetValues, loading, orderContext, language, widgetText) {
   if (isOrderWidget(widget.type)) {
-    if (!orderContext?.order) return <EmptyContent title="Order required" text="Add this widget to an Order page to display the selected order." />;
+    if (!orderContext?.order) return <EmptyContent title={widgetText('Order required')} text={widgetText('Add this widget to an Order page to display the selected order.')} />;
     const props = { context: orderContext, widget, isPreview };
     if (widget.type === orderWidgetTypes.OrderSummary) return <OrderSummaryWidget {...props} />;
     if (widget.type === orderWidgetTypes.OrderPayments) return <OrderPaymentsWidget {...props} />;
     if (widget.type === orderWidgetTypes.OrderCommissions) return <OrderCommissionsWidget {...props} />;
     return <OrderInvoiceWidget {...props} />;
   }
-  if (!compensationPlans) {
-    const periodBegin = new Date().toISOString().split('.')[0] + 'Z';
-    compensationPlans = [{
-      period: {
-        begin: periodBegin, rankAdvance: [{
-          nodeId: 'EX456', rankId: 10, rankName: 'Example Rank', requirements: [{
-            conditions: [
-              { valueId: "Personal Volume", value: 17, required: 20 },
-              { valueId: "Group Volume", value: 90, required: 200 },
-              { valueId: "Team Volume", value: 1250, required: 1250 }
-            ]
-          }]
-        }]
-      }
-    }]
-  }
-
-  if (!customer) {
-    customer = {
-      id: "EX456", fullName: 'Example Customer', profileImage: '', customerType: { name: 'Customer' }, status: { name: 'Active', statusClass: "Active" },
-      emailAddress: 'example@pillarshub.com', language: "en",
-      phoneNumbers: [{ type: 'Mobile', number: '(555) 555-5555' }, { type: 'Work', number: '(333) 333-3333' }],
-      addresses: [{ type: "Shipping", line1: '', line2: '', line3: '', city: '', stateCode: '', zip: '', countryCode: '' }],
-      cards: [{ values: [{ valueName: 'Example', valueId: 'Ex', value: '22' }, { valueName: 'Rank', valueId: 'Rank', value: '10' }, { valueName: 'High Rank', valueId: 'HighRank', value: '10' }] }]
-    }
-  }
-
-  if (isPreview) {
-    trees = trees?.map((tree) => ({
-      ...tree,
-      nodes: [{ upline: { fullName: 'Example Customer' } }]
-    }))
-
-    customer = { ...customer, socialMedia: SocialMediaPlatforms.map((p) => ({ name: p.name, value: 'preview' })) };
+  if (!compensationPlans || (isPreview && !compensationPlans.some?.(plan => plan.period?.length))) {
+    compensationPlans = previewCompensationPlans;
   }
 
 
@@ -312,14 +326,14 @@ function Content(widget, date, customer, compensationPlans, trees, isPreview, wi
   if (widget.type == WidgetTypes.Card) {
     var values = [
       ...(customer.cards[0]?.values || []),
-      { valueName: "Customer Name", valueId: "FullName", value: customer.fullName },
-      { valueName: "Customer Type", valueId: "CustType", value: customer.customerType.name },
-      { valueName: "Status", valueId: "Status", value: customer.status.name },
-      { valueName: "Email", valueId: "Email", value: customer.emailAddress },
-      { valueName: "Handle", valueId: "Handle", value: customer.webAlias ?? customer.id },
-      { valueName: "Enroll Date", valueId: "EnrollDate", value: ToLocalDate(customer.enrollDate, true) },
-      { valueName: "Enroll Date + Time", valueId: "EnrollDateTime", value: ToLocalDate(customer.enrollDate, false) },
-      { valueName: "Phone", valueId: "Phone", value: customer.phoneNumbers && customer.phoneNumbers.length > 0 ? customer.phoneNumbers[0].number : '' }
+      { valueName: widgetText("Customer Name"), valueId: "FullName", value: customer.fullName },
+      { valueName: widgetText("Customer Type"), valueId: "CustType", value: customer.customerType.name },
+      { valueName: widgetText("Status"), valueId: "Status", value: customer.status.name },
+      { valueName: widgetText("Email"), valueId: "Email", value: customer.emailAddress },
+      { valueName: widgetText("Handle"), valueId: "Handle", value: customer.webAlias ?? customer.id },
+      { valueName: widgetText("Enroll Date"), valueId: "EnrollDate", value: ToLocalDate(customer.enrollDate, true) },
+      { valueName: widgetText("Enroll Date + Time"), valueId: "EnrollDateTime", value: ToLocalDate(customer.enrollDate, false) },
+      { valueName: widgetText("Phone"), valueId: "Phone", value: customer.phoneNumbers && customer.phoneNumbers.length > 0 ? customer.phoneNumbers[0].number : '' }
     ];
 
     var compact = (widget?.settings?.['compact'] ?? false);
@@ -402,7 +416,7 @@ function Content(widget, date, customer, compensationPlans, trees, isPreview, wi
 
         {!customer.socialMedia?.some(item => item.value) && <>
           <div className="empty">
-            <p className="empty-title">No Social Links Configured</p>
+            <p className="empty-title">{widgetText('No Social Links Configured')}</p>
           </div>
         </>}
 
@@ -425,7 +439,7 @@ function Content(widget, date, customer, compensationPlans, trees, isPreview, wi
 
   if (widget.type == WidgetTypes.Html) {
     const html = widget.panes ? widget.panes[0]?.text : '';
-    return <HtmlWidget orderId={orderContext?.orderId} order={orderContext?.order} html={html} customer={customer} widget={widget} date={date} periodId={widgetValues?.periodId} isPreview={isPreview} />
+    return <HtmlWidget orderId={orderContext?.orderId} order={orderContext?.order} html={html} customer={customer} widget={widget} date={date} periodId={widgetValues?.periodId} isPreview={isPreview} language={language} />
   }
 
   if (widget.type == WidgetTypes.Earnings) {
@@ -436,17 +450,14 @@ function Content(widget, date, customer, compensationPlans, trees, isPreview, wi
   }
 
   if (widget.type == WidgetTypes.Payouts) {
-    var payoutOverrides = widget.panes?.map((p) => ({ title: p.title, display: p.text, show: p.imageUrl.toLowerCase() == 'true' }));
-    return <PayoutsWidget customerId={customer.id} date={date} overrides={payoutOverrides} />
+    return <PayoutsWidget customerId={customer.id} date={date} />
   }
 
   if (widget.type == WidgetTypes.PendingPayouts) {
-    var pendingOverrides = widget.panes?.map((p) => ({ title: p.title, display: p.text, show: p.imageUrl.toLowerCase() == 'true' }));
     return <PendingPayoutsWidget
       customerId={customer.id}
       date={date}
       isPreview={isPreview}
-      overrides={pendingOverrides}
       showCommissionSummary={widget?.settings?.showCommissionSummary ?? false}
       showNegativeBalanceMessage={widget?.settings?.showNegativeBalanceMessage ?? false}
       negativeBalanceMessage={widget?.settings?.negativeBalanceMessage}
@@ -480,5 +491,8 @@ Widget.propTypes = {
   supressQuery: PropTypes.bool,
   orderContext: PropTypes.object,
   page: PropTypes.object,
-  periodId: PropTypes.number
+  periodId: PropTypes.number,
+  language: PropTypes.string
 }
+
+WidgetView.propTypes = { ...Widget.propTypes, originalWidget: PropTypes.object };

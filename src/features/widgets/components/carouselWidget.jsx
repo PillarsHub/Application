@@ -1,9 +1,11 @@
+import useWidgetText from '../hooks/useWidgetText.js';
 import React, { useState } from "react";
 import PropTypes from 'prop-types';
 import { v4 as uuidv4 } from 'uuid'; // Using uuid library for fallback
 import EmptyContent from "../../../components/emptyContent";
 
 const CarouselWidget = ({ widget }) => {
+  const { widgetText } = useWidgetText();
   const [carouselId] = useState(() => 'carousel_' + generateUUID());
 
   return <>
@@ -16,7 +18,7 @@ const CarouselWidget = ({ widget }) => {
         {widget.panes && widget.panes.map((p, index) => {
           let active = index === 0; // Set 'active' to true for the first item
           return (
-            <div key={p.title} className={`carousel-item ${active ? 'active' : ''}`}>
+            <div key={p.id ?? index} className={`carousel-item ${active ? 'active' : ''}`}>
               <div className="image-container">
                 <img className="img-fluid" alt="" src={p.imageUrl} />
               </div>
@@ -32,11 +34,11 @@ const CarouselWidget = ({ widget }) => {
       {widget.panes && widget.panes.length > 1 && <>
         <a className="carousel-control-prev" href={`#${carouselId}`} role="button" data-bs-slide="prev">
           <span className="carousel-control-prev-icon" aria-hidden="true"></span>
-          <span className="visually-hidden">Previous</span>
+          <span className="visually-hidden">{widgetText("Previous")}</span>
         </a>
         <a className="carousel-control-next" href={`#${carouselId}`} role="button" data-bs-slide="next">
           <span className="carousel-control-next-icon" aria-hidden="true"></span>
-          <span className="visually-hidden">Next</span>
+          <span className="visually-hidden">{widgetText("Next")}</span>
         </a>
       </>}
     </div>

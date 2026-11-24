@@ -1,3 +1,4 @@
+import useWidgetText from '../hooks/useWidgetText.js';
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { GetScope } from '../../authentication/hooks/useToken.jsx';
@@ -6,6 +7,7 @@ import { getInvoiceTotalRows } from '../invoiceTotals.mjs';
 import OrderDetailBonuses from '../../../pages/customers/orderDetailBonuses.jsx';
 
 export default function OrderInvoiceWidget({ context, widget, isPreview }) {
+  const { widgetText } = useWidgetText();
   const [tab, setTab] = useState('details');
   const { order, customer, countries, customerId } = context;
   const settings = widget.settings ?? {};
@@ -17,10 +19,10 @@ export default function OrderInvoiceWidget({ context, widget, isPreview }) {
   return <>
     {canViewCommissions && <div className="card-header bg-light">
       <ul className="nav nav-tabs card-header-tabs nav-fill" role="tablist">
-        {['details', 'commissions'].map(name => <li className="nav-item" key={name}><button type="button" role="tab" aria-selected={tab === name} className={`nav-link ${tab === name ? 'active' : ''}`} onClick={() => setTab(name)}>{name === 'details' ? 'Details' : 'Commissions'}</button></li>)}
+        {['details', 'commissions'].map(name => <li className="nav-item" key={name}><button type="button" role="tab" aria-selected={tab === name} className={`nav-link ${tab === name ? 'active' : ''}`} onClick={() => setTab(name)}>{name === 'details' ? widgetText('Details') : widgetText('Commissions')}</button></li>)}
       </ul>
     </div>}
-    {tab === 'commissions' && canViewCommissions ? (isPreview ? <div className="card-body text-muted">Commission details appear here for this order.</div> : <OrderDetailBonuses orderId={order.id} />) : <div className="card-body">
+    {tab === 'commissions' && canViewCommissions ? (isPreview ? <div className="card-body text-muted">{widgetText("Commission details appear here for this order.")}</div> : <OrderDetailBonuses orderId={order.id} />) : <div className="card-body">
       {settings.showShippingAddress !== false && <div className="mb-3">
         <p className="h3 mb-2">{order.shipTo ?? customer?.fullName}</p>
         <address>{[address?.line1, address?.line2, address?.line3].filter(Boolean).map((line, i) => <React.Fragment key={i}>{line}<br /></React.Fragment>)}
@@ -29,20 +31,20 @@ export default function OrderInvoiceWidget({ context, widget, isPreview }) {
         </address>
       </div>}
       <div className="table-responsive"><table className="table table-transparent align-middle">
-        <thead><tr><th>Product</th><th className="text-center">Qty</th><th className="text-end">Unit Price</th><th className="text-end">Amount</th></tr></thead>
+        <thead><tr><th>{widgetText("Product")}</th><th className="text-center">{widgetText("Qty")}</th><th className="text-end">{widgetText("Unit Price")}</th><th className="text-end">{widgetText("Amount")}</th></tr></thead>
         <tbody>
           {(order.lineItems ?? []).map((item, index) => <tr key={`${item.productId}-${index}`}>
             <td>{item.description}</td><td className="text-center">{item.quantity}</td><td className="text-end">{money(item.price)}</td><td className="text-end">{money(Number(item.price ?? 0) * Number(item.quantity ?? 0))}</td>
           </tr>)}
-          {!order.lineItems?.length && <tr><td colSpan="4" className="text-muted text-center py-4">No line items on this order.</td></tr>}
+          {!order.lineItems?.length && <tr><td colSpan="4" className="text-muted text-center py-4">{widgetText("No line items on this order.")}</td></tr>}
         </tbody>
         <tbody className="order-invoice-totals">
           {settings.spaceBeforeTotals === true && <tr aria-hidden="true"><td colSpan="4" className="p-0 border-0" style={{ height: '1rem' }} /></tr>}
           {getInvoiceTotalRows(order, settings).map(row => totalRow(row.label, row.value, row.className, row.id))}
-          {totalRow('Invoice Total', totals.invoiceTotal, 'table-light')}
+          {totalRow(widgetText('Invoice Total'), totals.invoiceTotal, 'table-light')}
           {settings.showBalance !== false && <>
-            {totalRow('Total Paid', totals.totalPaid)}
-            {totalRow(totals.balanceDue <= 0 ? 'Credit' : 'Balance Due', Math.abs(totals.balanceDue), totals.balanceDue <= 0 ? 'table-success' : 'table-warning')}
+            {totalRow(widgetText('Total Paid'), totals.totalPaid)}
+            {totalRow(totals.balanceDue <= 0 ? widgetText('Credit') : widgetText('Balance Due'), Math.abs(totals.balanceDue), totals.balanceDue <= 0 ? 'table-success' : 'table-warning')}
           </>}
         </tbody>
       </table></div>

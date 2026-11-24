@@ -1,3 +1,4 @@
+import useWidgetText from '../features/widgets/hooks/useWidgetText.js';
 import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useQuery, gql } from "@apollo/client";
@@ -42,6 +43,7 @@ var GET_HIGH_RANK = gql`query ($nodeIds: [String]!) {
 }`;
 
 const RankAdvance = ({ currentRank, ranks, valueMap, period, options, isPreview }) => {
+  const { widgetText } = useWidgetText();
   const [initRanks, setInitRanks] = useState();
   const [lastRanks, setLastRanks] = useState();
   const [lastRankId, setLastRankId] = useState();
@@ -93,7 +95,7 @@ const RankAdvance = ({ currentRank, ranks, valueMap, period, options, isPreview 
   }, [ranks, currentRank])
 
   if (loading) return <DataLoading />
-  if (!activeRank) return <><EmptyContent title="No ranks found" text="Ranks are not available at the moment." />
+  if (!activeRank) return <><EmptyContent title={widgetText("No ranks found")} text={widgetText("Ranks are not available at the moment.")} />
     <div className="mb-3">{JSON.stringify(currentRank)}</div>
     <div className="mb-3">{JSON.stringify(activeRanks)}</div>
     <div className="mb-3">{JSON.stringify(activeRank)}</div>
@@ -346,13 +348,13 @@ const RankAdvance = ({ currentRank, ranks, valueMap, period, options, isPreview 
     {options.tabs > 0 && <div className="card-header">
       <ul className="nav nav-tabs card-header-tabs nav-fill" data-bs-toggle="tabs" role="tablist">
         <li className="nav-item" role="presentation">
-          <button className={`nav-link ${activeTab == 1 ? 'active' : ''}`} onClick={() => handlePeriodChange(1)}>Current Period</button>
+          <button className={`nav-link ${activeTab == 1 ? 'active' : ''}`} onClick={() => handlePeriodChange(1)}>{widgetText("Current Period")}</button>
         </li>
         {(options.tabs == 1 || options.tabs == 2) && <li className="nav-item" role="presentation">
-          <button className={`nav-link ${activeTab == 2 ? 'active' : ''}`} onClick={() => handlePeriodChange(2)}>Last Period</button>
+          <button className={`nav-link ${activeTab == 2 ? 'active' : ''}`} onClick={() => handlePeriodChange(2)}>{widgetText("Last Period")}</button>
         </li>}
         {(options.tabs == 1 || options.tabs == 3) && <li className="nav-item" role="presentation">
-          <button className={`nav-link ${activeTab == 3 ? 'active' : ''}`} onClick={() => setActiveTab(3)}>High Rank</button>
+          <button className={`nav-link ${activeTab == 3 ? 'active' : ''}`} onClick={() => setActiveTab(3)}>{widgetText("High Rank")}</button>
         </li>}
       </ul>
     </div>}
@@ -427,9 +429,9 @@ const RankAdvance = ({ currentRank, ranks, valueMap, period, options, isPreview 
       activeTab !== 3 && options.reqs == 1 && <table className="table card-table table-vcenter">
         <thead>
           <tr>
-            <th>Requirement</th>
-            <th>Current</th>
-            <th>Required</th>
+            <th>{widgetText("Requirement")}</th>
+            <th>{widgetText("Current")}</th>
+            <th>{widgetText("Required")}</th>
             {options.showItemPercent && <th></th>}
           </tr>
         </thead>
@@ -445,7 +447,7 @@ const RankAdvance = ({ currentRank, ranks, valueMap, period, options, isPreview 
                   {value?.text ?? condition.valueId}
                 </td>
                 <td>{truncateDecimals(condition.value, value?.values, 0)}</td>
-                <td>{!hasMap && <span>{getRankRequirements(condition, true)}</span>}</td>
+                <td>{!hasMap && <span>{getRankRequirements(condition, true, widgetText)}</span>}</td>
                 {options.showItemPercent && <td className="w-25">
                   <div className="progress progress-xs">
                     <div className="progress-bar bg-primary" style={{ width: percent + '%' }} ></div>
@@ -471,10 +473,10 @@ const RankAdvance = ({ currentRank, ranks, valueMap, period, options, isPreview 
             return <div key={condition.valueId} className="mb-2">
               <div className="row">
                 <div className="col">
-                  <label className="form-label">{value?.text ?? condition.valueId} {getCapText(condition)}</label>
+                  <label className="form-label">{value?.text ?? condition.valueId} {getCapText(condition, widgetText)}</label>
                 </div>
                 <div className="col-auto text-end">
-                  {truncateDecimals(condition.value, value?.values, 0)} {!hasMap && <span>/ {getRankRequirements(condition, false)}</span>}
+                  {truncateDecimals(condition.value, value?.values, 0)} {!hasMap && <span>/ {getRankRequirements(condition, false, widgetText)}</span>}
                 </div>
                 {options.showItemPercent && <div className="col-12">
                   <div className="progress progress-sm">
@@ -492,7 +494,7 @@ const RankAdvance = ({ currentRank, ranks, valueMap, period, options, isPreview 
       activeTab !== 3 && options.reqs == 3 && <div className="card-footer">
         <div className="row align-items-center">
           <div className="col">
-            <button className="btn btn-ligth w-100" onClick={handleShowReqModal}>View Requirements</button>
+            <button className="btn btn-ligth w-100" onClick={handleShowReqModal}>{widgetText("View Requirements")}</button>
           </div>
           <div className="col-auto ms-auto">
 
@@ -501,7 +503,7 @@ const RankAdvance = ({ currentRank, ranks, valueMap, period, options, isPreview 
         <Modal showModal={showReqModal} size="sm" centered={true} onHide={handleHideReqModal}>
           <div className="modal-header">
             <h5 className="modal-title">{activeRank.rankName}{options.showRankId ? ` (${activeRank.rankId})` : ''}</h5>
-            <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label={widgetText("Close")}></button>
           </div>
           <div className="modal-body">
             {activeRank.requirements && activeRank.requirements.map((requirement) => {
@@ -516,10 +518,10 @@ const RankAdvance = ({ currentRank, ranks, valueMap, period, options, isPreview 
                 return <div key={condition.valueId} className="mb-2">
                   <div className="row">
                     <div className="col">
-                      <label className="form-label">{value?.text ?? condition.valueId} {getCapText(condition)}</label>
+                      <label className="form-label">{value?.text ?? condition.valueId} {getCapText(condition, widgetText)}</label>
                     </div>
                     <div className="col-auto text-end">
-                      {truncateDecimals(condition.value, value?.values, 0)} {!hasMap && <span>/ {getRankRequirements(condition, false)}</span>}
+                      {truncateDecimals(condition.value, value?.values, 0)} {!hasMap && <span>/ {getRankRequirements(condition, false, widgetText)}</span>}
                     </div>
                     {options.showItemPercent && <div className="col-12">
                       <div className="progress">
@@ -542,7 +544,7 @@ const RankAdvance = ({ currentRank, ranks, valueMap, period, options, isPreview 
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="icon-xl icon icon-tabler icons-tabler-outline icon-tabler-award"><path stroke="none" d="M0 0h24v24H0z" fill="none" /><path d="M12 9m-6 0a6 6 0 1 0 12 0a6 6 0 1 0 -12 0" /><path d="M12 15l3.4 5.89l1.598 -3.233l3.598 .232l-3.4 -5.889" /><path d="M6.802 12l-3.4 5.89l3.598 -.233l1.598 3.232l3.4 -5.889" /></svg>
           </span>
           {highRank && <p className="empty-title">{highRank.rankName}{options.showRankId ? ` (${highRank.rankId})` : ''}</p>}
-          {!highRank && <p className="empty-title">Your highest rank will be shown here when earned.</p>}
+          {!highRank && <p className="empty-title">{widgetText("Your highest rank will be shown here when earned.")}</p>}
         </div>
       </>
     }
@@ -556,7 +558,7 @@ function truncateDecimals(number, valueMap, digits) {
   var result = truncatedNum / multiplier;
 
   if (valueMap && valueMap.length > 0) {
-    var mapped = valueMap.find(entry => entry.value === result.toString());
+    var mapped = valueMap.find(entry => String(entry.value) === result.toString());
     if (mapped) {
       return mapped.text;
     }
@@ -612,10 +614,10 @@ function getPercent(x, y) {
   return Math.trunc(percent * 10, 0) / 10;
 }
 
-function getRankRequirements(condition, showPercent) {
+function getRankRequirements(condition, showPercent, widgetText) {
   if (condition.legCap > 0 && showPercent) {
     let percent = (condition.legCap / condition.required) * 100;
-    return <>{condition.required.toLocaleString("en-US")} <span className="text-muted small lh-base-muted"> {percent}% cap</span></>
+    return <>{condition.required.toLocaleString("en-US")} <span className="text-muted small lh-base-muted"> {widgetText("{percent}% cap", { percent })}</span></>
   }
 
   if (condition.legCap > 0 && !showPercent) {
@@ -623,16 +625,16 @@ function getRankRequirements(condition, showPercent) {
   }
 
   if (condition.legValue > 0) {
-    return <>{condition.required.toLocaleString("en-US")} <span className="text-muted small lh-base-muted"> legs with </span>{condition.legValue.toLocaleString("en-US")}</>
+    return <span className="text-muted small lh-base-muted">{widgetText("{count} legs with {value}", { count: condition.required.toLocaleString("en-US"), value: condition.legValue.toLocaleString("en-US") })}</span>
   }
 
   return <>{condition.required.toLocaleString("en-US")}</>
 }
 
-function getCapText(condition) {
+function getCapText(condition, widgetText) {
   if (condition.legCap > 0) {
     let percent = (condition.legCap / condition.required) * 100;
-    return <span className="text-muted small lh-base-muted"> {percent}% cap</span>
+    return <span className="text-muted small lh-base-muted"> {widgetText("{percent}% cap", { percent })}</span>
   }
   return <></>
 }

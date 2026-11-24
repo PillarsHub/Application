@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useQuery, gql } from "@apollo/client";
 import PropTypes from 'prop-types';
 import { ToLocalDate, FormatDate } from "../util/LocalDate";
+import useWidgetText from '../features/widgets/hooks/useWidgetText.js';
 
 const GET_PERIOD_DETAILS = gql`
   query ($date: Date!) {
@@ -19,6 +20,7 @@ const GET_PERIOD_DETAILS = gql`
 `;
 
 const PeriodPicker = ({ periodId, setPeriodId, options, disabled = false }) => {
+  const { widgetText } = useWidgetText();
   const currentDate = new Date(Date.now());
   const isoDate = currentDate.toISOString();
   const dateOnly = isoDate.split('T')[0];
@@ -118,7 +120,7 @@ const PeriodPicker = ({ periodId, setPeriodId, options, disabled = false }) => {
   }
 
   if (loading) return <span>-</span>;
-  if (error) return `Error! ${error}`;
+  if (error) return widgetText('Error! {error}', { error });
   if (!localData) return <span>-</span>;
 
   if (opts.tabbedUI) {
@@ -146,7 +148,7 @@ const PeriodPicker = ({ periodId, setPeriodId, options, disabled = false }) => {
                     return <button type="button" key={period.id} className={`dropdown-item ${period.id == periodId ? 'active' : ''}`} disabled={disabled} onClick={() => setPeriodId(period.id, true, period, activePlan)}>
                       <div className="d-block">
                         <div>{formatDate(period.begin, opts.hideTime)}</div>
-                        {!opts.hideEnd && <div className="small text-muted">to {formatDate(period.end, opts.hideTime)}</div>}
+                        {!opts.hideEnd && <div className="small text-muted">{widgetText('to {date}', { date: formatDate(period.end, opts.hideTime) })}</div>}
                       </div>
                     </button>
                   }
@@ -177,7 +179,7 @@ const PeriodPicker = ({ periodId, setPeriodId, options, disabled = false }) => {
 };
 
 function getOptions(plan, formatDate, opts) {
-  const periods = [...plan.periods].sort((a, b) => new Date(b.end) - new Date(a.end));
+  const periods = [...(plan?.periods ?? [])].sort((a, b) => new Date(b.end) - new Date(a.end));
   return (
     periods &&
     periods.map((period) => {

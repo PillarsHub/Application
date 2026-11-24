@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import PropTypes from "prop-types";
 import CodeMirror from "@uiw/react-codemirror";
 import { basicSetup } from "@uiw/codemirror-extensions-basic-setup";
@@ -6,7 +6,7 @@ import { html } from "@codemirror/lang-html";
 import { css } from "@codemirror/lang-css";
 
 const CodeEditor = ({ name, value, mode = "htmlmixed", onChange }) => {
-  const extensions = mode === "css" ? [basicSetup(), css()] : [basicSetup(), html()];
+  const extensions = useMemo(() => mode === "css" ? [basicSetup(), css()] : [basicSetup(), html()], [mode]);
 
   return (
     <CodeMirror

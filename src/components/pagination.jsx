@@ -1,7 +1,9 @@
+import useWidgetText from '../features/widgets/hooks/useWidgetText.js';
 import React from 'react';
 import PropTypes from 'prop-types';
 
 const Pagination = ({ variables, refetch, total, hasNextPage, pageSize: requestedPageSize }) => {
+  const { widgetText } = useWidgetText();
   const pageSize = requestedPageSize ?? variables.first ?? variables.count;
 
   const currentPage = Math.floor(variables.offset / pageSize) + 1;
@@ -84,10 +86,7 @@ const Pagination = ({ variables, refetch, total, hasNextPage, pageSize: requeste
   return (
     <>
       {total > -1 && (
-        <p className="m-0 text-muted d-none d-sm-block">
-          Showing <span>{variables.offset + 1}</span> to{' '}
-          <span>{displayTo > total ? total : displayTo}</span> of <span>{total}</span> entries
-        </p>
+        <p className="m-0 text-muted d-none d-sm-block">{widgetText("Showing {from} to {to} of {total} entries", { from: variables.offset + 1, to: displayTo > total ? total : displayTo, total })}</p>
       )}
 
       {showPagination && (
@@ -99,9 +98,7 @@ const Pagination = ({ variables, refetch, total, hasNextPage, pageSize: requeste
                 <ul className="pagination m-0">
                   <li className={`page-item ${!canPrev ? 'disabled' : ''}`}>
                     <button className="page-link" onClick={onPrev} disabled={!canPrev} aria-disabled={!canPrev} >
-                      {ChevronLeft}
-                      prev
-                    </button>
+                      {ChevronLeft}{widgetText("prev")}</button>
                   </li>
                 </ul>
               </div>
@@ -109,7 +106,7 @@ const Pagination = ({ variables, refetch, total, hasNextPage, pageSize: requeste
               <div className="flex-fill d-flex justify-content-center">
                 <ul className="pagination m-0">
                   <li className="page-item">
-                    <span className="page-link">Page {currentPage}</span>
+                    <span className="page-link">{widgetText("Page {page}", { page: currentPage })}</span>
                   </li>
                 </ul>
               </div>
@@ -122,9 +119,7 @@ const Pagination = ({ variables, refetch, total, hasNextPage, pageSize: requeste
                       onClick={onNext}
                       disabled={!canNext}
                       aria-disabled={!canNext}
-                    >
-                      next
-                      {ChevronRight}
+                    >{widgetText("next")}{ChevronRight}
                     </button>
                   </li>
                 </ul>
@@ -140,9 +135,7 @@ const Pagination = ({ variables, refetch, total, hasNextPage, pageSize: requeste
                   disabled={!canPrev}
                   aria-disabled={!canPrev}
                 >
-                  {ChevronLeft}
-                  prev
-                </button>
+                  {ChevronLeft}{widgetText("prev")}</button>
               </li>
 
               {pages.map((page) => (
@@ -162,9 +155,7 @@ const Pagination = ({ variables, refetch, total, hasNextPage, pageSize: requeste
                   onClick={onNext}
                   disabled={!canNext}
                   aria-disabled={!canNext}
-                >
-                  next
-                  {ChevronRight}
+                >{widgetText("next")}{ChevronRight}
                 </button>
               </li>
             </ul>

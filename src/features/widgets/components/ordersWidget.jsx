@@ -1,3 +1,4 @@
+import useWidgetText from '../hooks/useWidgetText.js';
 import React from "react";
 import PropTypes from 'prop-types';
 import { useQuery, gql } from "@apollo/client";
@@ -46,6 +47,7 @@ var GET_DATA = gql`query ($offset: Int!, $first: Int!, $nodeIds: [String]!) {
 }`;
 
 const OrdersWidget = ({ customer, widget, useExternalId }) => {
+  const { widgetText } = useWidgetText();
   const { loading, error, data, variables, refetch } = useQuery(GET_DATA, {
     variables: { offset: 0, first: 10, nodeIds: [customer?.id] },
   });
@@ -90,7 +92,7 @@ const OrdersWidget = ({ customer, widget, useExternalId }) => {
   const uniqueVolumeIds = getUniqueVolumeIds(orders);
 
   if (!data?.customers?.[0]) {
-    return <EmptyContent title="Customer Not Found" text="The customer requested cannot be found." ></EmptyContent>
+    return <EmptyContent title={widgetText("Customer Not Found")} text={widgetText("The customer requested cannot be found.")} ></EmptyContent>
   }
 
   return <>
@@ -98,16 +100,16 @@ const OrdersWidget = ({ customer, widget, useExternalId }) => {
       <table className="table card-table table-vcenter text-nowrap datatable">
         <thead>
           <tr>
-            <th className="w-1">No.</th>
-            <th>Order Date</th>
-            <th>Invoice Date</th>
-            <th>Product</th>
-            <th>Order Type</th>
+            <th className="w-1">{widgetText("No.")}</th>
+            <th>{widgetText("Order Date")}</th>
+            <th>{widgetText("Invoice Date")}</th>
+            <th>{widgetText("Product")}</th>
+            <th>{widgetText("Order Type")}</th>
             {uniqueVolumeIds.map((v, index) => {
               return <th key={index}>{v}</th>
             })}
-            <th>Total</th>
-            <th>Status</th>
+            <th>{widgetText("Total")}</th>
+            <th>{widgetText("Status")}</th>
           </tr>
         </thead>
         <tbody>

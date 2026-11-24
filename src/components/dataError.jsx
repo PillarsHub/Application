@@ -1,8 +1,10 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import AccountMenu from '../pages/accountMenu.jsx';
+import useWidgetText from '../features/widgets/hooks/useWidgetText.js';
 
 const DataError = ({ title, error, showHeader = false }) => {
+  const { widgetText } = useWidgetText();
   return <div className="page-wrapper page-center" >
 
     {showHeader && <header className="navbar navbar-expand d-print-none" data-bs-theme="light">
@@ -20,7 +22,7 @@ const DataError = ({ title, error, showHeader = false }) => {
     <div className="container container-tight py-4">
       <div className="text-center">
         <div className="mb-3">
-          {title ?? 'We encountered an error requesting your data.'}
+          {title ?? widgetText('We encountered an error requesting your data.')}
         </div>
         <div className="text-secondary mb-3">{JSON.stringify(error)}</div>
       </div>

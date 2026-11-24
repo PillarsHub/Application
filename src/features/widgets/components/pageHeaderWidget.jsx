@@ -1,8 +1,10 @@
+import useWidgetText from '../hooks/useWidgetText.js';
 import React from 'react';
 import PropTypes from 'prop-types';
 import { isPageHeaderBackgroundTransparent, pageHeaderBreadcrumbs } from '../pageHeader.mjs';
 
 export default function PageHeaderWidget({ widget, customer, orderId, page }) {
+  const { widgetText } = useWidgetText();
   const settings = widget.settings ?? {};
   const breadcrumbs = pageHeaderBreadcrumbs(settings, { customerId: customer?.id, orderId, page });
   const name = settings.showCustomerName !== false ? customer?.fullName : '';
@@ -11,10 +13,10 @@ export default function PageHeaderWidget({ widget, customer, orderId, page }) {
   return <div className={`page-header m-0 w-100 d-print-none text-${alignment}`} style={{ backgroundColor: isPageHeaderBackgroundTransparent(widget) ? 'transparent' : widget.headerColor ?? 'transparent' }}>
     <div className="row g-3 align-items-center">
       <div className="col">
-        {breadcrumbs.length > 0 && <nav aria-label="Page breadcrumbs">
+        {breadcrumbs.length > 0 && <nav aria-label={widgetText("Page breadcrumbs")}>
           <ol className={`breadcrumb breadcrumb-arrows justify-content-${alignment}`}>
             {breadcrumbs.map((crumb, index) => <li key={`${crumb.id}-${index}`} className="breadcrumb-item" aria-current={!crumb.link && index === breadcrumbs.length - 1 ? 'page' : undefined}>
-              {crumb.link ? <a href={crumb.link}>{crumb.label}</a> : <span>{crumb.label}</span>}
+              {crumb.link ? <a href={crumb.link}>{widgetText(crumb.label)}</a> : <span>{widgetText(crumb.label)}</span>}
             </li>)}
           </ol>
         </nav>}

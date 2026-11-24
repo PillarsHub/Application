@@ -1,3 +1,4 @@
+import useWidgetText from '../hooks/useWidgetText.js';
 import React, { useMemo, useState } from "react";
 import PropTypes from "prop-types";
 import { gql, useLazyQuery, useQuery } from "@apollo/client";
@@ -80,6 +81,7 @@ const sortPaidReleases = (a, b) => {
 };
 
 const PaymentsWidget = ({ date, customerId, setCurrentBatch }) => {
+  const { widgetText } = useWidgetText();
   const { loading, error, data } = useQuery(GET_CUSTOMER, {
     variables: { date, nodeId: customerId },
     fetchPolicy: "no-cache",
@@ -145,8 +147,8 @@ const PaymentsWidget = ({ date, customerId, setCurrentBatch }) => {
   if (!payments.length) {
     return (
       <EmptyContent
-        title="No commission payments yet"
-        text="Once commissions are calculated and released, your payment history will show up here."
+        title={widgetText("No commission payments yet")}
+        text={widgetText("Once commissions are calculated and released, your payment history will show up here.")}
       />
     );
   }
@@ -157,12 +159,12 @@ const PaymentsWidget = ({ date, customerId, setCurrentBatch }) => {
         <thead>
           <tr>
             <th className="w-1"></th>
-            <th>Date Paid</th>
-            <th className="text-center">Status</th>
-            <th>Payment Id</th>
-            <th>Batch</th>
-            <th className="text-center">Items</th>
-            <th className="text-end">Amount</th>
+            <th>{widgetText("Date Paid")}</th>
+            <th className="text-center">{widgetText("Status")}</th>
+            <th>{widgetText("Payment Id")}</th>
+            <th>{widgetText("Batch")}</th>
+            <th className="text-center">{widgetText("Items")}</th>
+            <th className="text-end">{widgetText("Amount")}</th>
           </tr>
         </thead>
         <tbody>
@@ -196,7 +198,7 @@ const PaymentsWidget = ({ date, customerId, setCurrentBatch }) => {
                       {pmt.status}
                     </span>
                   </td>
-                  <td>Payment {pmt.id}</td>
+                  <td>{widgetText("Payment {paymentId}", { paymentId: pmt.id })}</td>
                   <td>{pmt.batchId}</td>
                   <td className="text-center">{pmt.totalDetails ?? 0}</td>
                   <td className={`text-end fw-bold ${pmt.amount < 0 ? "text-danger" : ""}`}>{currency(pmt.amount)}</td>
@@ -215,15 +217,15 @@ const PaymentsWidget = ({ date, customerId, setCurrentBatch }) => {
                             <table className="table table-sm mb-2">
                               <thead>
                                 <tr>
-                                  <th>Bonus</th>
-                                  <th className="d-none d-sm-table-cell">Level</th>
-                                  <th className="d-none d-md-table-cell">Commission Date</th>
-                                  <th className="d-none d-xl-table-cell">Order Customer</th>
-                                  <th>Order Number</th>
-                                  <th>Order Date</th>
-                                  <th>Volume</th>
-                                  <th>Percent</th>
-                                  <th className="text-end">Amount</th>
+                                  <th>{widgetText("Bonus")}</th>
+                                  <th className="d-none d-sm-table-cell">{widgetText("Level")}</th>
+                                  <th className="d-none d-md-table-cell">{widgetText("Commission Date")}</th>
+                                  <th className="d-none d-xl-table-cell">{widgetText("Order Customer")}</th>
+                                  <th>{widgetText("Order Number")}</th>
+                                  <th>{widgetText("Order Date")}</th>
+                                  <th>{widgetText("Volume")}</th>
+                                  <th>{widgetText("Percent")}</th>
+                                  <th className="text-end">{widgetText("Amount")}</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -236,7 +238,7 @@ const PaymentsWidget = ({ date, customerId, setCurrentBatch }) => {
                                     const buyer = src.customer || {};
                                     return (
                                       <tr key={rel.id}>
-                                        <td>{b.bonusTitle ?? b.bonusId ?? "Bonus"}</td>
+                                        <td>{b.bonusTitle ?? b.bonusId ?? widgetText("Bonus")}</td>
                                         <td className="d-none d-sm-table-cell">{b.level ?? "—"}</td>
                                         <td className="d-none d-md-table-cell">
                                           {b.commissionDate ? (
@@ -282,13 +284,11 @@ const PaymentsWidget = ({ date, customerId, setCurrentBatch }) => {
                                 onClick={() => onLoadMore(pmt)}
                                 disabled={releasesState.loading}
                               >
-                                {releasesState.loading ? "Loading…" : `Load more (${remaining} left)`}
+                                {releasesState.loading ? widgetText("Loading…") : widgetText("Load more ({count} left)", { count: remaining })}
                               </button>
                             </div>
                           ) : total > 0 ? (
-                            <div className="text-center text-muted small">
-                              All {loaded.toLocaleString()} items loaded.
-                            </div>
+                            <div className="text-center text-muted small">{widgetText("All {count} items loaded.", { count: loaded.toLocaleString() })}</div>
                           ) : null;
                         })()}
                       </div>
